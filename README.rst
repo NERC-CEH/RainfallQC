@@ -26,6 +26,7 @@ Features
 * TODO:
         - setup.py and setup.cfg
         - bump2version
+        - precommit
 
 Credits
 -------
