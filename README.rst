@@ -23,7 +23,9 @@ Quality control procedure for rainfall data
 Features
 --------
 
-* TODO
+* TODO:
+        - setup.py and setup.cfg
+        - bump2version
 
 Credits
 -------
