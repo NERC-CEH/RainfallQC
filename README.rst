@@ -6,9 +6,6 @@ Intense-QC
 .. image:: https://img.shields.io/pypi/v/IntenseQC.svg
         :target: https://pypi.python.org/pypi/IntenseQC
 
-.. image:: https://img.shields.io/travis/thomasjkeel/IntenseQC.svg
-        :target: https://travis-ci.com/thomasjkeel/IntenseQC
-
 .. image:: https://readthedocs.org/projects/intense-qc/badge/?version=latest
         :target: https://intense-qc.readthedocs.io/en/latest/?version=latest
         :alt: Documentation Status
