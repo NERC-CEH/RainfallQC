@@ -38,8 +38,8 @@ and "help wanted" is open to whoever wants to implement it.
 Write Documentation
 ~~~~~~~~~~~~~~~~~~~
 
-Rainfall-QC could always use more documentation, whether as part of the
-official Rainfall-QC docs, in docstrings, or even on the web in blog posts,
+RainfallQC could always use more documentation, whether as part of the
+official RainfallQC docs, in docstrings, or even on the web in blog posts,
 articles, and such.
 
 Submit Feedback

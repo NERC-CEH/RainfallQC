@@ -46,7 +46,7 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project = 'Rainfall-QC'
+project = 'RainfallQC'
 copyright = "2025, Tom Keel"
 author = "Tom Keel"
 
@@ -128,7 +128,7 @@ latex_elements = {
 # [howto, manual, or own class]).
 latex_documents = [
     (master_doc, 'RainfallQC.tex',
-     'Rainfall-QC Documentation',
+     'RainfallQC Documentation',
      'Tom Keel', 'manual'),
 ]
 
@@ -139,7 +139,7 @@ latex_documents = [
 # (source start file, name, description, authors, manual section).
 man_pages = [
     (master_doc, 'RainfallQC',
-     'Rainfall-QC Documentation',
+     'RainfallQC Documentation',
      [author], 1)
 ]
 
@@ -151,7 +151,7 @@ man_pages = [
 #  dir menu entry, description, category)
 texinfo_documents = [
     (master_doc, 'RainfallQC',
-     'Rainfall-QC Documentation',
+     'RainfallQC Documentation',
      author,
      'RainfallQC',
      'One line description of project.',

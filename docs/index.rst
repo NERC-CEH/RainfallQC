@@ -1,4 +1,4 @@
-Welcome to Rainfall-QC's documentation!
+Welcome to RainfallQC's documentation!
 ======================================
 
 .. toctree::

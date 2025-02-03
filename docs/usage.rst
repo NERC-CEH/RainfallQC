@@ -2,6 +2,6 @@
 Usage
 =====
 
-To use Rainfall-QC in a project::
+To use RainfallQC in a project::
 
     import RainfallQC

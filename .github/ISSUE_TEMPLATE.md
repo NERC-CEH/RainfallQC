@@ -1,4 +1,4 @@
-* Rainfall-QC version:
+* RainfallQC version:
 * Python version:
 * Operating System:
 

@@ -1,4 +1,4 @@
-"""Top-level package for Rainfall-QC."""
+"""Top-level package for RainfallQC."""
 
 __author__ = """Tom Keel"""
 __email__ = 'tomkee@ceh.ac.uk'
