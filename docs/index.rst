@@ -1,4 +1,4 @@
-Welcome to Intense-QC's documentation!
+Welcome to Rainfall-QC's documentation!
 ======================================
 
 .. toctree::

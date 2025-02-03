@@ -2,6 +2,6 @@
 Usage
 =====
 
-To use Intense-QC in a project::
+To use Rainfall-QC in a project::
 
-    import IntenseQC
+    import RainfallQC

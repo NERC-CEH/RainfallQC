@@ -3,7 +3,7 @@ requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "IntenseQC"
+name = "RainfallQC"
 version = "0.0.1"
 description = "Quality control procedure for rainfall data"
 readme = "README.rst"
@@ -25,16 +25,16 @@ dependencies = [
 test = ["pytest", "pytest-cov", "parameterized"]
 docs = ["sphinx", "sphinx-copybutton", "sphinx-rtd-theme"]
 lint = ["mypy", "ruff"]
-dev = ["IntenseQC[test,docs,lint]"]
+dev = ["RainfallQC[test,docs,lint]"]
 
 [project.urls]
-bugs = "https://github.com/thomasjkeel/IntenseQC/issues"
-changelog = "https://github.com/thomasjkeel/IntenseQC/blob/master/changelog.md"
-homepage = "https://github.com/thomasjkeel/IntenseQC"
+bugs = "https://github.com/thomasjkeel/RainfallQC/issues"
+changelog = "https://github.com/thomasjkeel/RainfallQC/blob/master/changelog.md"
+homepage = "https://github.com/thomasjkeel/RainfallQC"
 
 
 [tool.pytest.ini_options]
-addopts = "--cov=IntenseQC"
+addopts = "--cov=RainfallQC"
 markers = [
     "slow: Marks slow tests",
 ]

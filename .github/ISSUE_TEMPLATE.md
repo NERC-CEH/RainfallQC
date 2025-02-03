@@ -1,4 +1,4 @@
-* Intense-QC version:
+* Rainfall-QC version:
 * Python version:
 * Operating System:
 

@@ -1,4 +1,4 @@
-name: intenseqc
+name: rainfallqc
 channels:
   - conda-forge
   - default

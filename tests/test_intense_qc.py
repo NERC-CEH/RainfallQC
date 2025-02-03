@@ -1,11 +1,11 @@
 #!/usr/bin/env python
 
-"""Tests for `IntenseQC` package."""
+"""Tests for `RainfallQC` package."""
 
 import pytest
 
 
-from IntenseQC import IntenseQC
+from RainfallQC import RainfallQC
 
 
 @pytest.fixture

@@ -1,1 +1,1 @@
-"""Unit test package for IntenseQC."""
+"""Unit test package for RainfallQC."""
