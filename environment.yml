@@ -1,4 +1,4 @@
-name: rainfallqc
+name: rainfall_qc
 channels:
   - conda-forge
   - default
