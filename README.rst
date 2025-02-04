@@ -18,6 +18,7 @@ Quality control procedure for rainfall data
 Proof of concept
 ----------------
 Running quality control measure:
+
 ...code-black:: python
 
         ## Simple qc not dependent external data or neighbours
@@ -38,6 +39,7 @@ Running quality control measure:
 
 
 Running rulebase:
+
 ...code-black:: python
 
         formatted_data = rainfall_qc.intense_qc_rulebase.apply_rulebase(rainguage_data, gauge_metadata, CDCC_data)
