@@ -19,7 +19,7 @@ Proof of concept
 ----------------
 Running quality control measure:
 
-...code-black:: python
+.. code-black:: python
 
         ## Simple qc not dependent external data or neighbours
         cleaned_raingauge_data = rainfall_qc.accumulation_checks.run(data)
@@ -40,7 +40,7 @@ Running quality control measure:
 
 Running rulebase:
 
-...code-black:: python
+.. code-black:: python
 
         formatted_data = rainfall_qc.intense_qc_rulebase.apply_rulebase(rainguage_data, gauge_metadata, CDCC_data)
         formatted_data, flags = rainfall_qc.intense_qc_rulebase.apply_rulebase(rainguage_data, gauge_metadata, CDCC_data, return_flags=True)
