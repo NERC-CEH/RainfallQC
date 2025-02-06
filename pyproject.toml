@@ -25,7 +25,7 @@ dependencies = [
 test = ["pytest", "pytest-cov", "parameterized"]
 docs = ["sphinx", "sphinx-copybutton", "sphinx-rtd-theme"]
 lint = ["mypy", "ruff"]
-dev = ["RainfallQC[test,docs,lint]"]
+dev = ["RainfallQC[test,docs,lint]", "bump-my-version==0.32.0"]
 
 [project.urls]
 bugs = "https://github.com/thomasjkeel/RainfallQC/issues"
