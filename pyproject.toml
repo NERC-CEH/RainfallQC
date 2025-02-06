@@ -1,10 +1,10 @@
 [build-system]
-requires = ["setuptools>=61.0"]
+requires = ["setuptools>=71.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "RainfallQC"
-version = "0.0.1"
+version = "0.0.2-beta"
 description = "Quality control procedure for rainfall data"
 readme = "README.rst"
 authors = [
@@ -25,13 +25,49 @@ dependencies = [
 test = ["pytest", "pytest-cov", "parameterized"]
 docs = ["sphinx", "sphinx-copybutton", "sphinx-rtd-theme"]
 lint = ["mypy", "ruff"]
-dev = ["RainfallQC[test,docs,lint]"]
+dev = ["RainfallQC[test,docs,lint]", "bump-my-version==0.32.0"]
 
 [project.urls]
 bugs = "https://github.com/thomasjkeel/RainfallQC/issues"
 changelog = "https://github.com/thomasjkeel/RainfallQC/blob/master/changelog.md"
 homepage = "https://github.com/thomasjkeel/RainfallQC"
 
+[tool]
+
+[tool.black]
+target-version = [
+  "py310",
+  "py311",
+  "py312",
+  "py313"
+]
+
+[tool.bumpversion]
+current_version = "0.1.0"
+commit = true
+commit_args = "--no-verify --signoff"
+tag = false
+allow_dirty = false
+parse = "(?P<major>\\d+)\\.(?P<minor>\\d+)\\.(?P<patch>\\d+)(\\-(?P<release>[a-z]+)(\\.(?P<build>\\d+)))?"
+serialize = [
+  "{major}.{minor}.{patch}-{release}.{build}",
+  "{major}.{minor}.{patch}"
+]
+
+[[tool.bumpversion.files]]
+filename = "src/rainfall_qc/__init__.py"
+search = "__version__ = \"{current_version}\""
+replace = "__version__ = \"{new_version}\""
+
+[tool.bumpversion.parts.build]
+independent = false
+
+[tool.bumpversion.parts.release]
+optional_value = "release"
+values = [
+  "dev",
+  "release"
+]
 
 [tool.pytest.ini_options]
 addopts = "--cov=RainfallQC"
@@ -54,10 +90,29 @@ include = ["src/**.py"]
 line-length = 120
 
 [tool.ruff.lint]
-select = ["F", "E", "W", "A", "PLC", "PLE", "PLW", "I", "N816", "ANN001", "ANN201", "ANN202", "ANN205", "ANN206"]
+ignore = [
+  "E501", # line-too-long
+]
+preview = true
+select = [
+  "A",
+  "B", # bugbear
+  "D", # docstrings
+  "E", # pycodestyle errors
+  "F", # pyflakes
+  "I", # imports
+  "W", # pycodestyle warnings
+  "PLC", "PLE", "PLW", "N816", "ANN001", "ANN201", "ANN202", "ANN205", "ANN206" # TODO
+]
+# exclude = [
+#   "docs/notebooks/*.ipynb"
+# ]
 
 [tool.ruff.lint.flake8-type-checking]
 strict = true
+
+[tool.ruff.lint.isort]
+case-sensitive = true
 
 # Mypy
 # ----
@@ -75,4 +130,3 @@ warn_no_return = true
 module = "tests.*"
 allow_untyped_defs = true
 disable_error_code = "attr-defined"
-
