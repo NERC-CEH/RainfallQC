@@ -91,10 +91,7 @@ line-length = 120
 
 [tool.ruff.lint]
 ignore = [
-  "E203", # no-explicit-stacklevel
-  "E203", # blank-line-after-summary
-  "E501", # multi-line-summary-first-line
-  "W503", # ends-in-period
+  "E501", # line-too-long
 ]
 preview = true
 select = [
