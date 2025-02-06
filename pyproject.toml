@@ -113,9 +113,11 @@ select = [
   "PLC", "PLE", "PLW", "N816", "ANN001", "ANN201", "ANN202", "ANN205", "ANN206" # TODO
 ]
 
-
 [tool.ruff.lint.flake8-type-checking]
 strict = true
+
+[tool.ruff.lint.isort]
+case-sensitive = true
 
 # Mypy
 # ----
