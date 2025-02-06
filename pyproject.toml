@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "RainfallQC"
-version = "0.0.1"
+version = "0.0.2-alpha"
 description = "Quality control procedure for rainfall data"
 readme = "README.rst"
 authors = [
@@ -75,4 +75,3 @@ warn_no_return = true
 module = "tests.*"
 allow_untyped_defs = true
 disable_error_code = "attr-defined"
-
