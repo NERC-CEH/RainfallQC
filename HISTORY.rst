@@ -2,7 +2,7 @@
 History
 =======
 
-0.0.2 (2025-01-16)
+0.0.2 (2025-02-06)
 ------------------
 * Set up environment, pyproject, setup and tox ini files in prep for development
 
