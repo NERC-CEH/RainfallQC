@@ -30,10 +30,9 @@ jobs:
         with:
           cache-downloads: true
           cache-environment: true
-          activate-environment: rainfall_qc
+          environment-name: rainfall_qc
           environment-file: environment.yml
-          python-version: 3.10
-          auto-activate-base: false
+          generate-run-shell: false
       - name: Run pytest coverage
         shell: bash -el {0}
         run: |
