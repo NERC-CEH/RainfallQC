@@ -46,6 +46,7 @@ setup(
         "Programming Language :: Python :: 3.12",
         "Programming Language :: Python :: 3.13",
         "Topic :: Scientific/Engineering :: Environmental Science",
+        "Topic :: Scientific/Engineering :: Hydrology",
     ],
     description=DESCRIPTION,
     python_requires=REQUIRES_PYTHON,

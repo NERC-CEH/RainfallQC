@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "RainfallQC"
-version = "0.0.2-alpha"
+version = "0.0.2-beta"
 description = "Quality control procedure for rainfall data"
 readme = "README.rst"
 authors = [
@@ -90,11 +90,6 @@ include = ["src/**.py"]
 line-length = 120
 
 [tool.ruff.lint]
-
-[tool.ruff.lint]
-# exclude = [
-#   "docs/notebooks/*.ipynb"
-# ]
 ignore = [
   "E203", # no-explicit-stacklevel
   "E203", # blank-line-after-summary
@@ -109,9 +104,12 @@ select = [
   "E", # pycodestyle errors
   "F", # pyflakes
   "I", # imports
-  "W" # pycodestyle warnings
+  "W", # pycodestyle warnings
   "PLC", "PLE", "PLW", "N816", "ANN001", "ANN201", "ANN202", "ANN205", "ANN206" # TODO
 ]
+# exclude = [
+#   "docs/notebooks/*.ipynb"
+# ]
 
 [tool.ruff.lint.flake8-type-checking]
 strict = true
