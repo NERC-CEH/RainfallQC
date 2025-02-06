@@ -9,7 +9,6 @@ dependencies:
   - black
   - coverage
   - flake8
-  - bump-my-version==0.31.1
   - pre_commit
   - pylint
   - pip
@@ -17,3 +16,4 @@ dependencies:
       - ruff
       - pytest-cov
       - parameterized
+      - bump-my-version==0.31.1
