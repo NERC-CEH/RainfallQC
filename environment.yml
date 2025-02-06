@@ -9,7 +9,7 @@ dependencies:
   - black
   - coverage
   - flake8
-  - bump2version
+  - bump-my-version==0.32.0
   - pre_commit
   - pylint
   - pip
