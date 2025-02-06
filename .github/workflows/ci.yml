@@ -39,9 +39,13 @@ jobs:
         run: |
           python -m pytest --cov=./RainfallQC --cov-report xml
       - name: Lint with ruff
-        run: ruff check
+        uses: astral-sh/ruff-action@v3
+        with:
+          src: "./src"
       - name: Check format with ruff
-        run: ruff format --check
+        uses: astral-sh/ruff-action@v3
+        with:
+          args: "format --check"
       # - name: Coveralls GitHub Action
       #   uses: coverallsapp/github-action@648a8eb78e6d50909eff900e4ec85cab4524a45b # v2.3.6
       #   with:
