@@ -1,3 +1,15 @@
 # Testing and development dependencies
 pip
 numpy
+bump2version
+ruff
+black
+flake8
+parameterized
+pre_commit
+pylint
+pytest
+pytest-cov
+# Documentation and examples
+matplotlib
+sphinx
