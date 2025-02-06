@@ -5,3 +5,15 @@ channels:
 dependencies:
   - python>=3.10
   - numpy
+  # Testing and development dependencies
+  - black
+  - coverage
+  - flake8
+  - bump2version
+  - pre_commit
+  - pylint
+  - pip
+  - pip:
+      - shapely
+      - pytest-cov
+      - parameterized
