@@ -5,7 +5,7 @@
 import pytest
 
 
-from RainfallQC import RainfallQC
+# from raqin import RainfallQC
 
 
 @pytest.fixture
