@@ -90,7 +90,29 @@ include = ["src/**.py"]
 line-length = 120
 
 [tool.ruff.lint]
-select = ["F", "E", "W", "A", "PLC", "PLE", "PLW", "I", "N816", "ANN001", "ANN201", "ANN202", "ANN205", "ANN206"]
+
+[tool.ruff.lint]
+# exclude = [
+#   "docs/notebooks/*.ipynb"
+# ]
+ignore = [
+  "E203", # no-explicit-stacklevel
+  "E203", # blank-line-after-summary
+  "E501", # multi-line-summary-first-line
+  "W503", # ends-in-period
+]
+preview = true
+select = [
+  "A",
+  "B", # bugbear
+  "D", # docstrings
+  "E", # pycodestyle errors
+  "F", # pyflakes
+  "I", # imports
+  "W" # pycodestyle warnings
+  "PLC", "PLE", "PLW", "N816", "ANN001", "ANN201", "ANN202", "ANN205", "ANN206" # TODO
+]
+
 
 [tool.ruff.lint.flake8-type-checking]
 strict = true
