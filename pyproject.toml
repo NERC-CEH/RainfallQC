@@ -8,25 +8,45 @@ dynamic = ["version"]
 description = "Quality control procedure for rainfall data"
 readme = "README.rst"
 requires-python = ">=3.10.0"
-authors = [
-  {name = "Tom Keel", email = "tomkee@ceh.ac.uk"}
-]
-maintainers = [
-  {name = "Tom Keel", email = "tomkee@ceh.ac.uk"}
-]
+authors = [{ name = "Tom Keel", email = "tomkee@ceh.ac.uk" }]
+maintainers = [{ name = "Tom Keel", email = "tomkee@ceh.ac.uk" }]
 classifiers = [
-
+  "Development Status :: 4 - Beta",
+  "Intended Audience :: Developers",
+  "Intended Audience :: Science/Research",
+  "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
+  "Natural Language :: English",
+  "Operating System :: OS Independent",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Topic :: Scientific/Engineering :: Environmental Science",
+  "Topic :: Scientific/Engineering :: Hydrology",
 ]
-license = {text = "GNU General Public License v3"}
-dependencies = [
-
-]
+license = { file = "LICENSE" }
+dependencies = ["numpy"]
 
 [project.optional-dependencies]
 test = ["pytest", "pytest-cov", "parameterized"]
 docs = ["sphinx", "sphinx-copybutton", "sphinx-rtd-theme"]
 lint = ["mypy", "ruff"]
-dev = ["RainfallQC[test,docs,lint]", "bump-my-version==0.32.0"]
+dev = [
+  "pip",
+  "numpy",
+  "bump-my-version==0.32.0",
+  "ruff",
+  "black",
+  "flake8",
+  "parameterized",
+  "pre_commit",
+  "pylint",
+  "pytest",
+  "pytest-cov",
+  "matplotlib",
+  "sphinx",
+]
 
 [project.urls]
 bugs = "https://github.com/thomasjkeel/RainfallQC/issues"
@@ -36,12 +56,7 @@ homepage = "https://github.com/thomasjkeel/RainfallQC"
 [tool]
 
 [tool.black]
-target-version = [
-  "py310",
-  "py311",
-  "py312",
-  "py313"
-]
+target-version = ["py310", "py311", "py312", "py313"]
 
 [tool.bumpversion]
 current_version = "0.0.3-alpha"
@@ -50,10 +65,7 @@ commit_args = "--no-verify --signoff"
 tag = false
 allow_dirty = false
 parse = "(?P<major>\\d+)\\.(?P<minor>\\d+)\\.(?P<patch>\\d+)(\\-(?P<release>[a-z]+))?"
-serialize = [
-  "{major}.{minor}.{patch}-{release}",
-  "{major}.{minor}.{patch}"
-]
+serialize = ["{major}.{minor}.{patch}-{release}", "{major}.{minor}.{patch}"]
 
 [[tool.bumpversion.files]]
 filename = "src/rainfallqc/__init__.py"
@@ -67,23 +79,14 @@ replace = "VERSION = \"{new_version}\""
 
 [tool.bumpversion.parts.release]
 optional_value = "gamma"
-values = [
-  "alpha",
-  "beta",
-  "gamma"
-]
+values = ["alpha", "beta", "gamma"]
 
 [tool.pytest.ini_options]
 addopts = "--cov=RainfallQC"
-markers = [
-    "slow: Marks slow tests",
-]
+markers = ["slow: Marks slow tests"]
 
 [tool.setuptools]
-package-dir = {"src" = "src"}
-
-[tool.setuptools.package-data]
-"*" = ["*.*"]
+package-dir = { "src" = "src" }
 
 [tool.coverage.run]
 omit = ["tests/*.py", "*__init__.py"]
@@ -97,18 +100,26 @@ line-length = 120
 [tool.ruff.lint]
 ignore = [
   "D203", # incorrect-blank-line-before-class
-  "D212" # multi-line-summary-first-line
+  "D212", # multi-line-summary-first-line
 ]
 preview = true
 select = [
   "A",
-  "B", # bugbear
-  "D", # docstrings
-  "E", # pycodestyle errors
-  "F", # pyflakes
-  "I", # imports
-  "W", # pycodestyle warnings
-  "PLC", "PLE", "PLW", "N816", "ANN001", "ANN201", "ANN202", "ANN205", "ANN206" # TODO
+  "B",      # bugbear
+  "D",      # docstrings
+  "E",      # pycodestyle errors
+  "F",      # pyflakes
+  "I",      # imports
+  "W",      # pycodestyle warnings
+  "PLC",
+  "PLE",
+  "PLW",
+  "N816",
+  "ANN001",
+  "ANN201",
+  "ANN202",
+  "ANN205",
+  "ANN206", # TODO
 ]
 # exclude = [
 #   "docs/notebooks/*.ipynb"
@@ -130,9 +141,3 @@ files = "."
 strict = true
 warn_unreachable = true
 warn_no_return = true
-
-[[tool.mypy.overrides]]
-# Don't require test functions to include types
-module = "tests.*"
-allow_untyped_defs = true
-disable_error_code = "attr-defined"
