@@ -91,7 +91,8 @@ line-length = 120
 
 [tool.ruff.lint]
 ignore = [
-  "E501", # line-too-long
+  "D203", # incorrect-blank-line-before-class
+  "D212" # multi-line-summary-first-line
 ]
 preview = true
 select = [
