@@ -1,5 +1,1 @@
-"""Main module."""
-
-
-def main():
-    return True
+"""Quality control for rainfall data."""

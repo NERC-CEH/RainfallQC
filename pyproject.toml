@@ -1,11 +1,11 @@
 [build-system]
-requires = ["setuptools>=71.0"]
-build-backend = "setuptools.build_meta"
+requires = ["flit_core >=3.4"]
+build-backend = "flit_core.buildapi"
 
 [project]
 name = "rainfallqc"
 dynamic = ["version"]
-description = "Quality control procedure for rainfall data"
+description = "Quality control for rainfall data"
 readme = "README.rst"
 requires-python = ">=3.10.0"
 authors = [{ name = "Tom Keel", email = "tomkee@ceh.ac.uk" }]
@@ -82,7 +82,7 @@ optional_value = "gamma"
 values = ["alpha", "beta", "gamma"]
 
 [tool.pytest.ini_options]
-addopts = "--cov=RainfallQC"
+addopts = "--cov=rainfallqc"
 markers = ["slow: Marks slow tests"]
 
 [tool.setuptools]
@@ -121,9 +121,7 @@ select = [
   "ANN205",
   "ANN206", # TODO
 ]
-# exclude = [
-#   "docs/notebooks/*.ipynb"
-# ]
+exclude = ["docs/conf.py", "docs/notebooks/*.ipynb"]
 
 [tool.ruff.lint.flake8-type-checking]
 strict = true

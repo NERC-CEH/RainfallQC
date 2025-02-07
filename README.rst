@@ -2,8 +2,8 @@
 RainfallQC
 ==========
 
-.. image:: https://img.shields.io/pypi/v/RainfallQC.svg
-        :target: https://pypi.python.org/pypi/RainfallQC
+.. image:: https://img.shields.io/pypi/v/rainfallqc.svg
+        :target: https://pypi.python.org/pypi/rainfallqc
 
 .. image:: https://readthedocs.org/projects/rainfallqc/badge/?version=latest
         :target: https://rainfallqc.readthedocs.io/en/latest/?version=latest
