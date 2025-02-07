@@ -25,10 +25,21 @@ requirements = [
     "numpy",
 ]
 
-dev_requirements = []
-with open("requirements_dev.txt", "r", encoding="utf8") as dev:
-    for dependency in dev.readlines():
-        dev_requirements.append(dependency)
+dev_requirements = [
+    "pip",
+    "numpy",
+    "bump-my-version==0.31.1",
+    "ruff",
+    "black",
+    "flake8",
+    "parameterized",
+    "pre_commit",
+    "pylint",
+    "pytest",
+    "pytest-cov",
+    "matplotlib",
+    "sphinx",
+]
 
 setup(
     author=AUTHOR,

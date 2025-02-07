@@ -80,7 +80,7 @@ markers = [
 ]
 
 [tool.setuptools]
-package-dir = {"" = "src"}
+package-dir = {"src" = "src"}
 
 [tool.setuptools.package-data]
 "*" = ["*.*"]
