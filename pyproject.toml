@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "RainfallQC"
-VERSION = "0.0.2-beta"
+dynamic = ["version"]
 description = "Quality control procedure for rainfall data"
 readme = "README.rst"
 authors = [
@@ -43,7 +43,7 @@ target-version = [
 ]
 
 [tool.bumpversion]
-current_VERSION = "0.0.2-beta"
+current_version = "0.0.2-beta"
 commit = true
 commit_args = "--no-verify --signoff"
 tag = false
@@ -67,7 +67,7 @@ replace = "VERSION = \"{new_version}\""
 [[tool.bumpversion.files]]
 filename = "pyproject.toml"
 search = "version = \"{current_version}\""
-replace = "VERSION = \"{new_version}\""
+replace = "version = \"{new_version}\""
 
 [tool.bumpversion.parts.release]
 optional_value = "gamma"
