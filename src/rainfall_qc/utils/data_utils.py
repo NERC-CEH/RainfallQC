@@ -2,5 +2,5 @@
 """
 All data operations
 
-Classes and Functions ordered alphabetically.
+Classes and functions ordered alphabetically.
 """
