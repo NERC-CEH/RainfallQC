@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
-"""
-All spatial operations
+"""All spatial operations
 
 Classes and functions ordered alphabetically.
 """
