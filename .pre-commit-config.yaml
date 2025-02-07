@@ -11,6 +11,7 @@ repos:
     rev: 7.1.1
     hooks:
       - id: flake8
+        exclude: "(src/rainfallqc/__init__.py)"
         args: ["--ignore=E203 E501 W503"]
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v5.0.0
