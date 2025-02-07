@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-All spatial operations needed for the jet-stream metrics and algorithms
+All spatial operations
 
 Classes and functions ordered alphabetically.
 """
