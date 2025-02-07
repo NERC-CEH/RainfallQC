@@ -55,7 +55,7 @@ serialize = [
 ]
 
 [[tool.bumpversion.files]]
-filename = "src/rainfall_qc/__init__.py"
+filename = "src/rainfallqc/__init__.py"
 search = "__version__ = \"{current_version}\""
 replace = "__version__ = \"{new_version}\""
 
