@@ -6,7 +6,7 @@ from setuptools import find_packages, setup
 
 NAME = "rainfallqc"
 DESCRIPTION = "Quality control procedure for rainfall data."
-URL = "https://github.com/Thomasjkeel/jsmetrics"
+URL = "https://github.com/Thomasjkeel/RainfallQC"
 AUTHOR = "Thomas Keel"
 AUTHOR_EMAIL = "thomasjames.keel@gmail.com"
 REQUIRES_PYTHON = ">=3.10.0"
