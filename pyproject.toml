@@ -7,6 +7,7 @@ name = "RainfallQC"
 dynamic = ["version"]
 description = "Quality control procedure for rainfall data"
 readme = "README.rst"
+requires-python = ">=3.10.0"
 authors = [
   {name = "Tom Keel", email = "tomkee@ceh.ac.uk"}
 ]
