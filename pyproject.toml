@@ -84,6 +84,8 @@ values = ["alpha", "beta", "gamma"]
 [tool.pytest.ini_options]
 addopts = "--cov=rainfallqc"
 markers = ["slow: Marks slow tests"]
+testpaths = ["tests"]
+pythonpath = ["src"]
 
 [tool.setuptools]
 package-dir = { "src" = "src" }
@@ -129,8 +131,6 @@ strict = true
 [tool.ruff.lint.isort]
 case-sensitive = true
 
-# Mypy
-# ----
 
 [tool.mypy]
 files = "."
