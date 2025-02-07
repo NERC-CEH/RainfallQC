@@ -2,8 +2,8 @@
 RainfallQC
 ==========
 
-.. image:: https://img.shields.io/pypi/v/RainfallQC.svg
-        :target: https://pypi.python.org/pypi/RainfallQC
+.. image:: https://img.shields.io/pypi/v/rainfallqc.svg
+        :target: https://pypi.python.org/pypi/rainfallqc
 
 .. image:: https://readthedocs.org/projects/rainfallqc/badge/?version=latest
         :target: https://rainfallqc.readthedocs.io/en/latest/?version=latest
@@ -22,14 +22,14 @@ Running quality control measure:
 .. code-block:: python
 
         ## Simple qc not dependent external data or neighbours
-        cleaned_raingauge_data = rainfall_qc.accumulation_checks.run(data)
-        cleaned_raingauge_data = rainfall_qc.comparison_checks.run(data, comparison_data)
+        cleaned_raingauge_data = rainfallqc.accumulation_checks.run(data)
+        cleaned_raingauge_data = rainfallqc.comparison_checks.run(data, comparison_data)
 
         ## Simple qc with flags returned
-        cleaned_raingauge_data, returned_flags = rainfall_qc.comparison_checks.run(data, comparison_data, return_flags=True)
+        cleaned_raingauge_data, returned_flags = rainfallqc.comparison_checks.run(data, comparison_data, return_flags=True)
 
         ## Run neighbour checks
-        cleaned_raingauge_data = rainfall_qc.neighbour_checks.run(data, gauge_metadata, return_flags=False)
+        cleaned_raingauge_data = rainfallqc.neighbour_checks.run(data, gauge_metadata, return_flags=False)
 
         ## Applying multiple QCs in framework:
         qc_runner = QCRunner()
@@ -42,8 +42,8 @@ Running rulebase:
 
 .. code-block:: python
 
-        formatted_data = rainfall_qc.intense_qc_rulebase.apply_rulebase(rainguage_data, gauge_metadata, CDCC_data)
-        formatted_data, flags = rainfall_qc.intense_qc_rulebase.apply_rulebase(rainguage_data, gauge_metadata, CDCC_data, return_flags=True)
+        formatted_data = rainfallqc.intense_qc_rulebase.apply_rulebase(rainguage_data, gauge_metadata, CDCC_data)
+        formatted_data, flags = rainfallqc.intense_qc_rulebase.apply_rulebase(rainguage_data, gauge_metadata, CDCC_data, return_flags=True)
 
 
 Notes on rulebase application:

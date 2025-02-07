@@ -1,11 +1,8 @@
 #!/usr/bin/env python
 
-"""Tests for `RainfallQC` package."""
+"""Tests for rain gauge quality control checks."""
 
 import pytest
-
-
-# from RainfallQC import RainfallQC
 
 
 @pytest.fixture
