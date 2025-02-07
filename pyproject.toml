@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "RainfallQC"
-version = "0.0.2-alpha"
+VERSION = "0.0.2-beta"
 description = "Quality control procedure for rainfall data"
 readme = "README.rst"
 authors = [
@@ -43,7 +43,7 @@ target-version = [
 ]
 
 [tool.bumpversion]
-current_version = "0.0.2-alpha"
+current_VERSION = "0.0.2-beta"
 commit = true
 commit_args = "--no-verify --signoff"
 tag = false
