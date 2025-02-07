@@ -86,7 +86,8 @@ package-dir = {"" = "src"}
 "*" = ["*.*"]
 
 [tool.coverage.run]
-omit = ["*__init__.py"]
+omit = ["tests/*.py", "*__init__.py"]
+relative_files = true
 
 [tool.ruff]
 src = ["src", "tests"]
