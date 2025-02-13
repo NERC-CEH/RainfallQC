@@ -72,11 +72,6 @@ filename = "src/rainfallqc/__init__.py"
 search = "__version__ = \"{current_version}\""
 replace = "__version__ = \"{new_version}\""
 
-[[tool.bumpversion.files]]
-filename = "setup.py"
-search = "VERSION = \"{current_version}\""
-replace = "VERSION = \"{new_version}\""
-
 [tool.bumpversion.parts.release]
 optional_value = "gamma"
 values = ["alpha", "beta", "gamma"]
