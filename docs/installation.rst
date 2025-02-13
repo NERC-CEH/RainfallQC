@@ -12,7 +12,7 @@ To install RainfallQC, run this command in your terminal:
 
 .. code-block:: console
 
-    $ pip install RainfallQC
+    $ pip install rainfallqc
 
 This is the preferred method to install RainfallQC, as it will always install the most recent stable release.
 
