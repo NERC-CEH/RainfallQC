@@ -8,6 +8,7 @@ from rainfallqc.checks import (
     comparison_checks,
     gauge_checks,
     neighbour_checks,
+    timeseries_checks,
 )
 from rainfallqc.rulebases import intense_qc_rulebase
 
@@ -16,4 +17,5 @@ __all__ = [
     "comparison_checks",
     "gauge_checks",
     "neighbour_checks",
+    "timeseries_checks",
 ]
