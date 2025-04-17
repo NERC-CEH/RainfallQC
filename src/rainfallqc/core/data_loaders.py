@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Data reading tools."""
+"""Data loading tools."""
 import datetime
 
 import polars as pl
