@@ -26,7 +26,15 @@ classifiers = [
   "Topic :: Scientific/Engineering :: Hydrology",
 ]
 license = { file = "LICENSE" }
-dependencies = ["numpy"]
+dependencies = [
+  "numpy",
+  "polars",
+  "pandas",
+  "xarray",
+  "scipy",
+  "bottleneck",
+  "geopy"
+]
 
 [project.optional-dependencies]
 test = ["pytest", "pytest-cov", "parameterized"]
