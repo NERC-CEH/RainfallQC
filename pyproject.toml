@@ -35,7 +35,7 @@ lint = ["mypy", "ruff"]
 dev = [
   "pip",
   "numpy",
-  "bump-my-version==0.32.0",
+  "bump-my-version",
   "ruff",
   "black",
   "flake8",

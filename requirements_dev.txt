@@ -1,7 +1,6 @@
 # Testing and development dependencies
 pip
 numpy
-bump-my-version==0.31.1
 ruff
 black
 flake8
