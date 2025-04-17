@@ -37,7 +37,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-test = ["pytest", "pytest-cov", "parameterized"]
+test = ["pytest", "pytest-cov"]
 docs = ["sphinx", "sphinx-copybutton", "sphinx-rtd-theme"]
 lint = ["mypy", "ruff"]
 dev = [
@@ -46,7 +46,6 @@ dev = [
   "bump-my-version",
   "ruff",
   "black",
-  "parameterized",
   "pre_commit",
   "pylint",
   "pytest",
