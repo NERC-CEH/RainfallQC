@@ -2,6 +2,8 @@
 """Data reading tools."""
 import datetime
 
+import polars as pl
+
 
 def read_gdsr_metadata(data_path: str) -> dict:
     """
@@ -31,25 +33,66 @@ def read_gdsr_metadata(data_path: str) -> dict:
     return metadata
 
 
-def convert_gdsr_metadata_dates_to_datetime(metadata: dict) -> dict:
+def convert_gdsr_metadata_dates_to_datetime(gdsr_metadata: dict) -> dict:
     """
     Convert GDSR metadata date string column to datetime.
 
     Parameters
     ----------
-    metadata :
+    gdsr_metadata :
         Metadata from GDSR file
 
     Returns
     -------
-    metadata : dict
+    gdsr_metadata : dict
     Metadata from GDSR file with start and end date column
 
     """
-    metadata["start_datetime"] = datetime.datetime.strptime(
-        metadata["start_datetime"], "%Y%m%d%H"
+    gdsr_metadata["start_datetime"] = datetime.datetime.strptime(
+        gdsr_metadata["start_datetime"], "%Y%m%d%H"
     )
-    metadata["end_datetime"] = datetime.datetime.strptime(
-        metadata["end_datetime"], "%Y%m%d%H"
+    gdsr_metadata["end_datetime"] = datetime.datetime.strptime(
+        gdsr_metadata["end_datetime"], "%Y%m%d%H"
     )
-    return metadata
+    return gdsr_metadata
+
+
+def add_datetime_to_gdsr_data(
+    gdsr_metadata: dict, gdsr_data: pl.DataFrame, multiplying_factor: [int, float]
+) -> pl.DataFrame:
+    """
+    Add datetime column to GDSR gauge data using metadata from that gauge.
+
+    NOTE: Could maybe extend so can find metadata if not provided?
+
+    Parameters
+    ----------
+    gdsr_metadata :
+        Metadata from GDSR file
+    gdsr_data :
+        GDSR data
+    multiplying_factor : int or float
+        Factor to multiply the data by.
+
+    Returns
+    -------
+    gdsr_data
+        GDSR data with datetime column added
+
+    """
+    start_date = gdsr_metadata["start_datetime"]
+    end_date = gdsr_metadata["end_datetime"]
+    assert isinstance(
+        start_date, datetime.datetime
+    ), "Please convert start_ and end_datetime to datetime.datetime objects"
+
+    date_interval = []
+    delta_days = (end_date + datetime.timedelta(days=1) - start_date).days
+    for i in range(delta_days * multiplying_factor):
+        date_interval.append(start_date + datetime.timedelta(hours=i))
+
+    # add time column
+    assert len(gdsr_data) == len(date_interval)
+    gdsr_data = gdsr_data.with_columns(time=pl.Series(date_interval))
+
+    return gdsr_data
