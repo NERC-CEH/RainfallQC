@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 """Data reading tools."""
+import datetime
 
 
 def read_gdsr_metadata(data_path: str) -> dict:
@@ -26,4 +27,29 @@ def read_gdsr_metadata(data_path: str) -> dict:
             metadata[key.strip()] = val.strip()
             if key == "other":
                 break
+    metadata = convert_gdsr_metadata_dates_to_datetime(metadata)
+    return metadata
+
+
+def convert_gdsr_metadata_dates_to_datetime(metadata: dict) -> dict:
+    """
+    Convert GDSR metadata date string column to datetime.
+
+    Parameters
+    ----------
+    metadata :
+        Metadata from GDSR file
+
+    Returns
+    -------
+    metadata : dict
+    Metadata from GDSR file with start and end date column
+
+    """
+    metadata["start_datetime"] = datetime.datetime.strptime(
+        metadata["start_datetime"], "%Y%m%d%H"
+    )
+    metadata["end_datetime"] = datetime.datetime.strptime(
+        metadata["end_datetime"], "%Y%m%d%H"
+    )
     return metadata
