@@ -15,7 +15,7 @@ permissions:
 
 jobs:
   build:
-    name: continuos-integration
+    name: continuous-integration
     runs-on: ubuntu-latest
     strategy:
       matrix:
