@@ -39,17 +39,8 @@ jobs:
         run: uv sync --all-extras --dev
 
       - name: Run tests
-        # For example, using `pytest`
         run: uv run pytest tests --cov=./rainfallqc --cov-report xml
 
-#      - name: Install dependencies
-#        run: |
-#          python -m pip install --upgrade pip
-#          pip install .[test]
-#      - name: Run pytest coverage
-#        shell: bash -el {0}
-#        run: |
-#          python -m pytest
       - name: Lint with ruff
         uses: astral-sh/ruff-action@v3
         with:
