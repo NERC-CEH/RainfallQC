@@ -26,7 +26,15 @@ classifiers = [
   "Topic :: Scientific/Engineering :: Hydrology",
 ]
 license = { file = "LICENSE" }
-dependencies = ["numpy"]
+dependencies = [
+  "numpy",
+  "polars",
+  "pandas",
+  "xarray",
+  "scipy",
+  "bottleneck",
+  "geopy"
+]
 
 [project.optional-dependencies]
 test = ["pytest", "pytest-cov", "parameterized"]
@@ -35,7 +43,7 @@ lint = ["mypy", "ruff"]
 dev = [
   "pip",
   "numpy",
-  "bump-my-version==0.32.0",
+  "bump-my-version",
   "ruff",
   "black",
   "flake8",
