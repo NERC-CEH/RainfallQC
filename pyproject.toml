@@ -27,11 +27,11 @@ classifiers = [
 ]
 license = { file = "LICENSE" }
 dependencies = [
+  "scipy",
   "numpy",
   "polars",
   "pandas",
   "xarray",
-  "scipy",
   "bottleneck",
   "geopy"
 ]
@@ -46,7 +46,6 @@ dev = [
   "bump-my-version",
   "ruff",
   "black",
-  "flake8",
   "parameterized",
   "pre_commit",
   "pylint",
