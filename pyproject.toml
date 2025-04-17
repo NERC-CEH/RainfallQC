@@ -46,7 +46,6 @@ dev = [
   "bump-my-version",
   "ruff",
   "black",
-  "flake8",
   "parameterized",
   "pre_commit",
   "pylint",
