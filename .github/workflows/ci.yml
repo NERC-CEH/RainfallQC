@@ -31,6 +31,7 @@ jobs:
         uses: astral-sh/setup-uv@v5
         with:
           python-version: ${{ matrix.python-version }}
+          enable-cache: true
 
       - name: Display Python version
         run: python -c "import sys; print(sys.version)"
