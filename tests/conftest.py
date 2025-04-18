@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 """Pytest config file. Contains test fixtures of rainfall data."""
+
 import numpy as np
 import polars as pl
 import pytest
@@ -31,7 +32,5 @@ def daily_gdsr_data() -> pl.DataFrame:
     )
 
     # add datetime column to data
-    data_loaders.add_datetime_to_gdsr_data(
-        gdsr_data, gdsr_metadata, multiplying_factor=MULTIPLYING_FACTORS["hourly"]
-    )
+    data_loaders.add_datetime_to_gdsr_data(gdsr_data, gdsr_metadata, multiplying_factor=MULTIPLYING_FACTORS["hourly"])
     return gdsr_data

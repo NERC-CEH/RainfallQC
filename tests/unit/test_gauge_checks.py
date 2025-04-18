@@ -2,7 +2,6 @@
 
 """Tests for rain gauge quality control checks."""
 
-
 from rainfallqc.checks import gauge_checks
 
 
