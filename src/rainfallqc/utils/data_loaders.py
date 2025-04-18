@@ -49,12 +49,8 @@ def convert_gdsr_metadata_dates_to_datetime(gdsr_metadata: dict) -> dict:
     Metadata from GDSR file with start and end date column
 
     """
-    gdsr_metadata["start_datetime"] = datetime.datetime.strptime(
-        gdsr_metadata["start_datetime"], "%Y%m%d%H"
-    )
-    gdsr_metadata["end_datetime"] = datetime.datetime.strptime(
-        gdsr_metadata["end_datetime"], "%Y%m%d%H"
-    )
+    gdsr_metadata["start_datetime"] = datetime.datetime.strptime(gdsr_metadata["start_datetime"], "%Y%m%d%H")
+    gdsr_metadata["end_datetime"] = datetime.datetime.strptime(gdsr_metadata["end_datetime"], "%Y%m%d%H")
     return gdsr_metadata
 
 
@@ -83,9 +79,9 @@ def add_datetime_to_gdsr_data(
     """
     start_date = gdsr_metadata["start_datetime"]
     end_date = gdsr_metadata["end_datetime"]
-    assert isinstance(
-        start_date, datetime.datetime
-    ), "Please convert start_ and end_datetime to datetime.datetime objects"
+    assert isinstance(start_date, datetime.datetime), (
+        "Please convert start_ and end_datetime to datetime.datetime objects"
+    )
 
     date_interval = []
     delta_days = (end_date + datetime.timedelta(days=1) - start_date).days
