@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-"""Pytest config file."""
+"""Pytest config file. Contains test fixtures of rainfall data."""
 import numpy as np
 import polars as pl
 import pytest
