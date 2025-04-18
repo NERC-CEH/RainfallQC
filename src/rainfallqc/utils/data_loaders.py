@@ -22,12 +22,14 @@ def read_gdsr_metadata(data_path: str) -> dict:
 
     """
     metadata = {}
-
     with open(data_path, "r", encoding="utf-8") as f:
-        while True:
-            key, val = f.readline().strip().split(":", maxsplit=1)
-            key = key.lower().replace(" ", "_")
-            metadata[key.strip()] = val.strip()
+        for line in f:
+            if ":" not in line:
+                continue
+            key, val = line.strip().split(":", maxsplit=1)
+            key = key.lower().replace(" ", "_").strip()
+            val = val.strip()
+            metadata[key] = val
             if key == "other":
                 break
     metadata = convert_gdsr_metadata_dates_to_datetime(metadata)
