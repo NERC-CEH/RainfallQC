@@ -58,7 +58,7 @@ def convert_gdsr_metadata_dates_to_datetime(gdsr_metadata: dict) -> dict:
 
 
 def add_datetime_to_gdsr_data(
-    gdsr_metadata: dict, gdsr_data: pl.DataFrame, multiplying_factor: [int, float]
+    gdsr_metadata: dict, gdsr_data: pl.DataFrame, multiplying_factor: int | float
 ) -> pl.DataFrame:
     """
     Add datetime column to GDSR gauge data using metadata from that gauge.
