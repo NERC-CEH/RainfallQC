@@ -6,7 +6,8 @@ History
 ------------------
 * Add QC1 and associated tests
 * Fill out some of the data loader utils
-* remove tox ini and conda
+* remove tox.ini and conda config
+* add conftest.py with data fixtures
 
 0.0.3 (2025-02-13)
 ------------------
