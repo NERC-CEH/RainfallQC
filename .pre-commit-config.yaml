@@ -10,11 +10,10 @@ repos:
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.11.6
     hooks:
+      # Sort imports.
       - id: ruff
-        args: ["--fix", "--show-fixes"]
-  - repo: https://github.com/PyCQA/flake8
-    rev: 7.1.1
-    hooks:
-      - id: flake8
-        exclude: "(src/rainfallqc/__init__.py)"
-        args: ["--ignore=E203 E501 W503"]
+        args: [--select, I, --fix, --show-fixes]
+      # Run the linter.
+      - id: ruff
+      # Run the formatter.
+      - id: ruff-format
