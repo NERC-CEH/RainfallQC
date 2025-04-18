@@ -2,22 +2,25 @@
 
 """Tests for rain gauge quality control checks."""
 
-import pytest
+import numpy.testing
+
 from rainfallqc.checks import gauge_checks
 
-
-@pytest.fixture
-def response():
-    """Sample pytest fixture.
-
-    See more at: http://doc.pytest.org/en/latest/fixture.html
-    """
-    # import requests
-    # return requests.get("https://github.com/audreyr/cookiecutter-pypackage")
+DEFAULT_RAIN_COL = "rain_mm"
 
 
-def test_content(response):
-    """Sample pytest test function with the pytest fixture as an argument."""
-    # from bs4 import BeautifulSoup
-    # assert 'GitHub' in BeautifulSoup(response.content).title.string
-    assert gauge_checks
+def test_get_years_where_nth_percentile_is_zero(daily_gdsr_data):
+    years_95th = gauge_checks.get_years_where_nth_percentile_is_zero(
+        daily_gdsr_data, rain_col=DEFAULT_RAIN_COL, quantile=0.95
+    )
+    years_99th = gauge_checks.get_years_where_nth_percentile_is_zero(
+        daily_gdsr_data, rain_col=DEFAULT_RAIN_COL, quantile=0.99
+    )
+    years_50th = gauge_checks.get_years_where_nth_percentile_is_zero(
+        daily_gdsr_data, rain_col=DEFAULT_RAIN_COL, quantile=0.5
+    )
+
+    assert len(years_95th) == 0
+    assert len(years_99th) == 0
+    assert len(years_50th) != 0
+    numpy.testing.assert_array_equal(years_50th, [2006, 2007, 2008, 2009, 2010])

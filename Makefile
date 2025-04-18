@@ -1,4 +1,4 @@
-.PHONY: clean clean-build clean-pyc clean-test coverage dist docs help install lint lint/flake8
+.PHONY: clean clean-build clean-pyc clean-test coverage dist docs help install lint
 
 .DEFAULT_GOAL := help
 
@@ -48,11 +48,8 @@ clean-test: ## remove test and coverage artifacts
 	rm -fr htmlcov/
 	rm -fr .pytest_cache
 
-lint/flake8: ## check style with flake8
-	flake8 rainfallqc tests
-
-
-lint: lint/flake8 ## check style
+lint: ## check style
+	python -m ruff check src/rainfallqc tests
 
 test: ## run tests quickly with the default Python
 	pytest
