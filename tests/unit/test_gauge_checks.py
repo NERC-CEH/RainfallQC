@@ -33,6 +33,15 @@ def test_get_years_where_annual_mean_k_top_rows_are_zero(daily_gdsr_data):
 
 
 def test_check_day_of_week_bias(daily_gdsr_data):
-    week_bias_true = gauge_checks.check_day_of_week_bias(daily_gdsr_data, rain_col=DEFAULT_RAIN_COL)
+    week_bias_true = gauge_checks.check_temporal_bias(
+        daily_gdsr_data, rain_col=DEFAULT_RAIN_COL, time_granularity="weekday"
+    )
     assert week_bias_true == 0
     # week_bias_false = gauge_checks.check_day_of_week_bias(other_daily_gdsr_data, rain_col=DEFAULT_RAIN_COL)
+
+
+def test_check_hour_of_day_bias(daily_gdsr_data):
+    hour_bias_true = gauge_checks.check_temporal_bias(
+        daily_gdsr_data, rain_col=DEFAULT_RAIN_COL, time_granularity="hour"
+    )
+    assert hour_bias_true == 0

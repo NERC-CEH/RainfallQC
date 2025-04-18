@@ -59,11 +59,16 @@ def get_years_where_annual_mean_k_top_rows_are_zero(data: pl.DataFrame, rain_col
     return data_top_k.filter(pl.col(rain_col) == 0)["time"].dt.year().to_list()
 
 
-def check_day_of_week_bias(data: pl.DataFrame, rain_col: str) -> list:
+def check_temporal_bias(
+    data: pl.DataFrame,
+    rain_col: str,
+    time_granularity: str,
+    p_threshold: float = 0.01,
+) -> int:
     """
-    Perform a two-sided t-test on the distribution of mean rainfall over the days of the week.
+    Perform a two-sided t-test on the distribution of mean rainfall over time slices.
 
-    This is QC3 from the IntenseQC framework
+    This is QC3 (day of week bias) and QC4 (hour-of-day bias) from the IntenseQC framework.
 
     Parameters
     ----------
@@ -71,18 +76,24 @@ def check_day_of_week_bias(data: pl.DataFrame, rain_col: str) -> list:
         Rainfall data
     rain_col :
         Column with rainfall data
+    time_granularity :
+        Temporal grouping, either 'weekday' or 'hour'
+    p_threshold :
+        Significance level for the test
 
     Returns
     -------
-    year_list :
-        List of years where k-largest are zero.
+    flag : int
+        1 if bias is detected (p < threshold), 0 otherwise
 
     """
-    data_weekday_mean = data.group_by(pl.col("time").dt.weekday()).agg(pl.col(rain_col).drop_nans().mean())[rain_col]
-    data_mean = data[rain_col].drop_nans().mean()
-    print(data_mean, data_weekday_mean)
-    _, p_val = scipy.stats.ttest_1samp(data_weekday_mean, data_mean)
-    p_val = 1
-    if p_val < 0.01:
-        return 1
-    return 0
+    if time_granularity == "weekday":
+        time_group = pl.col("time").dt.weekday()
+    elif time_granularity == "hour":
+        time_group = pl.col("time").dt.hour()
+    else:
+        raise ValueError("time_granularity must be either 'weekday' or 'hour'")
+    grouped_means = data.group_by(time_group).agg(pl.col(rain_col).drop_nans().mean())[rain_col]
+    overall_mean = data[rain_col].drop_nans().mean()
+    _, p_val = scipy.stats.ttest_1samp(grouped_means, overall_mean)
+    return int(p_val < p_threshold)
