@@ -2,6 +2,12 @@
 History
 =======
 
+0.0.4 (2025-04-17)
+------------------
+* Add QC1 and associated tests
+* Fill out some of the data loader utils
+* remove tox ini and conda
+
 0.0.3 (2025-02-13)
 ------------------
 * remove setup py in favour for pyproject.toml only
