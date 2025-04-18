@@ -18,7 +18,7 @@ def random() -> np.random.Generator:
 @pytest.fixture
 def daily_gdsr_data() -> pl.DataFrame:
     # TODO: maybe randomise this with every call? Or use parameterise
-    data_path = "./tests/test_data/GDSR/DE_02483.txt"
+    data_path = "./tests/data/GDSR/DE_02483.txt"
     # read in metadata of gauge
     gdsr_metadata = data_loaders.read_gdsr_metadata(data_path)
     rain_col = f"rain_{gdsr_metadata['original_units']}"
