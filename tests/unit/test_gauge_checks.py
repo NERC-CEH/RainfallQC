@@ -30,3 +30,9 @@ def test_get_years_where_annual_mean_k_top_rows_are_zero(daily_gdsr_data):
     )
     assert len(years_k_top_5) == 0
     numpy.testing.assert_array_equal(years_k_top_1600, [2006, 2008, 2010])
+
+
+def test_check_day_of_week_bias(daily_gdsr_data):
+    week_bias_true = gauge_checks.check_day_of_week_bias(daily_gdsr_data, rain_col=DEFAULT_RAIN_COL)
+    assert week_bias_true == 0
+    # week_bias_false = gauge_checks.check_day_of_week_bias(other_daily_gdsr_data, rain_col=DEFAULT_RAIN_COL)
