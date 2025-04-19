@@ -97,3 +97,57 @@ def check_temporal_bias(
     overall_mean = data[rain_col].drop_nans().mean()
     _, p_val = scipy.stats.ttest_1samp(grouped_means, overall_mean)
     return int(p_val < p_threshold)
+
+
+def intermittency_check(
+    data: pl.DataFrame, rain_col: str, no_data_threshold: int = 2, annual_count_threshold: int = 5
+) -> list:
+    """
+    Return years where more than five periods of missing data are bounded by zeros.
+
+    TODO: split into multiple sub-functions for testing
+    This is QC3 (day of week bias) and QC4 (hour-of-day bias) from the IntenseQC framework.
+
+    Parameters
+    ----------
+    data :
+        Rainfall data
+    rain_col :
+        Column with rainfall data
+    no_data_threshold :
+        Number of missing values needed to be counted as a no data period (default: 2 (days))
+    annual_count_threshold :
+        Number of missing data periods above no_data_threshold per year (default: 5)
+
+    Returns
+    -------
+    years_w_intermittency :
+        List of years with intermittency issues.
+
+    """
+    # 1. Identify missing values
+    missing_vals_mask = data[rain_col].is_nan()
+    data = data.with_columns((missing_vals_mask).alias("is_missing"))
+
+    # 2. Identify group numbers for consecutive nulls
+    gauge_data_missing_groups = data.with_columns(
+        (pl.when(data["is_missing"]).then((~data["is_missing"]).cum_sum()).otherwise(None)).alias("group")
+    )
+
+    # 3. Get length of groups of missing data
+    gauge_data_missing_group_counts = gauge_data_missing_groups.group_by("group").agg(
+        pl.col("is_missing").sum().alias("count")
+    )
+
+    # 4. Get groups with missing values above or at the `no_data_threshold`
+    no_data_period_groups = gauge_data_missing_group_counts.filter(pl.col("count") >= no_data_threshold)["group"]
+
+    # 5. Select rows belonging to 'no data periods'
+    gauge_data_no_data_periods = gauge_data_missing_groups.filter(pl.col("group").is_in(no_data_period_groups))
+
+    # 6. Get annual counts of no data periods
+    gauge_data_year_counts = gauge_data_no_data_periods.select(pl.col("time").dt.year()).to_series().value_counts()
+
+    # 7. Filter out years above or at the threshold of `annual_count_threshold`
+    years_w_intermittency = gauge_data_year_counts.filter(pl.col("count") >= annual_count_threshold)["time"].to_list()
+    return years_w_intermittency

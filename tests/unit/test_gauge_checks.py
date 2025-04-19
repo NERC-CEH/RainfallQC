@@ -3,6 +3,7 @@
 """Tests for rain gauge quality control checks."""
 
 import numpy.testing
+import pytest
 
 from rainfallqc.checks import gauge_checks
 
@@ -45,3 +46,9 @@ def test_check_hour_of_day_bias(daily_gdsr_data):
         daily_gdsr_data, rain_col=DEFAULT_RAIN_COL, time_granularity="hour"
     )
     assert hour_bias_true == 0
+
+
+@pytest.mark.parametrize("daily_data", ["daily_gdsr_data", "gappy_daily_data"])
+def test_intermittency_check(daily_data):
+    yr_list = gauge_checks.intermittency_check(daily_data, rain_col=DEFAULT_RAIN_COL)
+    assert len(yr_list) > 2
