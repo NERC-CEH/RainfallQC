@@ -127,6 +127,7 @@ def intermittency_check(
     """
     # 1. Identify missing values
     missing_vals_mask = data[rain_col].is_nan()
+    print(f"{(missing_vals_mask).sum()} missing values")
     data = data.with_columns((missing_vals_mask).alias("is_missing"))
 
     # 2. Identify group numbers for consecutive nulls

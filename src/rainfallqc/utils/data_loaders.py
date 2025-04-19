@@ -3,6 +3,7 @@
 
 import datetime
 
+import numpy as np
 import polars as pl
 
 
@@ -66,10 +67,10 @@ def add_datetime_to_gdsr_data(
 
     Parameters
     ----------
-    gdsr_metadata :
-        Metadata from GDSR file
     gdsr_data :
         GDSR data
+    gdsr_metadata :
+        Metadata from GDSR file
     multiplying_factor : int or float
         Factor to multiply the data by.
 
@@ -95,3 +96,32 @@ def add_datetime_to_gdsr_data(
     gdsr_data = gdsr_data.with_columns(time=pl.Series(date_interval))
 
     return gdsr_data
+
+
+def replace_missing_vals_with_nan_gdsr_data(
+    gdsr_data: pl.DataFrame, gdsr_metadata: dict, rain_col: str
+) -> pl.DataFrame:
+    """
+    Replace no data value with numpy.nan in GDSR data.
+
+    Parameters
+    ----------
+    gdsr_data :
+        GDSR data
+    gdsr_metadata :
+        Metadata from GDSR file
+    rain_col :
+        Column of rainfall
+
+    Returns
+    -------
+    gdsr_data
+        GDSR data with missing values replaced
+
+    """
+    return gdsr_data.with_columns(
+        pl.when(pl.col(rain_col) == int(gdsr_metadata["no_data_value"]))
+        .then(np.nan)
+        .otherwise(pl.col(rain_col))
+        .alias(rain_col)
+    )
