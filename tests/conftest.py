@@ -2,6 +2,8 @@
 
 """Pytest config file. Contains test fixtures of rainfall data."""
 
+import datetime
+
 import numpy as np
 import polars as pl
 import pytest
@@ -9,6 +11,7 @@ import pytest
 from rainfallqc.utils import data_loaders
 
 MULTIPLYING_FACTORS = {"hourly": 24, "daily": 1}  # compared to daily reference
+DEFAULT_RAIN_COL = "rain_mm"
 
 
 @pytest.fixture
@@ -36,3 +39,33 @@ def daily_gdsr_data() -> pl.DataFrame:
         gdsr_data, gdsr_metadata, multiplying_factor=MULTIPLYING_FACTORS["hourly"]
     )
     return gdsr_data
+
+
+@pytest.fixture
+def gappy_daily_data() -> pl.DataFrame:
+    return pl.DataFrame(
+        {
+            "time": pl.date_range(
+                datetime.date(year=2006, month=1, day=1), datetime.date(year=2006, month=1, day=17), eager=True
+            ),
+            DEFAULT_RAIN_COL: [
+                np.nan,
+                np.nan,
+                1,
+                None,
+                None,
+                4,
+                None,
+                None,
+                None,
+                8,
+                None,
+                9,
+                None,
+                None,
+                12,
+                None,
+                None,
+            ],
+        }
+    )
