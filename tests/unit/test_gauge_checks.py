@@ -25,11 +25,11 @@ def test_get_years_where_annual_mean_k_top_rows_are_zero(daily_gdsr_data):
     years_k_top_5 = gauge_checks.get_years_where_annual_mean_k_top_rows_are_zero(
         daily_gdsr_data, rain_col=DEFAULT_RAIN_COL, k=5
     )
-    years_k_top_1600 = gauge_checks.get_years_where_annual_mean_k_top_rows_are_zero(
-        daily_gdsr_data, rain_col=DEFAULT_RAIN_COL, k=1600
+    years_k_top_2000 = gauge_checks.get_years_where_annual_mean_k_top_rows_are_zero(
+        daily_gdsr_data, rain_col=DEFAULT_RAIN_COL, k=2000
     )
     assert len(years_k_top_5) == 0
-    numpy.testing.assert_array_equal(years_k_top_1600, [2006, 2008, 2010])
+    numpy.testing.assert_array_equal(years_k_top_2000, [2006, 2007, 2008, 2009])
 
 
 def test_check_day_of_week_bias(daily_gdsr_data):
@@ -49,7 +49,7 @@ def test_check_hour_of_day_bias(daily_gdsr_data):
 
 def test_intermittency_check(daily_gdsr_data, gappy_daily_data):
     yr_list = gauge_checks.intermittency_check(daily_gdsr_data, rain_col=DEFAULT_RAIN_COL)
-    assert len(yr_list) > 2
+    numpy.testing.assert_array_equal(sorted(yr_list), [2006, 2010])
 
-    yr_list = gauge_checks.intermittency_check(gappy_daily_data, rain_col=DEFAULT_RAIN_COL)
+    yr_list = gauge_checks.intermittency_check(gappy_daily_data, rain_col=DEFAULT_RAIN_COL, annual_count_threshold=4)
     assert len(yr_list) == 1
