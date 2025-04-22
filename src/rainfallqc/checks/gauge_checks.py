@@ -2,7 +2,7 @@
 """
 Quality control checks examining suspicious rain gauges.
 
-Classes and functions ordered alphabetically.
+Classes and functions ordered by apperance in IntenseQC framework.
 """
 
 import polars as pl
@@ -114,7 +114,7 @@ def intermittency_check(
     Return years where more than five periods of missing data are bounded by zeros.
 
     TODO: split into multiple sub-functions and write more tests!
-    This is QC3 (day of week bias) and QC4 (hour-of-day bias) from the IntenseQC framework.
+    This is QC5 from the IntenseQC framework.
 
     Parameters
     ----------
@@ -170,6 +170,8 @@ def breakpoints_check(
     """
     Use a Pettitt test rainfall data to check for breakpoints.
 
+    This is QC6 from the IntenseQC framework.
+
     Parameters
     ----------
     data :
@@ -188,8 +190,41 @@ def breakpoints_check(
     # 1. Upsample data to daily
     data_upsampled = data.upsample("time", every="1d")
 
+    # 2. Compute Pettitt test for breakpoints
     _, p_val = stats.pettitt_test(data_upsampled[rain_col].fill_nan(0.0))
     if p_val < p_threshold:
         return 1
     else:
         return 0
+
+
+def min_val_change(data: pl.DataFrame, rain_col: str, resolution: float) -> list:
+    """
+    Return years when the minimum recorded value changes.
+
+    Used to determine whether there are possible changes to the measuring equipment.
+    This is QC7 from the IntenseQC framework.
+
+    Parameters
+    ----------
+    data :
+        Rainfall data
+    rain_col :
+        Column with rainfall data.
+    resolution :
+        Resolution of data.
+
+    Returns
+    -------
+    yr_list :
+        List of years with minimum value changes.
+
+    """
+    # 1. Filter out non-zero years
+    data_non_zero = data.filter(pl.col(rain_col) > 0)
+
+    # 2. Get minimum value each year
+    data_min_by_year = data_non_zero.group_by_dynamic(pl.col("time"), every="1y").agg(pl.col(rain_col).min())
+
+    non_res_years = data_min_by_year.filter(pl.col(rain_col) != resolution)
+    return non_res_years["time"].dt.year().to_list()
