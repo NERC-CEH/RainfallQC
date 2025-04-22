@@ -59,3 +59,7 @@ def test_intermittency_check(daily_gdsr_data, gappy_daily_data):
 
     yr_list = gauge_checks.intermittency_check(gappy_daily_data, rain_col=DEFAULT_RAIN_COL, no_data_threshold=2)
     numpy.testing.assert_array_equal(yr_list, 2006)
+
+
+def test_breakpoints(daily_gdsr_data):
+    pass

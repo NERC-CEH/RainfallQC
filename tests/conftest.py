@@ -72,3 +72,7 @@ def gappy_daily_data() -> pl.DataFrame:
             ],
         }
     )
+
+
+def example_array() -> np.ndarray:
+    return np.array([4.3, 1.7, 0.9, 3.6, 2.4, 0.2, 4.8, 1.1, 3.0, 2.7, 0.5, 4.1])
