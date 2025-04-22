@@ -2,6 +2,13 @@
 History
 =======
 
+0.0.4 (2025-04-22)
+------------------
+* Add QC1-QC5 and associated tests
+* Fill out some of the data loader utils
+* remove tox.ini, flake8, black and conda config
+* add conftest.py with data fixtures
+
 0.0.3 (2025-02-13)
 ------------------
 * remove setup py in favour for pyproject.toml only
