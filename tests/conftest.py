@@ -74,6 +74,19 @@ def gappy_daily_data() -> pl.DataFrame:
     )
 
 
+@pytest.fixture()
+def daily_gdsr_data_w_breakpoint(daily_gdsr_data):
+    # Modify 'values' column: add 10 to rows after index 10
+    return daily_gdsr_data.with_columns(
+        [
+            pl.when(pl.int_range(0, daily_gdsr_data.height).alias("idx") > 50)
+            .then(pl.col(DEFAULT_RAIN_COL) + 100)
+            .otherwise(pl.col(DEFAULT_RAIN_COL))
+            .alias(DEFAULT_RAIN_COL)
+        ]
+    )
+
+
 @pytest.fixture(scope="session")
 def example_array() -> np.ndarray:
     return np.array([1.3, 1.7, 0.9, 1.6, 1.4, 0.2, 4.8, 4.1, 6.0, 5.7, 5.5, 4.1])

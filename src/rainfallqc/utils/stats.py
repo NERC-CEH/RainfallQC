@@ -6,13 +6,11 @@ Classes and functions ordered alphabetically.
 
 """
 
-from typing import Tuple, Union
-
 import numpy as np
 import polars as pl
 
 
-def pettitt_test(arr: Union[pl.Series, np.ndarray]) -> Tuple[float, float]:
+def pettitt_test(arr: pl.Series | np.ndarray) -> int | float:
     """
     Pettitt test for detecting a change point in a time series.
 
@@ -39,15 +37,14 @@ def pettitt_test(arr: Union[pl.Series, np.ndarray]) -> Tuple[float, float]:
     n = len(arr)
     K = np.zeros(n)
 
+    # Compute rank matrix difference in a vectorized way
     for t in range(n):
-        s = 0
-        for i in range(t):
-            for j in range(t, n):
-                s += np.sign(arr[i] - arr[j])
-        K[t] = s
+        left = arr[:t]
+        right = arr[t:]
+        if left.size > 0 and right.size > 0:
+            K[t] = np.sum(np.sign(left[:, None] - right[None, :]))
 
     tau = int(np.argmax(np.abs(K)))
     U = np.max(np.abs(K))
     p = 2 * np.exp((-6 * U**2) / (n**3 + n**2))
-
     return tau, p

@@ -185,4 +185,11 @@ def breakpoints_check(
         1 if breakpoint is detected (p < p_threshold), 0 otherwise
 
     """
-    return stats.pettitt_test(data[rain_col])
+    # 1. Upsample data to daily
+    data_upsampled = data.upsample("time", every="1d")
+
+    _, p_val = stats.pettitt_test(data_upsampled[rain_col].fill_nan(0.0))
+    if p_val < p_threshold:
+        return 1
+    else:
+        return 0
