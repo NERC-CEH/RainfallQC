@@ -99,7 +99,9 @@ def add_datetime_to_gdsr_data(
 
 
 def replace_missing_vals_with_nan_gdsr_data(
-    gdsr_data: pl.DataFrame, gdsr_metadata: dict, rain_col: str
+    gdsr_data: pl.DataFrame,
+    rain_col: str,
+    missing_val: int = None,
 ) -> pl.DataFrame:
     """
     Replace no data value with numpy.nan in GDSR data.
@@ -108,10 +110,10 @@ def replace_missing_vals_with_nan_gdsr_data(
     ----------
     gdsr_data :
         GDSR data
-    gdsr_metadata :
-        Metadata from GDSR file
     rain_col :
         Column of rainfall
+    missing_val :
+        Missing value identifier
 
     Returns
     -------
@@ -120,8 +122,5 @@ def replace_missing_vals_with_nan_gdsr_data(
 
     """
     return gdsr_data.with_columns(
-        pl.when(pl.col(rain_col) == int(gdsr_metadata["no_data_value"]))
-        .then(np.nan)
-        .otherwise(pl.col(rain_col))
-        .alias(rain_col)
+        pl.when(pl.col(rain_col) == missing_val).then(np.nan).otherwise(pl.col(rain_col)).alias(rain_col)
     )

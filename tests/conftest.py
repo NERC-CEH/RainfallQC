@@ -39,7 +39,7 @@ def daily_gdsr_data() -> pl.DataFrame:
         gdsr_data, gdsr_metadata, multiplying_factor=MULTIPLYING_FACTORS["hourly"]
     )
     gdsr_data = data_loaders.replace_missing_vals_with_nan_gdsr_data(
-        gdsr_data, gdsr_metadata, rain_col=DEFAULT_RAIN_COL
+        gdsr_data, rain_col=DEFAULT_RAIN_COL, missing_val=int(gdsr_metadata["no_data_value"])
     )
     return gdsr_data
 
