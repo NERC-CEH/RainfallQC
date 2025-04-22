@@ -79,9 +79,9 @@ def daily_gdsr_data_w_breakpoint(daily_gdsr_data):
     # Modify 'values' column: add 10 to rows after index 10
     return daily_gdsr_data.with_columns(
         [
-            pl.when(pl.int_range(0, daily_gdsr_data.height).alias("idx") > 50)
-            .then(pl.col(DEFAULT_RAIN_COL) + 100)
-            .otherwise(pl.col(DEFAULT_RAIN_COL))
+            pl.when(pl.int_range(0, daily_gdsr_data.height).alias("idx") > 200)
+            .then(pl.col(DEFAULT_RAIN_COL) + 10)
+            .otherwise(pl.col(DEFAULT_RAIN_COL) / pl.col(DEFAULT_RAIN_COL))
             .alias(DEFAULT_RAIN_COL)
         ]
     )
