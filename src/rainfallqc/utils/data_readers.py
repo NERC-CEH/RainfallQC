@@ -66,10 +66,10 @@ def add_datetime_to_gdsr_data(
 
     Parameters
     ----------
-    gdsr_metadata :
-        Metadata from GDSR file
     gdsr_data :
         GDSR data
+    gdsr_metadata :
+        Metadata from GDSR file
     multiplying_factor : int or float
         Factor to multiply the data by.
 
