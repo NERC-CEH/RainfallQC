@@ -8,7 +8,7 @@ Classes and functions ordered alphabetically.
 import polars as pl
 import scipy.stats
 
-from rainfallqc.utils import data_utils
+from rainfallqc.utils import data_utils, stats
 
 
 def get_years_where_nth_percentile_is_zero(data: pl.DataFrame, rain_col: str, quantile: float) -> list:
@@ -95,8 +95,14 @@ def check_temporal_bias(
         time_group = pl.col("time").dt.hour()
     else:
         raise ValueError("time_granularity must be either 'weekday' or 'hour'")
+
+    # 1. Get time-average mean
     grouped_means = data.group_by(time_group).agg(pl.col(rain_col).drop_nans().mean())[rain_col]
+
+    # 2. Get data mean
     overall_mean = data[rain_col].drop_nans().mean()
+
+    # 3. Compute 1-sample t-test
     _, p_val = scipy.stats.ttest_1samp(grouped_means, overall_mean)
     return int(p_val < p_threshold)
 
@@ -154,3 +160,29 @@ def intermittency_check(
     # 7. Filter out years above or at the threshold of `annual_count_threshold`
     years_w_intermittency = gauge_data_year_counts.filter(pl.col("count") >= annual_count_threshold)["time"].to_list()
     return years_w_intermittency
+
+
+def breakpoints_check(
+    data: pl.DataFrame,
+    rain_col: str,
+    p_threshold: float = 0.01,
+) -> int:
+    """
+    Use a Pettitt test rainfall data to check for breakpoints.
+
+    Parameters
+    ----------
+    data :
+        Rainfall data.
+    rain_col :
+        Column with rainfall data.
+    p_threshold :
+        Significance level for the test.
+
+    Returns
+    -------
+    flag : int
+        1 if breakpoint is detected (p < p_threshold), 0 otherwise
+
+    """
+    return stats.pettitt_test(data[rain_col])
