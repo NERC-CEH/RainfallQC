@@ -10,7 +10,7 @@ import numpy as np
 import polars as pl
 
 
-def pettitt_test(arr: pl.Series | np.array) -> (float, float):
+def pettitt_test(arr: pl.Series | np.ndarray) -> (float, float):
     """
     Pettitt test calculated following Pettitt (1979): https://www.jstor.org/stable/2346729?seq=4#metadata_info_tab_contents.
 
