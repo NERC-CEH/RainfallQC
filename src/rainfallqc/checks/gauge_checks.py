@@ -107,7 +107,7 @@ def intermittency_check(
     """
     Return years where more than five periods of missing data are bounded by zeros.
 
-    TODO: split into multiple sub-functions for testing
+    TODO: split into multiple sub-functions and write more tests!
     This is QC3 (day of week bias) and QC4 (hour-of-day bias) from the IntenseQC framework.
 
     Parameters
