@@ -3,6 +3,7 @@
 """Tests for rain gauge quality control checks."""
 
 import numpy.testing
+import pytest
 
 from rainfallqc.checks import gauge_checks
 
@@ -45,6 +46,11 @@ def test_check_hour_of_day_bias(daily_gdsr_data):
         daily_gdsr_data, rain_col=DEFAULT_RAIN_COL, time_granularity="hour"
     )
     assert hour_bias_true == 0
+
+
+def test_check_wrong_time_gran(daily_gdsr_data):
+    with pytest.raises(ValueError):
+        gauge_checks.check_temporal_bias(daily_gdsr_data, rain_col=DEFAULT_RAIN_COL, time_granularity="wrong")
 
 
 def test_intermittency_check(daily_gdsr_data, gappy_daily_data):
