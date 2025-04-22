@@ -8,6 +8,8 @@ Classes and functions ordered alphabetically.
 import polars as pl
 import scipy.stats
 
+from rainfallqc.utils import data_utils
+
 
 def get_years_where_nth_percentile_is_zero(data: pl.DataFrame, rain_col: str, quantile: float) -> list:
     """
@@ -126,9 +128,10 @@ def intermittency_check(
 
     """
     # 1. Identify missing values
+    data = data_utils.replace_missing_vals_with_nan_gdsr_data(data, rain_col)
     missing_vals_mask = data[rain_col].is_nan()
-    print(f"{(missing_vals_mask).sum()} missing values")
-    data = data.with_columns((missing_vals_mask).alias("is_missing"))
+    print(f"{missing_vals_mask.sum()} missing values")
+    data = data.with_columns(missing_vals_mask.alias("is_missing"))
 
     # 2. Identify group numbers for consecutive nulls
     gauge_data_missing_groups = data.with_columns(
