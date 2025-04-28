@@ -4,7 +4,7 @@ History
 
 0.0.4 (2025-04-22)
 ------------------
-* Add QC1-QC5 and associated tests
+* Add QC1-QC7 and associated tests
 * Fill out some of the data loader utils
 * remove tox.ini, flake8, black and conda config
 * add conftest.py with data fixtures
