@@ -19,6 +19,15 @@ def random() -> np.random.Generator:
     return np.random.default_rng(seed=list(map(ord, "𝕽𝔞𝖓𝔡𝖔𝔪")))
 
 
+@pytest.fixture()
+def daily_gdsr_metadata() -> dict:
+    # TODO: maybe randomise this with every call? Or use parameterise
+    data_path = "./tests/data/GDSR/DE_02483.txt"
+    # read in metadata of gauge
+    gdsr_metadata = data_readers.read_gdsr_metadata(data_path)
+    return gdsr_metadata
+
+
 @pytest.fixture
 def daily_gdsr_data() -> pl.DataFrame:
     # TODO: maybe randomise this with every call? Or use parameterise

@@ -7,5 +7,10 @@ from rainfallqc.checks import comparison_checks
 DEFAULT_RAIN_COL = "rain_mm"
 
 
-def test_R99_check(daily_gdsr_data):
-    comparison_checks.check_annual_exceedance_ETCCDI_R99p(daily_gdsr_data, rain_col=DEFAULT_RAIN_COL)
+def test_R99_check(daily_gdsr_data, daily_gdsr_metadata):
+    comparison_checks.check_annual_exceedance_ETCCDI_R99p(
+        daily_gdsr_data,
+        rain_col=DEFAULT_RAIN_COL,
+        gauge_lat=daily_gdsr_metadata["latitude"],
+        gauge_lon=daily_gdsr_metadata["longitude"],
+    )
