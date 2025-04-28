@@ -7,6 +7,8 @@ Classes and functions ordered alphabetically.
 
 import polars as pl
 
+from rainfallqc.utils import data_readers
+
 
 def check_annual_exceedance_ETCCDI_R99p(data: pl.DataFrame, rain_col: str) -> list:
     """
@@ -26,6 +28,8 @@ def check_annual_exceedance_ETCCDI_R99p(data: pl.DataFrame, rain_col: str) -> li
         List of flags
 
     """
+    etcddi_r99p = data_readers.load_ETCCDI_data(etccdi_var="R99p")
+
     flag_list = []
 
-    return flag_list
+    return flag_list, etcddi_r99p
