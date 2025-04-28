@@ -4,6 +4,7 @@
 import datetime
 
 import polars as pl
+import xarray as xr
 
 
 def read_gdsr_metadata(data_path: str) -> dict:
@@ -95,3 +96,30 @@ def add_datetime_to_gdsr_data(
     gdsr_data = gdsr_data.with_columns(time=pl.Series(date_interval))
 
     return gdsr_data
+
+
+def load_ETCCDI_data(etccdi_var: str, path_to_etccdi: str = None) -> xr.Dataset:
+    """
+    Load ETCCDI data.
+
+    Parameters
+    ----------
+    etccdi_var :
+        variable to load from ETCCDI
+    path_to_etccdi :
+        path to ETCCDI data (default is location of data in tests)
+
+    Returns
+    -------
+    etccdi_data :
+        Loaded data
+
+    """
+    if not path_to_etccdi:
+        path_to_etccdi = "./tests/data/ETCCDI/"
+    else:
+        print(f"User defined path to ETCCDI being used: {path_to_etccdi}")
+    return xr.open_dataset(
+        f"{path_to_etccdi}RawData_HADEX2_{etccdi_var}_1951-2010_ANN_from-90to90_from-180to180.nc",
+        decode_timedelta=True,
+    )
