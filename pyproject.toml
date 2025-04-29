@@ -101,7 +101,7 @@ pythonpath = ["src"]
 package-dir = { "src" = "src" }
 
 [tool.setuptools.package-data]
-"etcddi_files" = ["tests/data/ETCCDI/*.nc"]
+"rainfallqc" = ["data/ETCCDI/*.nc"]
 
 [tool.coverage.run]
 omit = ["tests/*.py", "*__init__.py"]

@@ -32,4 +32,4 @@ def test_load_SDII_ETCCDI_data():
 
 
 def test_load_userpath_ETCCDI_data():
-    data_readers.load_ETCCDI_data(etccdi_var="PRCPTOT", path_to_etccdi="./tests/data/ETCCDI/")
+    data_readers.load_ETCCDI_data(etccdi_var="PRCPTOT", path_to_etccdi="./src/rainfallqc/data/ETCCDI/")
