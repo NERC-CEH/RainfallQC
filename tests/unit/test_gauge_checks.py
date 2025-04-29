@@ -22,12 +22,12 @@ def test_get_years_where_nth_percentile_is_zero(daily_gdsr_data):
     numpy.testing.assert_array_equal(years_50th, [2006, 2007, 2008, 2009, 2010])
 
 
-def test_get_years_where_annual_mean_k_top_rows_are_zero(daily_gdsr_data):
+def test_get_years_where_annual_mean_k_top_rows_are_zero(hourly_gdsr_data):
     years_k_top_5 = gauge_checks.get_years_where_annual_mean_k_top_rows_are_zero(
-        daily_gdsr_data, rain_col=DEFAULT_RAIN_COL, k=5
+        hourly_gdsr_data, rain_col=DEFAULT_RAIN_COL, k=5
     )
     years_k_top_2000 = gauge_checks.get_years_where_annual_mean_k_top_rows_are_zero(
-        daily_gdsr_data, rain_col=DEFAULT_RAIN_COL, k=2000
+        hourly_gdsr_data, rain_col=DEFAULT_RAIN_COL, k=2000
     )
     assert len(years_k_top_5) == 0
     numpy.testing.assert_array_equal(years_k_top_2000, [2006, 2007, 2008, 2009])
@@ -41,9 +41,9 @@ def test_check_day_of_week_bias(daily_gdsr_data):
     # week_bias_false = gauge_checks.check_day_of_week_bias(other_daily_gdsr_data, rain_col=DEFAULT_RAIN_COL)
 
 
-def test_check_hour_of_day_bias(daily_gdsr_data):
+def test_check_hour_of_day_bias(hourly_gdsr_data):
     hour_bias_true = gauge_checks.check_temporal_bias(
-        daily_gdsr_data, rain_col=DEFAULT_RAIN_COL, time_granularity="hour"
+        hourly_gdsr_data, rain_col=DEFAULT_RAIN_COL, time_granularity="hour"
     )
     assert hour_bias_true == 0
 
@@ -69,6 +69,6 @@ def test_breakpoints(daily_gdsr_data, daily_gdsr_data_w_breakpoint):
     assert flag == 1
 
 
-def test_min_val_change(daily_gdsr_data):
-    yr_list = gauge_checks.min_val_change(daily_gdsr_data, rain_col=DEFAULT_RAIN_COL, resolution=0.1)
+def test_min_val_change(hourly_gdsr_data):
+    yr_list = gauge_checks.min_val_change(hourly_gdsr_data, rain_col=DEFAULT_RAIN_COL, resolution=0.1)
     numpy.testing.assert_array_equal(yr_list, [2006, 2010])
