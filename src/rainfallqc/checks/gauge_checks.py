@@ -136,7 +136,7 @@ def intermittency_check(
 
     """
     # 1. Identify missing values
-    data = data_utils.replace_missing_vals_with_nan_gdsr_data(data, rain_col)  # drops None by default
+    data = data_utils.replace_missing_vals_with_nan(data, rain_col)  # drops None by default
     missing_vals_mask = data[rain_col].is_nan()
     data = data.with_columns(missing_vals_mask.alias("is_missing"))
 
