@@ -12,6 +12,7 @@ from rainfallqc.utils import data_readers, data_utils
 
 MULTIPLYING_FACTORS = {"hourly": 24, "daily": 1}  # compared to daily reference
 DEFAULT_RAIN_COL = "rain_mm"
+DEFAULT_GDSR_OFFSET = "7h"  # 7 hours
 
 
 @pytest.fixture
@@ -19,17 +20,8 @@ def random() -> np.random.Generator:
     return np.random.default_rng(seed=list(map(ord, "𝕽𝔞𝖓𝔡𝖔𝔪")))
 
 
-@pytest.fixture()
-def daily_gdsr_metadata() -> dict:
-    # TODO: maybe randomise this with every call? Or use parameterise
-    data_path = "./tests/data/GDSR/DE_02483.txt"
-    # read in metadata of gauge
-    gdsr_metadata = data_readers.read_gdsr_metadata(data_path)
-    return gdsr_metadata
-
-
 @pytest.fixture
-def daily_gdsr_data() -> pl.DataFrame:
+def hourly_gdsr_data() -> pl.DataFrame:
     # TODO: maybe randomise this with every call? Or use parameterise
     data_path = "./tests/data/GDSR/DE_02483.txt"
     # read in metadata of gauge
@@ -51,6 +43,25 @@ def daily_gdsr_data() -> pl.DataFrame:
         gdsr_data, rain_col=DEFAULT_RAIN_COL, missing_val=int(gdsr_metadata["no_data_value"])
     )
     return gdsr_data
+
+
+@pytest.fixture()
+def daily_gdsr_metadata() -> dict:
+    # TODO: maybe randomise this with every call? Or use parameterise
+    data_path = "./tests/data/GDSR/DE_02483.txt"
+    # read in metadata of gauge
+    gdsr_metadata = data_readers.read_gdsr_metadata(data_path)
+    return gdsr_metadata
+
+
+@pytest.fixture
+def daily_gdsr_data() -> pl.DataFrame:
+    gdsr_data = hourly_gdsr_data()
+    # convert to daily
+    gdsr_data_daily = data_readers.convert_gdsr_hourly_to_daily(
+        gdsr_data, rain_col=DEFAULT_RAIN_COL, offset=DEFAULT_GDSR_OFFSET
+    )
+    return gdsr_data_daily
 
 
 @pytest.fixture

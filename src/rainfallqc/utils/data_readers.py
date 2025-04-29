@@ -98,6 +98,34 @@ def add_datetime_to_gdsr_data(
     return gdsr_data
 
 
+def convert_gdsr_hourly_to_daily(hourly_data: pl.DataFrame, rain_col: str, offset: str) -> pl.DataFrame:
+    """
+    Group hourly data into daily and check for at least 24 daily time steps per day.
+
+    Parameters
+    ----------
+    hourly_data :
+        Hourly rainfall data
+    rain_col :
+        Column with rainfall data
+    offset :
+        Time offset in hours
+
+    Returns
+    -------
+    daily_data :
+        Daily rainfall data
+
+    """
+    # resample into daily (also round to 1 decimal place)
+    return (
+        hourly_data.group_by_dynamic("time", every="1d", offset=offset, closed="right")
+        .agg([pl.len().alias("n_hours"), pl.col(rain_col).mean().round(1).alias(rain_col)])
+        .filter(pl.col("n_hours") == 24)
+        .drop("n_hours")
+    )
+
+
 def load_ETCCDI_data(etccdi_var: str, path_to_etccdi: str = None) -> xr.Dataset:
     """
     Load ETCCDI data.
