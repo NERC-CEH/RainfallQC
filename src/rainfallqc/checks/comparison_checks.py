@@ -9,7 +9,7 @@ import numpy as np
 import polars as pl
 import xarray as xr
 
-from rainfallqc.utils import data_readers
+from rainfallqc.utils import data_readers, stats
 
 
 def check_annual_exceedance_etccdi_r99p(
@@ -90,6 +90,32 @@ def check_annual_exceedance_etccdi_prcptot(
     return exceedance_flags
 
 
+def check_exceedance_of_rainfall_world_record(data: pl.DataFrame, rain_col: str, time_res: str) -> pl.DataFrame:
+    """
+    Check exceedance of rainfall world record.
+
+    See Also `utils/stats.py` from world record sources.
+
+    This is QC10 from the IntenseQC framework.
+
+    Parameters
+    ----------
+    data :
+        Rainfall data
+    rain_col :
+        Column with rainfall data
+    time_res :
+        Time resolution
+
+    Returns
+    -------
+    data_w_flags:
+        Rainfall data with exceedance of World Record (see `flag_exceedance_of_ref_val_as_col` function)
+
+    """
+    return flag_exceedance_of_ref_val_as_col(data, rain_col, etccdi_ref_val=stats.RAINFALL_WORLD_RECORDS[time_res])
+
+
 def check_annual_exceedance_of_etccdi_variable(
     data: pl.DataFrame,
     rain_col: str,
@@ -138,7 +164,7 @@ def check_annual_exceedance_of_etccdi_variable(
 
     # 7. Get flags. TODO: to refactor
     flag_list = [
-        exceedance_of_max_flagger(val=yr, ref_val=etccdi_var_max)
+        flag_exceedance_of_ref_val(val=yr, ref_val=etccdi_var_max)
         for yr in data_above_annual_percentile_year_sum[rain_col]
     ]
     return flag_list
@@ -193,7 +219,7 @@ def add_daily_year_col(data: pl.DataFrame) -> pl.DataFrame:
     return data_daily_upsample.with_columns(pl.col("time").dt.year().alias("year"))
 
 
-def exceedance_of_max_flagger(val: int | float, ref_val: int | float) -> int:
+def flag_exceedance_of_ref_val(val: int | float, ref_val: int | float) -> int:
     """
     Exceedance flagger from intenseqc.
 
@@ -222,11 +248,11 @@ def exceedance_of_max_flagger(val: int | float, ref_val: int | float) -> int:
         return 0
 
 
-def flag_exceedance_of_etccdi(
-    data: pl.DataFrame, rain_col: str, etccdi_ref_val: int | float, new_col_name: str
+def flag_exceedance_of_ref_val_as_col(
+    data: pl.DataFrame, rain_col: str, ref_val: int | float, new_col_name: str
 ) -> pl.DataFrame:
     """
-    Flag exceedance of maximum reference value.
+    Flag exceedance of maximum reference value and return as column.
 
     Used in QC11 of the IntenseQC framework. TODO: could this be used in QC8+9?
 
@@ -236,8 +262,8 @@ def flag_exceedance_of_etccdi(
         Rainfall data.
     rain_col :
         Column with rainfall data
-    etccdi_ref_val :
-        Reference value of ETCCDI variable.
+    ref_val :
+        Reference value.
     new_col_name :
         New column name.
 
@@ -248,13 +274,13 @@ def flag_exceedance_of_etccdi(
 
     """
     return data.with_columns(
-        pl.when(pl.col(rain_col) >= etccdi_ref_val * 1.5)
+        pl.when(pl.col(rain_col) >= ref_val * 1.5)
         .then(4)
-        .when(pl.col(rain_col) >= etccdi_ref_val * 1.33)
+        .when(pl.col(rain_col) >= ref_val * 1.33)
         .then(3)
-        .when(pl.col(rain_col) >= etccdi_ref_val * 1.2)
+        .when(pl.col(rain_col) >= ref_val * 1.2)
         .then(2)
-        .when(pl.col(rain_col) >= etccdi_ref_val)
+        .when(pl.col(rain_col) >= ref_val)
         .then(1)
         .otherwise(0)
         .alias(new_col_name)

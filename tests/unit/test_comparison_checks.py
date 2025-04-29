@@ -27,6 +27,18 @@ def test_check_annual_exceedance_etccdi_prcptot(daily_gdsr_data, daily_gdsr_meta
     )
 
 
+def test_check_daily_exceedance_of_rainfall_world_record(daily_gdsr_data):
+    comparison_checks.check_exceedance_of_rainfall_world_record(
+        daily_gdsr_data, rain_col=DEFAULT_RAIN_COL, data_res="daily"
+    )
+
+
+def test_check_hourly_exceedance_of_rainfall_world_record(hourly_gdsr_data):
+    comparison_checks.check_exceedance_of_rainfall_world_record(
+        hourly_gdsr_data, rain_col=DEFAULT_RAIN_COL, data_res="hourly"
+    )
+
+
 @pytest.mark.parametrize(
     "vals,max_ref_val,expected", [(1.5, 1, 4), (1.33, 1, 3), (1.2, 1, 2), (1.1, 1, 1), (0.9, 1, 0)]
 )
