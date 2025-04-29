@@ -161,11 +161,12 @@ def check_annual_exceedance_etccdi_rx1day(
     # 2. Get nearest local Rx1day value to the gauge coordinates
     nearby_etcddi_rx1day = get_nearest_etccdi_val_to_gauge(etcddi_rx1day, gauge_lat, gauge_lon)
 
-    # 1. Get local maximum ETCCDI value
-    nearby_etcddi_rx1day_max = np.max(nearby_etcddi_rx1day["Rx1day"])
+    # 3. Get local maximum ETCCDI value
+    max_nearby_etcddi_rx1day = np.max(nearby_etcddi_rx1day["Rx1day"])
 
-    flag_exceedance_of_max_etccdi_variable(
-        data, rain_col, ref_val=nearby_etcddi_rx1day_max, new_col_name="rx1day_check"
+    # 4. Flag exceedance of max ETCCDI value
+    return flag_exceedance_of_ref_val_as_col(
+        data, rain_col, ref_val=max_nearby_etcddi_rx1day, new_col_name="rx1day_check"
     )
 
 
