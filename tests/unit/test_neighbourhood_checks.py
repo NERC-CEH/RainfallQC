@@ -5,10 +5,10 @@
 import numpy.testing
 import pytest
 
-from rainfallqc.checks import neighbour_checks
+from rainfallqc.checks import neighbourhood_checks
 
 DEFAULT_RAIN_COL = "rain_mm"
 DISTANCE_THRESHOLD = 50  # 50 km
 OVERLAP_THRESHOLD = 365 * 3  # three years
 
-test = (DEFAULT_RAIN_COL, pytest, numpy.testing, neighbour_checks)
+test = (pytest, numpy.testing, neighbourhood_checks)
