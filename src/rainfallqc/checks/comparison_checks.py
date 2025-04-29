@@ -7,6 +7,7 @@ Classes and functions ordered alphabetically.
 
 import numpy as np
 import polars as pl
+import xarray as xr
 
 from rainfallqc.utils import data_readers
 
@@ -34,40 +35,127 @@ def check_annual_exceedance_ETCCDI_R99p(
         List of flags
 
     """
-    # 1. Load R99p data
-    etcddi_r99p = data_readers.load_ETCCDI_data(etccdi_var="R99p")
+    # 1. Load PRCPTOT data
+    etcddi_r99p = data_readers.load_ETCCDI_data(etccdi_var="PRCPTOT")
 
-    # 2. Get local R99p data
-    one_gauge_r99p = etcddi_r99p.sel(
+    # 2. Get nearest local PRCPTOT value to the gauge coordinates
+    nearby_etcddi_r99p = get_nearest_etccdi_val_to_gauge(etcddi_r99p, gauge_lat, gauge_lon)
+
+    # 3. Check exceedance of PRCPTOT variable
+    exceedance_flags = check_annual_exceedance_of_ETCCDI_variable(data, rain_col, nearby_etccdi_data=nearby_etcddi_r99p)
+
+    return exceedance_flags
+
+
+def check_annual_exceedance_ETCCDI_PRCPTOT(
+    data: pl.DataFrame, rain_col: str, gauge_lat: int | float, gauge_lon: int | float
+) -> list:
+    """
+    Check annual exceedance of maximum PRCPTOT from ETCCDI dataset.
+
+    Parameters
+    ----------
+    data :
+        Rainfall data
+    rain_col :
+        Column with rainfall data
+    gauge_lat :
+        latitude of the rain gauge
+    gauge_lon :
+        longitude of the rain gauge
+
+    Returns
+    -------
+    exceedance_flags :
+        List of flags (see `exceedance_flagger` function)
+
+    """
+    # 1. Load PRCPTOT data
+    etcddi_prcptot = data_readers.load_ETCCDI_data(etccdi_var="PRCPTOT")
+
+    # 2. Get nearest local PRCPTOT value to the gauge coordinates
+    nearby_etcddi_prcptot = get_nearest_etccdi_val_to_gauge(etcddi_prcptot, gauge_lat, gauge_lon)
+
+    # 3. Check exceedance of PRCPTOT variable
+    exceedance_flags = check_annual_exceedance_of_ETCCDI_variable(
+        data, rain_col, nearby_etccdi_data=nearby_etcddi_prcptot
+    )
+
+    return exceedance_flags
+
+
+def check_annual_exceedance_of_ETCCDI_variable(
+    data: pl.DataFrame,
+    rain_col: str,
+    etccdi_data: xr.DataFrame,
+) -> list:
+    """
+    Check annual exceedance of maximum PRCPTOT from ETCCDI dataset.
+
+    Parameters
+    ----------
+    data :
+        Rainfall data
+    rain_col :
+        Column with rainfall data
+    etccdi_data :
+        ETCCDI data with given variable to check
+
+    Returns
+    -------
+    exceedance_flags :
+        List of flags (see `exceedance_flagger` function)
+
+    """
+    # 1. Get local maximum PRCPTOT value
+    max_prcptot = np.max(etccdi_data["R99p"])
+    # 2. Add a daily year column to the data
+    data = add_daily_year_col(data)
+    # 3. Calculate percentiles
+    data_percentiles = data.group_by("year").agg(pl.col(rain_col).fill_nan(0.0).quantile(0.99).alias("percentile_99"))
+    # 4. Join percentiles back to the main DataFrame
+    data_yearly_percentiles = data.join(data_percentiles, on="year").fill_nan(0.0)
+    # 5. Filter values above the 99th percentile
+    data_above_annual_prcptot = data_yearly_percentiles.filter(pl.col(rain_col) > pl.col("percentile_99"))
+    # 6. Get number of values per year above 99th percentile
+    data_above_annual_prcptot_year_sum = data_above_annual_prcptot.group_by_dynamic("time", every="1y").agg(
+        pl.col(rain_col).sum()
+    )
+    # 7. Get flags. TODO: to refactor
+    flag_list = [
+        exceedance_flagger(val=yr, max_ref_val=max_prcptot) for yr in data_above_annual_prcptot_year_sum[rain_col]
+    ]
+    return flag_list
+
+
+def get_nearest_etccdi_val_to_gauge(
+    etccdi_data: xr.DataFrame, gauge_lat: int | float, gauge_lon: int | float
+) -> xr.DataFrame:
+    """
+    Get the value at the nearest ETCCDI grid cell to the gauge coordinates.
+
+    Parameters
+    ----------
+    etccdi_data
+        ETCCDI data with given variable to check
+    gauge_lat :
+        latitude of the rain gauge
+    gauge_lon :
+        longitude of the rain gauge
+
+    Returns
+    -------
+    nearby_etccdi_data :
+        ETCCDI data at the nearest grid cell
+
+    """
+    # 1. Get local data
+    nearby_etccdi_data = etccdi_data.sel(
         lon=gauge_lon,
         lat=gauge_lat,
         method="nearest",
     )
-
-    # 3. Get local maximum R99p value
-    max_r99p = np.max(one_gauge_r99p["R99p"])
-
-    # 4. Add a daily year column to the data
-    data = add_daily_year_col(data)
-
-    # 5. Calculate percentiles
-    data_percentiles = data.group_by("year").agg(pl.col(rain_col).fill_nan(0.0).quantile(0.99).alias("percentile_99"))
-
-    # 6. Join percentiles back to the main DataFrame
-    data_yearly_percentiles = data.join(data_percentiles, on="year").fill_nan(0.0)
-
-    # 7. Filter values above the 99th percentile
-    data_above_annual_r99p = data_yearly_percentiles.filter(pl.col(rain_col) > pl.col("percentile_99"))
-
-    # 8. Get number of values per year above 99th percentile
-    data_above_annual_r99_year_sum = data_above_annual_r99p.group_by_dynamic("time", every="1y").agg(
-        pl.col(rain_col).sum()
-    )
-
-    # 9. Get flags. TODO: to refactor
-    flag_list = [exceedance_check(val=yr, max_ref_val=max_r99p) for yr in data_above_annual_r99_year_sum[rain_col]]
-
-    return flag_list
+    return nearby_etccdi_data
 
 
 def add_daily_year_col(data: pl.DataFrame) -> pl.DataFrame:
@@ -89,7 +177,7 @@ def add_daily_year_col(data: pl.DataFrame) -> pl.DataFrame:
     return data_daily_upsample.with_columns(pl.col("time").dt.year().alias("year"))
 
 
-def exceedance_check(val: int | float, max_ref_val: int | float) -> int:
+def exceedance_flagger(val: int | float, max_ref_val: int | float) -> int:
     """
     From intenseqc.
 
