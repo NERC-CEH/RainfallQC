@@ -67,5 +67,4 @@ def pettitt_test(arr: pl.Series | np.ndarray) -> int | float:
     tau = int(np.argmax(np.abs(K)))
     U = np.max(np.abs(K))
     p = 2 * np.exp((-6 * U**2) / (n**3 + n**2))
-    print(tau, p)
     return tau, p
