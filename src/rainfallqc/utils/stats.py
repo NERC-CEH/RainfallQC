@@ -16,6 +16,19 @@ import polars as pl
 RAINFALL_WORLD_RECORDS = {"hourly": 401.0, "daily": 1825.0}  # mm
 
 
+def get_rainfall_world_records() -> dict[str, float]:
+    """
+    Return rainfall world record as of 29/04/25.
+
+    Returns
+    -------
+    rwr :
+        rainfall world records set in stats.py
+
+    """
+    return RAINFALL_WORLD_RECORDS
+
+
 def pettitt_test(arr: pl.Series | np.ndarray) -> int | float:
     """
     Pettitt test for detecting a change point in a time series.

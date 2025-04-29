@@ -6,6 +6,7 @@ History
 ------------------
 * Add QC16
 * Add description of each different type of QC check to header of files
+* remove uneccesary files
 
 0.0.5 (2025-04-29)
 ------------------

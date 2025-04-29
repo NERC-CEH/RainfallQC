@@ -125,8 +125,9 @@ def check_exceedance_of_rainfall_world_record(data: pl.DataFrame, rain_col: str,
         Rainfall data with exceedance of World Record (see `flag_exceedance_of_ref_val_as_col` function)
 
     """
+    rainfall_world_records = stats.get_rainfall_world_records()
     return flag_exceedance_of_ref_val_as_col(
-        data, rain_col, ref_val=stats.RAINFALL_WORLD_RECORDS[time_res], new_col_name="world_record_check"
+        data, rain_col, ref_val=rainfall_world_records[time_res], new_col_name="world_record_check"
     )
 
 
