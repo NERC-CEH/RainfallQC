@@ -18,6 +18,8 @@ def check_annual_exceedance_etccdi_r99p(
     """
     Check annual exceedance of maximum R99p from ETCCDI dataset.
 
+    This is QC8 from the IntenseQC framework.
+
     Parameters
     ----------
     data :
@@ -54,6 +56,8 @@ def check_annual_exceedance_etccdi_prcptot(
 ) -> list:
     """
     Check annual exceedance of maximum PRCPTOT from ETCCDI dataset.
+
+    This is QC9 from the IntenseQC framework.
 
     Parameters
     ----------
@@ -113,7 +117,7 @@ def check_annual_exceedance_of_etccdi_variable(
 
     """
     # 1. Get local maximum ETCCDI value
-    max_ref_val = np.max(nearby_etccdi_data[etccdi_var])
+    etccdi_var_max = np.max(nearby_etccdi_data[etccdi_var])
 
     # 2. Add a daily year column to the data
     data = add_daily_year_col(data)
@@ -134,7 +138,8 @@ def check_annual_exceedance_of_etccdi_variable(
 
     # 7. Get flags. TODO: to refactor
     flag_list = [
-        exceedance_flagger(val=yr, max_ref_val=max_ref_val) for yr in data_above_annual_percentile_year_sum[rain_col]
+        exceedance_of_max_flagger(val=yr, ref_val=etccdi_var_max)
+        for yr in data_above_annual_percentile_year_sum[rain_col]
     ]
     return flag_list
 
@@ -188,19 +193,69 @@ def add_daily_year_col(data: pl.DataFrame) -> pl.DataFrame:
     return data_daily_upsample.with_columns(pl.col("time").dt.year().alias("year"))
 
 
-def exceedance_flagger(val: int | float, max_ref_val: int | float) -> int:
+def exceedance_of_max_flagger(val: int | float, ref_val: int | float) -> int:
     """
-    From intenseqc.
+    Exceedance flagger from intenseqc.
 
-    TODO: TO REFACTOR as messy. Do we need this many flags?
+    Parameters
+    ----------
+    val :
+        Value to check
+    ref_val :
+        Reference value to compare against
+
+    Returns
+    -------
+    Flag :
+        Exceedance flag
+
     """
-    if val >= max_ref_val * 1.5:
+    if val >= ref_val * 1.5:
         return 4
-    elif val >= max_ref_val * 1.33:
+    elif val >= ref_val * 1.33:
         return 3
-    elif val >= max_ref_val * 1.2:
+    elif val >= ref_val * 1.2:
         return 2
-    elif val >= max_ref_val:
+    elif val >= ref_val:
         return 1
     else:
         return 0
+
+
+def flag_exceedance_of_etccdi(
+    data: pl.DataFrame, rain_col: str, etccdi_ref_val: int | float, new_col_name: str
+) -> pl.DataFrame:
+    """
+    Flag exceedance of maximum reference value.
+
+    Used in QC11 of the IntenseQC framework. TODO: could this be used in QC8+9?
+
+    Parameters
+    ----------
+    data :
+        Rainfall data.
+    rain_col :
+        Column with rainfall data
+    etccdi_ref_val :
+        Reference value of ETCCDI variable.
+    new_col_name :
+        New column name.
+
+    Returns
+    -------
+    data :
+        Data with exceedance flags between 0-4.
+
+    """
+    return data.with_columns(
+        pl.when(pl.col(rain_col) >= etccdi_ref_val * 1.5)
+        .then(4)
+        .when(pl.col(rain_col) >= etccdi_ref_val * 1.33)
+        .then(3)
+        .when(pl.col(rain_col) >= etccdi_ref_val * 1.2)
+        .then(2)
+        .when(pl.col(rain_col) >= etccdi_ref_val)
+        .then(1)
+        .otherwise(0)
+        .alias(new_col_name)
+    )
