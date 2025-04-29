@@ -200,7 +200,7 @@ def breakpoints_check(
         return 0
 
 
-def min_val_change(data: pl.DataFrame, rain_col: str, resolution: float) -> list:
+def min_val_change(data: pl.DataFrame, rain_col: str, expected_min_val: float) -> list:
     """
     Return years when the minimum recorded value changes.
 
@@ -213,8 +213,8 @@ def min_val_change(data: pl.DataFrame, rain_col: str, resolution: float) -> list
         Rainfall data
     rain_col :
         Column with rainfall data.
-    resolution :
-        Resolution of data.
+    expected_min_val :
+        Expected value of rainfall i.e. basically the resolution of data.
 
     Returns
     -------
@@ -228,5 +228,5 @@ def min_val_change(data: pl.DataFrame, rain_col: str, resolution: float) -> list
     # 2. Get minimum value each year
     data_min_by_year = data_non_zero.group_by_dynamic(pl.col("time"), every="1y").agg(pl.col(rain_col).min())
 
-    non_res_years = data_min_by_year.filter(pl.col(rain_col) != resolution)
+    non_res_years = data_min_by_year.filter(pl.col(rain_col) != expected_min_val)
     return non_res_years["time"].dt.year().to_list()
