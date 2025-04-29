@@ -30,5 +30,5 @@ def test_check_annual_exceedance_etccdi_prcptot(daily_gdsr_data, daily_gdsr_meta
 @pytest.mark.parametrize(
     "vals,max_ref_val,expected", [(1.5, 1, 4), (1.33, 1, 3), (1.2, 1, 2), (1.1, 1, 1), (0.9, 1, 0)]
 )
-def test_exceedance_check(vals, max_ref_val, expected):
-    assert comparison_checks.exceedance_check(vals, max_ref_val) == expected
+def test_exceedance_flagger(vals, max_ref_val, expected):
+    assert comparison_checks.exceedance_flagger(vals, max_ref_val) == expected
