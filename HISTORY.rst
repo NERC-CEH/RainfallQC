@@ -5,6 +5,7 @@ History
 0.0.6 (2025-05-X)
 ------------------
 * Add QC16
+* Package ETCCDI data with RainfallQC
 * Add description of each different type of QC check to header of files
 * remove uneccesary files
 
