@@ -174,7 +174,7 @@ def get_sum_rainfall_above_percentile_per_year(
     data: pl.DataFrame,
     rain_col: str,
     percentile: float,
-) -> list:
+) -> pl.DataFrame:
     """
     Check annual exceedance of maximum PRCPTOT from ETCCDI dataset.
 
