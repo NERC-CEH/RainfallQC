@@ -128,6 +128,47 @@ def check_exceedance_of_rainfall_world_record(data: pl.DataFrame, rain_col: str,
     )
 
 
+def check_annual_exceedance_etccdi_rx1day(
+    data: pl.DataFrame, rain_col: str, gauge_lat: int | float, gauge_lon: int | float
+) -> pl.DataFrame:
+    """
+    Check exceedance of rainfall world record.
+
+    See Also `utils/stats.py` from world record sources.
+
+    This is QC11 from the IntenseQC framework.
+
+    Parameters
+    ----------
+    data :
+        Rainfall data
+    rain_col :
+        Column with rainfall data
+    gauge_lat :
+        latitude of the rain gauge
+    gauge_lon :
+        longitude of the rain gauge
+
+    Returns
+    -------
+    data_w_flags:
+        Rainfall data with exceedance of Rx1day Record (see `flag_exceedance_of_ref_val_as_col` function)
+
+    """
+    # 1. Load Rx1day data
+    etcddi_rx1day = data_readers.load_ETCCDI_data(etccdi_var="Rx1day")
+
+    # 2. Get nearest local Rx1day value to the gauge coordinates
+    nearby_etcddi_rx1day = get_nearest_etccdi_val_to_gauge(etcddi_rx1day, gauge_lat, gauge_lon)
+
+    # 1. Get local maximum ETCCDI value
+    nearby_etcddi_rx1day_max = np.max(nearby_etcddi_rx1day["Rx1day"])
+
+    flag_exceedance_of_max_etccdi_variable(
+        data, rain_col, ref_val=nearby_etcddi_rx1day_max, new_col_name="rx1day_check"
+    )
+
+
 def get_sum_rainfall_above_percentile_per_year(
     data: pl.DataFrame,
     rain_col: str,
