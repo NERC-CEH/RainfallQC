@@ -68,12 +68,12 @@ def check_annual_exceedance_ETCCDI_R99p(
     )
 
     # 9. Get flags. TODO: to refactor
-    flag_list = [day_check(val=yr, max_ref_val=max_r99p) for yr in data_above_annual_r99_year_sum[rain_col]]
+    flag_list = [exceedance_check(val=yr, max_ref_val=max_r99p) for yr in data_above_annual_r99_year_sum[rain_col]]
 
     return flag_list
 
 
-def day_check(val: int | float, max_ref_val: int | float) -> int:
+def exceedance_check(val: int | float, max_ref_val: int | float) -> int:
     """
     From intenseqc.
 
