@@ -4,3 +4,362 @@ Quality control checks relying on comparison with a benchmark dataset.
 
 Classes and functions ordered alphabetically.
 """
+
+import numpy as np
+import polars as pl
+import xarray as xr
+
+from rainfallqc.utils import data_readers, stats
+
+
+def check_annual_exceedance_etccdi_r99p(
+    data: pl.DataFrame, rain_col: str, gauge_lat: int | float, gauge_lon: int | float
+) -> list:
+    """
+    Check annual exceedance of maximum R99p from ETCCDI dataset.
+
+    This is QC8 from the IntenseQC framework.
+
+    Parameters
+    ----------
+    data :
+        Rainfall data
+    rain_col :
+        Column with rainfall data
+    gauge_lat :
+        latitude of the rain gauge
+    gauge_lon :
+        longitude of the rain gauge
+
+    Returns
+    -------
+    flag_list :
+        List of flags
+
+    """
+    # 1. Load R99p data
+    etccdi_r99p = data_readers.load_ETCCDI_data(etccdi_var="R99p")
+
+    # 2. Get nearest local R99p value to the gauge coordinates
+    nearby_etccdi_r99p = get_nearest_etccdi_val_to_gauge(etccdi_r99p, gauge_lat, gauge_lon)
+
+    # 3. Get sum of rainfall above the 99th percentile per year
+    sum_rainfall_above_99percentile_per_year = get_sum_rainfall_above_percentile_per_year(
+        data, rain_col, percentile=0.99
+    )
+
+    # 4. Get flags of exceedance for R99p variable where the 0.99 percentile sum is more than ETCCDI max
+    exceedance_flags = flag_exceedance_of_max_etccdi_variable(
+        sum_rainfall_above_99percentile_per_year, rain_col, nearby_etccdi_r99p, etccdi_var="R99p"
+    )
+
+    return exceedance_flags
+
+
+def check_annual_exceedance_etccdi_prcptot(
+    data: pl.DataFrame, rain_col: str, gauge_lat: int | float, gauge_lon: int | float
+) -> list:
+    """
+    Check annual exceedance of maximum PRCPTOT from ETCCDI dataset.
+
+    This is QC9 from the IntenseQC framework.
+
+    Parameters
+    ----------
+    data :
+        Rainfall data
+    rain_col :
+        Column with rainfall data
+    gauge_lat :
+        latitude of the rain gauge
+    gauge_lon :
+        longitude of the rain gauge
+
+    Returns
+    -------
+    exceedance_flags :
+        List of flags (see `exceedance_flagger` function)
+
+    """
+    # 1. Load PRCPTOT data
+    etcddi_prcptot = data_readers.load_ETCCDI_data(etccdi_var="PRCPTOT")
+
+    # 2. Get nearest local PRCPTOT value to the gauge coordinates
+    nearby_etcddi_prcptot = get_nearest_etccdi_val_to_gauge(etcddi_prcptot, gauge_lat, gauge_lon)
+
+    # 3. Get sum of rainfall above the 99th percentile per year
+    sum_rainfall_above_99percentile_per_year = get_sum_rainfall_above_percentile_per_year(
+        data, rain_col, percentile=0.99
+    )
+
+    # 4. Get flags of exceedance for PRCPTOT variable where the 0.99 percentile sum is more than ETCCDI max
+    exceedance_flags = flag_exceedance_of_max_etccdi_variable(
+        sum_rainfall_above_99percentile_per_year, rain_col, nearby_etcddi_prcptot, etccdi_var="PRCPTOT"
+    )
+
+    return exceedance_flags
+
+
+def check_exceedance_of_rainfall_world_record(data: pl.DataFrame, rain_col: str, time_res: str) -> pl.DataFrame:
+    """
+    Check exceedance of rainfall world record.
+
+    See Also `utils/stats.py` from world record sources.
+
+    This is QC10 from the IntenseQC framework.
+
+    Parameters
+    ----------
+    data :
+        Rainfall data
+    rain_col :
+        Column with rainfall data
+    time_res :
+        Time resolution
+
+    Returns
+    -------
+    data_w_flags:
+        Rainfall data with exceedance of World Record (see `flag_exceedance_of_ref_val_as_col` function)
+
+    """
+    return flag_exceedance_of_ref_val_as_col(
+        data, rain_col, ref_val=stats.RAINFALL_WORLD_RECORDS[time_res], new_col_name="world_record_check"
+    )
+
+
+def check_annual_exceedance_etccdi_rx1day(
+    data: pl.DataFrame, rain_col: str, gauge_lat: int | float, gauge_lon: int | float
+) -> pl.DataFrame:
+    """
+    Check exceedance of rainfall world record.
+
+    See Also `utils/stats.py` from world record sources.
+
+    This is QC11 from the IntenseQC framework.
+
+    Parameters
+    ----------
+    data :
+        Rainfall data
+    rain_col :
+        Column with rainfall data
+    gauge_lat :
+        latitude of the rain gauge
+    gauge_lon :
+        longitude of the rain gauge
+
+    Returns
+    -------
+    data_w_flags:
+        Rainfall data with exceedance of Rx1day Record (see `flag_exceedance_of_ref_val_as_col` function)
+
+    """
+    # 1. Load Rx1day data
+    etcddi_rx1day = data_readers.load_ETCCDI_data(etccdi_var="Rx1day")
+
+    # 2. Get nearest local Rx1day value to the gauge coordinates
+    nearby_etcddi_rx1day = get_nearest_etccdi_val_to_gauge(etcddi_rx1day, gauge_lat, gauge_lon)
+
+    # 3. Get local maximum ETCCDI value
+    max_nearby_etcddi_rx1day = np.max(nearby_etcddi_rx1day["Rx1day"])
+
+    # 4. Flag exceedance of max ETCCDI value
+    return flag_exceedance_of_ref_val_as_col(
+        data, rain_col, ref_val=max_nearby_etcddi_rx1day, new_col_name="rx1day_check"
+    )
+
+
+def get_sum_rainfall_above_percentile_per_year(
+    data: pl.DataFrame,
+    rain_col: str,
+    percentile: float,
+) -> pl.DataFrame:
+    """
+    Check annual exceedance of maximum PRCPTOT from ETCCDI dataset.
+
+    Parameters
+    ----------
+    data :
+        Rainfall data
+    rain_col :
+        Column with rainfall data
+    percentile :
+        nth percentile to check for values above
+
+    Returns
+    -------
+    exceedance_flags :
+        List of flags (see `exceedance_flagger` function)
+
+    """
+    # 1. Add a daily year column to the data
+    data = add_daily_year_col(data)
+
+    # 2. Calculate percentiles
+    data_percentiles = data.group_by("year").agg(
+        pl.col(rain_col).fill_nan(0.0).quantile(percentile).alias("percentile")
+    )
+
+    # 3. Join percentiles back to the main DataFrame
+    data_yearly_percentiles = data.join(data_percentiles, on="year").fill_nan(0.0)
+
+    # 4. Filter values above the nth percentile
+    data_above_annual_percentile = data_yearly_percentiles.filter(pl.col(rain_col) > pl.col("percentile"))
+
+    # 5. Get number of values per year above nth percentile
+    sum_rainfall_above_percentile = data_above_annual_percentile.group_by_dynamic("time", every="1y").agg(
+        pl.col(rain_col).sum()
+    )
+
+    return sum_rainfall_above_percentile
+
+
+def flag_exceedance_of_max_etccdi_variable(
+    annual_sum_rainfall: pl.DataFrame, rain_col: str, nearby_etccdi_data: xr.Dataset, etccdi_var: str
+) -> list:
+    """
+    Flag exceedance of maximum ETCCDI variable, comparing the maximum sums of each year.
+
+    Parameters
+    ----------
+    annual_sum_rainfall :
+        Rainfall data as by year sums
+    rain_col :
+        Column with rainfall data
+    nearby_etccdi_data :
+        ETCCDI data with given variable to check
+    etccdi_var :
+        variable to load from ETCCDI
+
+    Returns
+    -------
+    exceedance_flags :
+        Flags of exceedances of max ETCCDI value
+
+    """
+    # 1. Get local maximum ETCCDI value
+    etccdi_var_max = np.max(nearby_etccdi_data[etccdi_var])
+
+    # 2. Get flags.
+    exceedance_flags = [
+        flag_exceedance_of_ref_val(val=yr, ref_val=etccdi_var_max) for yr in annual_sum_rainfall[rain_col]
+    ]
+    return exceedance_flags
+
+
+def get_nearest_etccdi_val_to_gauge(
+    etccdi_data: xr.Dataset, gauge_lat: int | float, gauge_lon: int | float
+) -> xr.Dataset:
+    """
+    Get the value at the nearest ETCCDI grid cell to the gauge coordinates.
+
+    Parameters
+    ----------
+    etccdi_data
+        ETCCDI data with given variable to check
+    gauge_lat :
+        latitude of the rain gauge
+    gauge_lon :
+        longitude of the rain gauge
+
+    Returns
+    -------
+    nearby_etccdi_data :
+        ETCCDI data at the nearest grid cell
+
+    """
+    # 1. Get local data
+    nearby_etccdi_data = etccdi_data.sel(
+        lon=gauge_lon,
+        lat=gauge_lat,
+        method="nearest",
+    )
+    return nearby_etccdi_data
+
+
+def add_daily_year_col(data: pl.DataFrame) -> pl.DataFrame:
+    """
+    Make a year column for the data. This method will first upsample data so that it is every day.
+
+    Parameters
+    ----------
+    data :
+        Rainfall data
+
+    Returns
+    -------
+    data_w_year_col :
+        Rainfall data with year column
+
+    """
+    data_daily_upsample = data.upsample("time", every="1d")
+    return data_daily_upsample.with_columns(pl.col("time").dt.year().alias("year"))
+
+
+def flag_exceedance_of_ref_val(val: int | float, ref_val: int | float) -> int:
+    """
+    Exceedance flagger from intenseqc.
+
+    Parameters
+    ----------
+    val :
+        Value to check
+    ref_val :
+        Reference value to compare against
+
+    Returns
+    -------
+    Flag :
+        Exceedance flag
+
+    """
+    if val >= ref_val * 1.5:
+        return 4
+    elif val >= ref_val * 1.33:
+        return 3
+    elif val >= ref_val * 1.2:
+        return 2
+    elif val >= ref_val:
+        return 1
+    else:
+        return 0
+
+
+def flag_exceedance_of_ref_val_as_col(
+    data: pl.DataFrame, rain_col: str, ref_val: int | float, new_col_name: str
+) -> pl.DataFrame:
+    """
+    Flag exceedance of maximum reference value and return as column.
+
+    Used in QC11 of the IntenseQC framework. TODO: could this be used in QC8+9?
+
+    Parameters
+    ----------
+    data :
+        Rainfall data.
+    rain_col :
+        Column with rainfall data
+    ref_val :
+        Reference value.
+    new_col_name :
+        New column name.
+
+    Returns
+    -------
+    data :
+        Data with exceedance flags between 0-4.
+
+    """
+    return data.with_columns(
+        pl.when(pl.col(rain_col) >= ref_val * 1.5)
+        .then(4)
+        .when(pl.col(rain_col) >= ref_val * 1.33)
+        .then(3)
+        .when(pl.col(rain_col) >= ref_val * 1.2)
+        .then(2)
+        .when(pl.col(rain_col) >= ref_val)
+        .then(1)
+        .otherwise(0)
+        .alias(new_col_name)
+    )
