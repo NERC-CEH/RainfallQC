@@ -9,7 +9,6 @@ Classes and functions ordered alphabetically.
 import numpy as np
 import polars as pl
 
-# TODO: *** updated to use 401.0 mm in 1 hour - compare e.g.
 # http://www.nws.noaa.gov/oh/hdsc/record_precip/record_precip_world.html
 # http://www.bom.gov.au/water/designRainfalls/rainfallEvents/worldRecRainfall.shtml
 # https://wmo.asu.edu/content/world-meteorological-organization-global-weather-climate-extremes-archive
@@ -19,6 +18,11 @@ RAINFALL_WORLD_RECORDS = {"hourly": 401.0, "daily": 1825.0}  # mm
 def get_rainfall_world_records() -> dict[str, float]:
     """
     Return rainfall world record as of 29/04/25.
+
+    See:
+    - http://www.nws.noaa.gov/oh/hdsc/record_precip/record_precip_world.html
+    - http://www.bom.gov.au/water/designRainfalls/rainfallEvents/worldRecRainfall.shtml
+    - https://wmo.asu.edu/content/world-meteorological-organization-global-weather-climate-extremes-archive
 
     Returns
     -------
