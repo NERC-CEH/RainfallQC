@@ -2,9 +2,9 @@
 History
 =======
 
-0.0.5 (2025-05-X)
+0.0.5 (2025-04-29)
 ------------------
-* Add QC8-X
+* Add QC8-11
 * Add hourly and daily fixtures for testing
 
 0.0.4 (2025-04-22)
