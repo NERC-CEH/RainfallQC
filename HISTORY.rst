@@ -2,6 +2,11 @@
 History
 =======
 
+0.0.6 (2025-05-X)
+------------------
+* Add QC16
+* Add description of each different type of QC check to header of files
+
 0.0.5 (2025-04-29)
 ------------------
 * Add QC8-11

@@ -2,7 +2,9 @@
 """
 Quality control checks relying on comparison with a benchmark dataset.
 
-Classes and functions ordered alphabetically.
+Comparison checks are defined as QC checks that: "detect abnormalities in rainfall record based on benchmarks."
+
+Classes and functions ordered by appearance in IntenseQC framework.
 """
 
 import numpy as np

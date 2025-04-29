@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-"""Tests for rain gauge quality control checks."""
+"""Tests for comparison quality control checks."""
 
 import polars as pl
 import pytest

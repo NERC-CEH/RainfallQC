@@ -2,7 +2,9 @@
 """
 Quality control checks examining suspicious rain gauges.
 
-Classes and functions ordered by apperance in IntenseQC framework.
+Gauge checks are defined as QC checks that: "detect abnormalities in summary and descriptive statistics of rain gauges."
+
+Classes and functions ordered by appearance in IntenseQC framework.
 """
 
 import polars as pl
