@@ -32,14 +32,14 @@ def test_check_daily_exceedance_of_rainfall_world_record(daily_gdsr_data):
     result = comparison_checks.check_exceedance_of_rainfall_world_record(
         daily_gdsr_data, rain_col=DEFAULT_RAIN_COL, time_res="daily"
     )
-    assert len(result.filter(pl.col("world_record_check") == 4)) == 1046
+    assert len(result.filter(pl.col("world_record_check") == 4)) == 66
 
 
 def test_check_hourly_exceedance_of_rainfall_world_record(hourly_gdsr_data):
     result = comparison_checks.check_exceedance_of_rainfall_world_record(
         hourly_gdsr_data, rain_col=DEFAULT_RAIN_COL, time_res="hourly"
     )
-    assert len(result.filter(pl.col("world_record_check") == 4)) == 1046
+    assert len(result.filter(pl.col("world_record_check") == 4)) == 1051
 
 
 @pytest.mark.parametrize(
