@@ -37,15 +37,20 @@ def check_annual_exceedance_etccdi_r99p(
         List of flags
 
     """
-    # 1. Load PRCPTOT data
-    etcddi_r99p = data_readers.load_ETCCDI_data(etccdi_var="R99p")
+    # 1. Load R99p data
+    etccdi_r99p = data_readers.load_ETCCDI_data(etccdi_var="R99p")
 
-    # 2. Get nearest local PRCPTOT value to the gauge coordinates
-    nearby_etcddi_r99p = get_nearest_etccdi_val_to_gauge(etcddi_r99p, gauge_lat, gauge_lon)
+    # 2. Get nearest local R99p value to the gauge coordinates
+    nearby_etccdi_r99p = get_nearest_etccdi_val_to_gauge(etccdi_r99p, gauge_lat, gauge_lon)
 
-    # 3. Check exceedance of PRCPTOT variable
-    exceedance_flags = check_annual_exceedance_of_etccdi_variable(
-        data, rain_col, nearby_etccdi_data=nearby_etcddi_r99p, etccdi_var="R99p"
+    # 3. Get sum of rainfall above the 99th percentile per year
+    sum_rainfall_above_99percentile_per_year = get_sum_rainfall_above_percentile_per_year(
+        data, rain_col, percentile=0.99
+    )
+
+    # 4. Get flags of exceedance for R99p variable where the 0.99 percentile sum is more than ETCCDI max
+    exceedance_flags = flag_exceedance_of_max_etccdi_variable(
+        sum_rainfall_above_99percentile_per_year, rain_col, nearby_etccdi_r99p, etccdi_var="PRCPTOT"
     )
 
     return exceedance_flags
@@ -82,9 +87,14 @@ def check_annual_exceedance_etccdi_prcptot(
     # 2. Get nearest local PRCPTOT value to the gauge coordinates
     nearby_etcddi_prcptot = get_nearest_etccdi_val_to_gauge(etcddi_prcptot, gauge_lat, gauge_lon)
 
-    # 3. Check exceedance of PRCPTOT variable
-    exceedance_flags = check_annual_exceedance_of_etccdi_variable(
-        data, rain_col, nearby_etccdi_data=nearby_etcddi_prcptot, etccdi_var="PRCPTOT"
+    # 3. Get sum of rainfall above the 99th percentile per year
+    sum_rainfall_above_99percentile_per_year = get_sum_rainfall_above_percentile_per_year(
+        data, rain_col, percentile=0.99
+    )
+
+    # 4. Get flags of exceedance for PRCPTOT variable where the 0.99 percentile sum is more than ETCCDI max
+    exceedance_flags = flag_exceedance_of_max_etccdi_variable(
+        sum_rainfall_above_99percentile_per_year, rain_col, nearby_etcddi_prcptot, etccdi_var="PRCPTOT"
     )
 
     return exceedance_flags
@@ -118,11 +128,10 @@ def check_exceedance_of_rainfall_world_record(data: pl.DataFrame, rain_col: str,
     )
 
 
-def check_annual_exceedance_of_etccdi_variable(
+def get_sum_rainfall_above_percentile_per_year(
     data: pl.DataFrame,
     rain_col: str,
-    nearby_etccdi_data: xr.Dataset,
-    etccdi_var: str,
+    percentile: float,
 ) -> list:
     """
     Check annual exceedance of maximum PRCPTOT from ETCCDI dataset.
@@ -133,6 +142,49 @@ def check_annual_exceedance_of_etccdi_variable(
         Rainfall data
     rain_col :
         Column with rainfall data
+    percentile :
+        nth percentile to check for values above
+
+    Returns
+    -------
+    exceedance_flags :
+        List of flags (see `exceedance_flagger` function)
+
+    """
+    # 1. Add a daily year column to the data
+    data = add_daily_year_col(data)
+
+    # 2. Calculate percentiles
+    data_percentiles = data.group_by("year").agg(
+        pl.col(rain_col).fill_nan(0.0).quantile(percentile).alias("percentile")
+    )
+
+    # 3. Join percentiles back to the main DataFrame
+    data_yearly_percentiles = data.join(data_percentiles, on="year").fill_nan(0.0)
+
+    # 4. Filter values above the nth percentile
+    data_above_annual_percentile = data_yearly_percentiles.filter(pl.col(rain_col) > pl.col("percentile"))
+
+    # 5. Get number of values per year above nth percentile
+    sum_rainfall_above_percentile = data_above_annual_percentile.group_by_dynamic("time", every="1y").agg(
+        pl.col(rain_col).sum()
+    )
+
+    return sum_rainfall_above_percentile
+
+
+def flag_exceedance_of_max_etccdi_variable(
+    annual_sum_rainfall: pl.DataFrame, rain_col: str, nearby_etccdi_data: xr.Dataset, etccdi_var: str
+) -> list:
+    """
+    Flag exceedance of maximum ETCCDI variable, comparing the maximum sums of each year.
+
+    Parameters
+    ----------
+    annual_sum_rainfall :
+        Rainfall data as by year sums
+    rain_col :
+        Column with rainfall data
     nearby_etccdi_data :
         ETCCDI data with given variable to check
     etccdi_var :
@@ -141,35 +193,17 @@ def check_annual_exceedance_of_etccdi_variable(
     Returns
     -------
     exceedance_flags :
-        List of flags (see `exceedance_flagger` function)
+        Flags of exceedances of max ETCCDI value
 
     """
     # 1. Get local maximum ETCCDI value
     etccdi_var_max = np.max(nearby_etccdi_data[etccdi_var])
 
-    # 2. Add a daily year column to the data
-    data = add_daily_year_col(data)
-
-    # 3. Calculate percentiles
-    data_percentiles = data.group_by("year").agg(pl.col(rain_col).fill_nan(0.0).quantile(0.99).alias("percentile_99"))
-
-    # 4. Join percentiles back to the main DataFrame
-    data_yearly_percentiles = data.join(data_percentiles, on="year").fill_nan(0.0)
-
-    # 5. Filter values above the 99th percentile
-    data_above_annual_99_percentile = data_yearly_percentiles.filter(pl.col(rain_col) > pl.col("percentile_99"))
-
-    # 6. Get number of values per year above 99th percentile
-    data_above_annual_percentile_year_sum = data_above_annual_99_percentile.group_by_dynamic("time", every="1y").agg(
-        pl.col(rain_col).sum()
-    )
-
-    # 7. Get flags. TODO: to refactor
-    flag_list = [
-        flag_exceedance_of_ref_val(val=yr, ref_val=etccdi_var_max)
-        for yr in data_above_annual_percentile_year_sum[rain_col]
+    # 2. Get flags.
+    exceedance_flags = [
+        flag_exceedance_of_ref_val(val=yr, ref_val=etccdi_var_max) for yr in annual_sum_rainfall[rain_col]
     ]
-    return flag_list
+    return exceedance_flags
 
 
 def get_nearest_etccdi_val_to_gauge(
