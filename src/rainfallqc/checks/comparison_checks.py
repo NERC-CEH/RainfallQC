@@ -50,7 +50,7 @@ def check_annual_exceedance_etccdi_r99p(
 
     # 4. Get flags of exceedance for R99p variable where the 0.99 percentile sum is more than ETCCDI max
     exceedance_flags = flag_exceedance_of_max_etccdi_variable(
-        sum_rainfall_above_99percentile_per_year, rain_col, nearby_etccdi_r99p, etccdi_var="PRCPTOT"
+        sum_rainfall_above_99percentile_per_year, rain_col, nearby_etccdi_r99p, etccdi_var="R99p"
     )
 
     return exceedance_flags
