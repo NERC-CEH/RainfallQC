@@ -47,16 +47,14 @@ def check_annual_exceedance_ETCCDI_R99p(
     # 3. Get local maximum R99p value
     max_r99p = np.max(one_gauge_r99p["R99p"])
 
-    # 4.
-    data_daily_upsample = get_year_col_for_daily_data(data)
+    # 4. Add a daily year column to the data
+    data = add_daily_year_col(data)
 
     # 5. Calculate percentiles
-    data_percentiles = data_daily_upsample.group_by("year").agg(
-        pl.col(rain_col).fill_nan(0.0).quantile(0.99).alias("percentile_99")
-    )
+    data_percentiles = data.group_by("year").agg(pl.col(rain_col).fill_nan(0.0).quantile(0.99).alias("percentile_99"))
 
     # 6. Join percentiles back to the main DataFrame
-    data_yearly_percentiles = data_daily_upsample.join(data_percentiles, on="year").fill_nan(0.0)
+    data_yearly_percentiles = data.join(data_percentiles, on="year").fill_nan(0.0)
 
     # 7. Filter values above the 99th percentile
     data_above_annual_r99p = data_yearly_percentiles.filter(pl.col(rain_col) > pl.col("percentile_99"))
@@ -72,7 +70,7 @@ def check_annual_exceedance_ETCCDI_R99p(
     return flag_list
 
 
-def get_year_col_for_daily_data(data: pl.DataFrame) -> pl.DataFrame:
+def add_daily_year_col(data: pl.DataFrame) -> pl.DataFrame:
     """
     Make a year column for the data. This method will first upsample data so that it is every day.
 
