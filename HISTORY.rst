@@ -5,6 +5,7 @@ History
 0.0.5 (2025-05-X)
 ------------------
 * Add QC8-X
+* Add hourly and daily fixtures for testing
 
 0.0.4 (2025-04-22)
 ------------------
