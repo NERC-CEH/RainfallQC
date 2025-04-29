@@ -12,7 +12,7 @@ import xarray as xr
 from rainfallqc.utils import data_readers
 
 
-def check_annual_exceedance_ETCCDI_R99p(
+def check_annual_exceedance_etccdi_r99p(
     data: pl.DataFrame, rain_col: str, gauge_lat: int | float, gauge_lon: int | float
 ) -> list:
     """
@@ -42,12 +42,12 @@ def check_annual_exceedance_ETCCDI_R99p(
     nearby_etcddi_r99p = get_nearest_etccdi_val_to_gauge(etcddi_r99p, gauge_lat, gauge_lon)
 
     # 3. Check exceedance of PRCPTOT variable
-    exceedance_flags = check_annual_exceedance_of_ETCCDI_variable(data, rain_col, nearby_etccdi_data=nearby_etcddi_r99p)
+    exceedance_flags = check_annual_exceedance_of_etccdi_variable(data, rain_col, nearby_etccdi_data=nearby_etcddi_r99p)
 
     return exceedance_flags
 
 
-def check_annual_exceedance_ETCCDI_PRCPTOT(
+def check_annual_exceedance_etccdi_prcptot(
     data: pl.DataFrame, rain_col: str, gauge_lat: int | float, gauge_lon: int | float
 ) -> list:
     """
@@ -77,17 +77,17 @@ def check_annual_exceedance_ETCCDI_PRCPTOT(
     nearby_etcddi_prcptot = get_nearest_etccdi_val_to_gauge(etcddi_prcptot, gauge_lat, gauge_lon)
 
     # 3. Check exceedance of PRCPTOT variable
-    exceedance_flags = check_annual_exceedance_of_ETCCDI_variable(
+    exceedance_flags = check_annual_exceedance_of_etccdi_variable(
         data, rain_col, nearby_etccdi_data=nearby_etcddi_prcptot
     )
 
     return exceedance_flags
 
 
-def check_annual_exceedance_of_ETCCDI_variable(
+def check_annual_exceedance_of_etccdi_variable(
     data: pl.DataFrame,
     rain_col: str,
-    etccdi_data: xr.DataFrame,
+    etccdi_data: xr.Dataset,
 ) -> list:
     """
     Check annual exceedance of maximum PRCPTOT from ETCCDI dataset.
@@ -129,8 +129,8 @@ def check_annual_exceedance_of_ETCCDI_variable(
 
 
 def get_nearest_etccdi_val_to_gauge(
-    etccdi_data: xr.DataFrame, gauge_lat: int | float, gauge_lon: int | float
-) -> xr.DataFrame:
+    etccdi_data: xr.Dataset, gauge_lat: int | float, gauge_lon: int | float
+) -> xr.Dataset:
     """
     Get the value at the nearest ETCCDI grid cell to the gauge coordinates.
 
