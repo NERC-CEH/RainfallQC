@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Quality control checks using neighbouring gauges to identify suspicious data.
+All neigbourhood and nearby related operations.
 
 Classes and functions ordered alphabetically.
 """

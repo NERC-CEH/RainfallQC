@@ -70,5 +70,5 @@ def test_breakpoints(daily_gdsr_data, daily_gdsr_data_w_breakpoint):
 
 
 def test_min_val_change(hourly_gdsr_data):
-    yr_list = gauge_checks.min_val_change(hourly_gdsr_data, rain_col=DEFAULT_RAIN_COL, resolution=0.1)
+    yr_list = gauge_checks.min_val_change(hourly_gdsr_data, rain_col=DEFAULT_RAIN_COL, expected_min_val=0.1)
     numpy.testing.assert_array_equal(yr_list, [2006, 2010])
