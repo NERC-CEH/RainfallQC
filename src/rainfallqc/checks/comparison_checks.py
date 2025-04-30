@@ -11,7 +11,7 @@ import numpy as np
 import polars as pl
 import xarray as xr
 
-from rainfallqc.utils import data_readers, stats
+from rainfallqc.utils import data_readers, neighbourhood_utils, stats
 
 
 def check_annual_exceedance_etccdi_r99p(
@@ -43,7 +43,7 @@ def check_annual_exceedance_etccdi_r99p(
     etccdi_r99p = data_readers.load_ETCCDI_data(etccdi_var="R99p")
 
     # 2. Get nearest local R99p value to the gauge coordinates
-    nearby_etccdi_r99p = get_nearest_etccdi_val_to_gauge(etccdi_r99p, gauge_lat, gauge_lon)
+    nearby_etccdi_r99p = neighbourhood_utils.get_nearest_etccdi_val_to_gauge(etccdi_r99p, gauge_lat, gauge_lon)
 
     # 3. Get sum of rainfall above the 99th percentile per year
     sum_rainfall_above_99percentile_per_year = get_sum_rainfall_above_percentile_per_year(
@@ -87,7 +87,7 @@ def check_annual_exceedance_etccdi_prcptot(
     etcddi_prcptot = data_readers.load_ETCCDI_data(etccdi_var="PRCPTOT")
 
     # 2. Get nearest local PRCPTOT value to the gauge coordinates
-    nearby_etcddi_prcptot = get_nearest_etccdi_val_to_gauge(etcddi_prcptot, gauge_lat, gauge_lon)
+    nearby_etcddi_prcptot = neighbourhood_utils.get_nearest_etccdi_val_to_gauge(etcddi_prcptot, gauge_lat, gauge_lon)
 
     # 3. Get sum of rainfall above the 99th percentile per year
     sum_rainfall_above_99percentile_per_year = get_sum_rainfall_above_percentile_per_year(
@@ -162,7 +162,7 @@ def check_annual_exceedance_etccdi_rx1day(
     etcddi_rx1day = data_readers.load_ETCCDI_data(etccdi_var="Rx1day")
 
     # 2. Get nearest local Rx1day value to the gauge coordinates
-    nearby_etcddi_rx1day = get_nearest_etccdi_val_to_gauge(etcddi_rx1day, gauge_lat, gauge_lon)
+    nearby_etcddi_rx1day = neighbourhood_utils.get_nearest_etccdi_val_to_gauge(etcddi_rx1day, gauge_lat, gauge_lon)
 
     # 3. Get local maximum ETCCDI value
     max_nearby_etcddi_rx1day = np.max(nearby_etcddi_rx1day["Rx1day"])
@@ -249,36 +249,6 @@ def flag_exceedance_of_max_etccdi_variable(
         flag_exceedance_of_ref_val(val=yr, ref_val=etccdi_var_max) for yr in annual_sum_rainfall[rain_col]
     ]
     return exceedance_flags
-
-
-def get_nearest_etccdi_val_to_gauge(
-    etccdi_data: xr.Dataset, gauge_lat: int | float, gauge_lon: int | float
-) -> xr.Dataset:
-    """
-    Get the value at the nearest ETCCDI grid cell to the gauge coordinates.
-
-    Parameters
-    ----------
-    etccdi_data
-        ETCCDI data with given variable to check
-    gauge_lat :
-        latitude of the rain gauge
-    gauge_lon :
-        longitude of the rain gauge
-
-    Returns
-    -------
-    nearby_etccdi_data :
-        ETCCDI data at the nearest grid cell
-
-    """
-    # 1. Get local data
-    nearby_etccdi_data = etccdi_data.sel(
-        lon=gauge_lon,
-        lat=gauge_lat,
-        method="nearest",
-    )
-    return nearby_etccdi_data
 
 
 def add_daily_year_col(data: pl.DataFrame) -> pl.DataFrame:

@@ -11,10 +11,12 @@ import numpy as np
 import polars as pl
 import xarray as xr
 
-from rainfallqc.utils import data_readers, data_utils
+from rainfallqc.utils import data_readers, data_utils, neighbourhood_utils
 
 
-def dry_period_cdd_check(data: pl.DataFrame, rain_col: str) -> pl.DataFrame:
+def dry_period_cdd_check(
+    data: pl.DataFrame, rain_col: str, gauge_lat: int | float, gauge_lon: int | float
+) -> pl.DataFrame:
     """
     Identify suspiciously long dry periods in time-series using the ETCCDI Consecutive Dry Days (CDD) index.
 
@@ -26,6 +28,10 @@ def dry_period_cdd_check(data: pl.DataFrame, rain_col: str) -> pl.DataFrame:
         Rainfall data
     rain_col :
         Column with rainfall data
+    gauge_lat :
+        latitude of the rain gauge
+    gauge_lon :
+        longitude of the rain gauge
 
     Returns
     -------
@@ -39,7 +45,10 @@ def dry_period_cdd_check(data: pl.DataFrame, rain_col: str) -> pl.DataFrame:
     # 2. Make dry spell days column from ETCCDI data
     dry_spell_days = compute_dry_spell_days(etccdi_cdd)
 
-    return data[rain_col], dry_spell_days
+    # 3. Get nearest local CDD value to the gauge coordinates
+    nearby_dry_spell_days = neighbourhood_utils.get_nearest_etccdi_val_to_gauge(dry_spell_days, gauge_lat, gauge_lon)
+
+    return data[rain_col], nearby_dry_spell_days
 
 
 def compute_dry_spell_days(dry_spell_data: xr.Dataset) -> xr.Dataset:
