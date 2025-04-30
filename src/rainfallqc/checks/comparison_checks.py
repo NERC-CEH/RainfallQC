@@ -40,7 +40,7 @@ def check_annual_exceedance_etccdi_r99p(
 
     """
     # 1. Load R99p data
-    etccdi_r99p = data_readers.load_ETCCDI_data(etccdi_var="R99p")
+    etccdi_r99p = data_readers.load_etccdi_data(etccdi_var="R99p")
 
     # 2. Get nearest local R99p value to the gauge coordinates
     nearby_etccdi_r99p = neighbourhood_utils.get_nearest_etccdi_val_to_gauge(etccdi_r99p, gauge_lat, gauge_lon)
@@ -84,7 +84,7 @@ def check_annual_exceedance_etccdi_prcptot(
 
     """
     # 1. Load PRCPTOT data
-    etcddi_prcptot = data_readers.load_ETCCDI_data(etccdi_var="PRCPTOT")
+    etcddi_prcptot = data_readers.load_etccdi_data(etccdi_var="PRCPTOT")
 
     # 2. Get nearest local PRCPTOT value to the gauge coordinates
     nearby_etcddi_prcptot = neighbourhood_utils.get_nearest_etccdi_val_to_gauge(etcddi_prcptot, gauge_lat, gauge_lon)
@@ -159,7 +159,7 @@ def check_annual_exceedance_etccdi_rx1day(
 
     """
     # 1. Load Rx1day data
-    etcddi_rx1day = data_readers.load_ETCCDI_data(etccdi_var="Rx1day")
+    etcddi_rx1day = data_readers.load_etccdi_data(etccdi_var="Rx1day")
 
     # 2. Get nearest local Rx1day value to the gauge coordinates
     nearby_etcddi_rx1day = neighbourhood_utils.get_nearest_etccdi_val_to_gauge(etcddi_rx1day, gauge_lat, gauge_lon)

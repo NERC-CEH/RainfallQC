@@ -40,7 +40,7 @@ def dry_period_cdd_check(
 
     """
     # 1. Load CDD data
-    etccdi_cdd = data_readers.load_ETCCDI_data(etccdi_var="CDD")
+    etccdi_cdd = data_readers.load_etccdi_data(etccdi_var="CDD")
 
     # 2. Make dry spell days column from ETCCDI data
     dry_spell_days = compute_dry_spell_days(etccdi_cdd)
