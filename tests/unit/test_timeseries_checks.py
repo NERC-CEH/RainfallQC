@@ -17,7 +17,17 @@ def test_dry_period_cdd_check_hourly(hourly_gdsr_data, gdsr_metadata):
     )
 
 
-def test_dry_period_cdd_check_daily(daily_gdsr_data, gdsr_metadata):
+def test_dry_period_cdd_check_daily_gpcc(daily_gpcc_data, gdsr_metadata):
+    timeseries_checks.dry_period_cdd_check(
+        daily_gpcc_data,
+        rain_col=DEFAULT_RAIN_COL,
+        time_res="daily",
+        gauge_lat=gdsr_metadata["latitude"],
+        gauge_lon=gdsr_metadata["longitude"],
+    )
+
+
+def test_dry_period_cdd_check_daily_gdsr(daily_gdsr_data, gdsr_metadata):
     timeseries_checks.dry_period_cdd_check(
         daily_gdsr_data,
         rain_col=DEFAULT_RAIN_COL,
