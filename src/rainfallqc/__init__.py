@@ -7,7 +7,7 @@ __version__ = "0.0.5"
 from rainfallqc.checks import (
     comparison_checks,
     gauge_checks,
-    neighbour_checks,
+    neighbourhood_checks,
     timeseries_checks,
 )
 from rainfallqc.rulebases import intense_qc_rulebase
@@ -16,6 +16,6 @@ __all__ = [
     "intense_qc_rulebase",
     "comparison_checks",
     "gauge_checks",
-    "neighbour_checks",
+    "neighbourhood_checks",
     "timeseries_checks",
 ]

@@ -100,6 +100,9 @@ pythonpath = ["src"]
 [tool.setuptools]
 package-dir = { "src" = "src" }
 
+[tool.setuptools.package-data]
+"rainfallqc" = ["data/ETCCDI/*.nc"]
+
 [tool.coverage.run]
 omit = ["tests/*.py", "*__init__.py"]
 relative_files = true
