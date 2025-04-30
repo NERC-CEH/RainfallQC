@@ -66,7 +66,7 @@ Features
 
 Credits
 -------
-Based on the IntenseQC 
+Based on the IntenseQC: https://github.com/nclwater/intense-qc/tree/master
 
 
 This package was created with Cookiecutter_ and the `audreyr/cookiecutter-pypackage`_ project template.
