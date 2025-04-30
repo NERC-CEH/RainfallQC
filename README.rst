@@ -51,7 +51,7 @@ Notes on rulebase application:
 * maybe uses dictionaries/json to set rules that can be more easily tweaked.
 
 
-Also see examples here: [RainfallQC-notebooks](https://github.com/Thomasjkeel/RainfallQC-notebooks/tree/main)
+Also see example Jupyter Notebooks here: https://github.com/Thomasjkeel/RainfallQC-notebooks/tree/main
 
 
 * Free software: GNU General Public License v3
