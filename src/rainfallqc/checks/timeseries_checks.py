@@ -13,9 +13,11 @@ import xarray as xr
 
 from rainfallqc.utils import data_readers, data_utils, neighbourhood_utils
 
+DAILY_DIVIDING_FACTOR = {"hourly": 24, "daily": 1}
+
 
 def dry_period_cdd_check(
-    data: pl.DataFrame, rain_col: str, gauge_lat: int | float, gauge_lon: int | float
+    data: pl.DataFrame, rain_col: str, time_res: str, gauge_lat: int | float, gauge_lon: int | float
 ) -> pl.DataFrame:
     """
     Identify suspiciously long dry periods in time-series using the ETCCDI Consecutive Dry Days (CDD) index.
@@ -28,6 +30,8 @@ def dry_period_cdd_check(
         Rainfall data
     rain_col :
         Column with rainfall data
+    time_res :
+        Temporal resolution of the time series either 'daily' or 'hourly'
     gauge_lat :
         latitude of the rain gauge
     gauge_lon :
@@ -43,50 +47,113 @@ def dry_period_cdd_check(
     etccdi_cdd = data_readers.load_etccdi_data(etccdi_var="CDD")
 
     # 2. Make dry spell days column from ETCCDI data
-    dry_spell_days = compute_dry_spell_days(etccdi_cdd)
+    etccdi_cdd_days = compute_dry_spell_days(etccdi_cdd)
 
     # 3. Get nearest local CDD value to the gauge coordinates
-    nearby_dry_spell_days = neighbourhood_utils.get_nearest_etccdi_val_to_gauge(dry_spell_days, gauge_lat, gauge_lon)
+    nearby_etccdi_cdd_days = neighbourhood_utils.get_nearest_etccdi_val_to_gauge(etccdi_cdd_days, gauge_lat, gauge_lon)
 
-    # 4. Get local maximum ETCCDI value
-    max_nearby_dry_spell = np.max(nearby_dry_spell_days["CDD_days"])
+    # 4. Get local maximum CDD_days value
+    max_etccdi_cdd_days = np.max(nearby_etccdi_cdd_days["CDD_days"])
 
-    # get dry spells and their legnths
-    gauge_dry_spells = data.with_columns(
-        (pl.col(rain_col) == 0).cast(pl.Int8()).alias("is_zero"),
-    )
+    # 5. Get dry spell durations (with start and end dates)
+    gauge_dry_spell_lengths = get_dry_spell_duration(data, rain_col)
 
-    gauge_dry_spell_groups = gauge_dry_spells.with_columns(
-        ((pl.col("is_zero").diff().fill_null(0) == 1).cum_sum()).alias("group_id")
-    )
+    # 6.
+    gauge_dry_spell_lengths_flags = flag_dry_spell_duration(gauge_dry_spell_lengths, max_etccdi_cdd_days, time_res)
 
-    gauge_dry_spell_lengths = (
-        gauge_dry_spell_groups.filter(pl.col("is_zero") == 1)
-        .group_by("group_id")
-        .agg(
-            pl.first("time").alias("dry_spell_start"),
-            pl.last("time").alias("dry_spell_end"),
-            pl.col("is_zero").sum().alias("dry_spell_length_h"),
+    # 7. Join data back to main data and flag
+    dry_spell_errors = gauge_dry_spell_lengths_flags.filter(pl.col("dry_spell_flag") > 0)
+
+    # 8.
+    dry_spell_flag_data = pl.DataFrame({"time": data["time"], "dry_spell_flag": np.zeros(data["time"].shape)})
+
+    # 9.
+    for errored_data_row in dry_spell_errors.iter_rows():
+        # overwrite flag
+        dry_spell_flag_data = dry_spell_flag_data.with_columns(
+            pl.when((pl.col("time") >= errored_data_row[1]) & (pl.col("time") <= errored_data_row[2]))
+            .then(errored_data_row[4])
+            .otherwise(pl.col("dry_spell_flag"))
+            .alias("dry_spell_flag")
         )
-        .sort("group_id")
-    )
 
-    gauge_dry_spell_lengths_in_days = gauge_dry_spell_lengths["dry_spell_length_h"] / 24
+    return dry_spell_flag_data
 
+
+def flag_dry_spell_duration(
+    dry_spell_lengths: pl.DataFrame, ref_dry_spell_length: int | float, time_res: str
+) -> pl.DataFrame:
+    """
+    Flag the dry spell duration using reference local dry spell length.
+
+    Parameters
+    ----------
+    dry_spell_lengths :
+        Data with dry spell lengths
+    ref_dry_spell_length :
+        Reference dry spell length
+    time_res :
+        Temporal resolution of the time series either 'daily' or 'hourly'
+
+    Returns
+    -------
+    dry_spell_lengths_flags :
+        Data with dry spell flags
+
+    """
     # May need to rethink how this is done uniformly (as could use day check)
-    gauge_dry_spell_lengths_flags = gauge_dry_spell_lengths.with_columns(
-        pl.when(pl.col("dry_spell_length_h") / 24 >= max_nearby_dry_spell * 1.5)
+    dry_spell_lengths_flags = dry_spell_lengths.with_columns(
+        pl.when(pl.col("dry_spell_length") / DAILY_DIVIDING_FACTOR[time_res] >= ref_dry_spell_length * 1.5)
         .then(4)
-        .when(pl.col("dry_spell_length_h") / 24 >= max_nearby_dry_spell * 1.33)
+        .when(pl.col("dry_spell_length") / DAILY_DIVIDING_FACTOR[time_res] >= ref_dry_spell_length * 1.33)
         .then(3)
-        .when(pl.col("dry_spell_length_h") / 24 >= max_nearby_dry_spell * 1.2)
+        .when(pl.col("dry_spell_length") / DAILY_DIVIDING_FACTOR[time_res] >= ref_dry_spell_length * 1.2)
         .then(2)
-        .when(pl.col("dry_spell_length_h") / 24 >= max_nearby_dry_spell)
+        .when(pl.col("dry_spell_length") / DAILY_DIVIDING_FACTOR[time_res] >= ref_dry_spell_length)
         .then(1)
         .otherwise(0)
         .alias("dry_spell_flag")
     )
-    return gauge_dry_spell_lengths_flags, gauge_dry_spell_lengths_in_days
+    return dry_spell_lengths_flags
+
+
+def get_dry_spell_duration(data: pl.DataFrame, rain_col: str) -> pl.DataFrame:
+    """
+    Get consecutive dry spell duration.
+
+    Parameters
+    ----------
+    data :
+        Rainfall data
+    rain_col :
+        Column with rainfall data
+
+    Returns
+    -------
+    gauge_dry_spell_lengths :
+        Data with dry spell start, end and duration
+
+    """
+    # 1. Get dry spells and their lengths
+    gauge_dry_spells = data.with_columns(
+        (pl.col(rain_col) == 0).cast(pl.Int8()).alias("is_dry"),
+    )
+    # 2. Get consecutive groups of dry spells
+    gauge_dry_spell_groups = gauge_dry_spells.with_columns(
+        ((pl.col("is_dry").diff().fill_null(0) == 1).cum_sum()).alias("dry_group_id")
+    )
+    # 3. Get
+    gauge_dry_spell_lengths = (
+        gauge_dry_spell_groups.filter(pl.col("is_dry") == 1)
+        .group_by("dry_group_id")
+        .agg(
+            pl.first("time").alias("dry_spell_start"),
+            pl.last("time").alias("dry_spell_end"),
+            pl.col("is_dry").sum().alias("dry_spell_length"),
+        )
+        .sort("dry_group_id")
+    )
+    return gauge_dry_spell_lengths
 
 
 def compute_dry_spell_days(dry_spell_data: xr.Dataset) -> xr.Dataset:
