@@ -39,8 +39,8 @@ def dry_period_cdd_check(
 
     Returns
     -------
-    data_w_cdd_flags :
-        Data with CDD flags
+    data_w_dry_spell_flags :
+        Data with dry spell flags
 
     """
     # 1. Load CDD data
@@ -58,16 +58,39 @@ def dry_period_cdd_check(
     # 5. Get dry spell durations (with start and end dates)
     gauge_dry_spell_lengths = get_dry_spell_duration(data, rain_col)
 
-    # 6.
+    # 6. Flag dry spells
     gauge_dry_spell_lengths_flags = flag_dry_spell_duration(gauge_dry_spell_lengths, max_etccdi_cdd_days, time_res)
 
     # 7. Join data back to main data and flag
-    dry_spell_errors = gauge_dry_spell_lengths_flags.filter(pl.col("dry_spell_flag") > 0)
+    data_w_dry_spell_flags = join_dry_spell_data_back_to_original(data, gauge_dry_spell_lengths_flags)
 
-    # 8.
+    return data_w_dry_spell_flags
+
+
+def join_dry_spell_data_back_to_original(data: pl.DataFrame, dry_spell_lengths_flags: pl.DataFrame) -> pl.DataFrame:
+    """
+    Flag dry spell data using dry spell lengths.
+
+    Parameters
+    ----------
+    data :
+        Rainfall data
+    dry_spell_lengths_flags :
+        Data with dry spell flags
+
+    Returns
+    -------
+    dry_spell_flag_data :
+        Data with dry spell flags
+
+    """
+    # 1. Make template of new data
     dry_spell_flag_data = pl.DataFrame({"time": data["time"], "dry_spell_flag": np.zeros(data["time"].shape)})
 
-    # 9.
+    # 2. Get all problematic flags
+    dry_spell_errors = dry_spell_lengths_flags.filter(pl.col("dry_spell_flag") > 0)
+
+    # 3. Loop through problematic flags and label the original data based on duration of dry spell
     for errored_data_row in dry_spell_errors.iter_rows():
         # overwrite flag
         dry_spell_flag_data = dry_spell_flag_data.with_columns(
@@ -76,7 +99,6 @@ def dry_period_cdd_check(
             .otherwise(pl.col("dry_spell_flag"))
             .alias("dry_spell_flag")
         )
-
     return dry_spell_flag_data
 
 
