@@ -7,6 +7,27 @@ Classes and functions ordered alphabetically.
 
 import numpy as np
 import polars as pl
+import xarray as xr
+
+SECONDS_IN_DAY = 86400.0
+
+
+def convert_datarray_seconds_to_days(series_seconds: xr.DataArray) -> np.ndarray:
+    """
+    Convert xarray series from seconds to days. For some reason the CDD data from ETCCDI is in seconds.
+
+    Parameters
+    ----------
+    series_seconds :
+        Data in series to convert to days.
+
+    Returns
+    -------
+    series_days :
+        Data array converted to days.
+
+    """
+    return series_seconds.values.astype("timedelta64[s]").astype("float32") / SECONDS_IN_DAY
 
 
 def replace_missing_vals_with_nan(
