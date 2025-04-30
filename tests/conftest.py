@@ -50,7 +50,7 @@ def hourly_gdsr_data() -> pl.DataFrame:
 
 
 @pytest.fixture()
-def daily_gdsr_metadata() -> dict:
+def gdsr_metadata() -> dict:
     # TODO: maybe randomise this with every call? Or use parameterise
     data_path = "./tests/data/GDSR/DE_02483.txt"
     # read in metadata of gauge
