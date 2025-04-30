@@ -145,8 +145,8 @@ def load_ETCCDI_data(etccdi_var: str, path_to_etccdi: str = None) -> xr.Dataset:
 
     """
     if not path_to_etccdi:
-        netcdf_file = f'RawData_HADEX2_{etccdi_var}_1951-2010_ANN_from-90to90_from-180to180.nc'
-        path_to_etccdi_data = resources.files('rainfallqc.data.ETCCDI').joinpath(netcdf_file)
+        netcdf_file = f"RawData_HADEX2_{etccdi_var}_1951-2010_ANN_from-90to90_from-180to180.nc"
+        path_to_etccdi_data = resources.files("rainfallqc.data.ETCCDI").joinpath(netcdf_file)
         return xr.open_dataset(path_to_etccdi_data, decode_timedelta=True)
     else:
         print(f"User defined path to ETCCDI being used: {path_to_etccdi}")
