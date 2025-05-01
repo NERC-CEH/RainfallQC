@@ -62,7 +62,7 @@ def get_rainfall_world_records() -> dict[str, float]:
     return RAINFALL_WORLD_RECORDS
 
 
-def pettitt_test(arr: pl.Series | np.ndarray) -> int | float:
+def pettitt_test(arr: pl.Series | np.ndarray) -> (int | float, int | float):
     """
     Pettitt test for detecting a change point in a time series.
 
