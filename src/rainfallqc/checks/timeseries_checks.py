@@ -11,7 +11,7 @@ import numpy as np
 import polars as pl
 import xarray as xr
 
-from rainfallqc.utils import data_readers, data_utils, neighbourhood_utils
+from rainfallqc.utils import data_readers, data_utils, neighbourhood_utils, spatial_utils, stats
 
 DAILY_DIVIDING_FACTOR = {"hourly": 24, "daily": 1}
 
@@ -22,7 +22,7 @@ def dry_period_cdd_check(
     """
     Identify suspiciously long dry periods in time-series using the ETCCDI Consecutive Dry Days (CDD) index.
 
-    This is QC11 from the IntenseQC framework.
+    This is QC12 from the IntenseQC framework.
 
     Parameters
     ----------
@@ -65,6 +65,76 @@ def dry_period_cdd_check(
     data_w_dry_spell_flags = join_dry_spell_data_back_to_original(data, gauge_dry_spell_lengths_flags)
 
     return data_w_dry_spell_flags
+
+
+def daily_accumulations(
+    data: pl.DataFrame, rain_col: str, time_res: str, gauge_lat: int | float, gauge_lon: int | float
+) -> pl.DataFrame:
+    """
+    Identify suspicious periods when rainfall is proceeded by 23 hours with no rain.
+
+    Uses a simple precipitation intensity index (SDII) from ETCCDI.
+
+    This is QC13 from the IntenseQC framework.
+
+    Parameters
+    ----------
+    data :
+        Rainfall data
+    rain_col :
+        Column with rainfall data
+    time_res :
+        Temporal resolution of the time series either 'daily' or 'hourly'
+    gauge_lat :
+        latitude of the rain gauge
+    gauge_lon :
+        longitude of the rain gauge
+
+    Returns
+    -------
+    data_w_dry_spell_flags :
+        Data with dry spell flags
+
+    """
+    if time_res != "daily" and time_res != "hourly":
+        raise ValueError("time_res must be 'daily' or 'hourly'")
+    # 1. Load SDII data
+    etccdi_sdii = data_readers.load_etccdi_data(etccdi_var="SDII")
+
+    # 2. Compute spatial mean
+    etccdi_sdii = spatial_utils.compute_spatial_mean_xr(etccdi_sdii, var_name="SDII")
+
+    # 3. Get nearest local CDD value to the gauge coordinates
+    nearby_etccdi_sdii = neighbourhood_utils.get_nearest_etccdi_val_to_gauge(etccdi_sdii, gauge_lat, gauge_lon)
+
+    # 4. Get local maximum CDD_days value
+    max_etccdi_sdii = np.max(nearby_etccdi_sdii["SDII_mean"])
+
+    # 5. Get world records
+    rainfall_world_records = stats.get_rainfall_world_records()
+
+    # 6. Filter out world records
+    if time_res == "hourly":
+        # 6.1 Filter out hourly world records
+        data_not_wr = data.with_columns(
+            pl.when(pl.col(rain_col) > rainfall_world_records["hourly"])
+            .then(np.nan)
+            .otherwise(pl.col(rain_col))
+            .alias(rain_col)
+        )
+        # 6.2 Group into daily resolution
+        data_not_wr = data_not_wr.group_by_dynamic("time", every="1d").agg(pl.col(rain_col).sum())
+    # 6.3 Filter out daily world records
+    data_not_wr = data_not_wr.with_columns(
+        pl.when(pl.col(rain_col) > rainfall_world_records["daily"])
+        .then(np.nan)
+        .otherwise(pl.col(rain_col))
+        .alias(rain_col)
+    )
+
+    # 7. Calculate simple precipitation intensity index
+
+    return data_not_wr, max_etccdi_sdii
 
 
 def join_dry_spell_data_back_to_original(data: pl.DataFrame, dry_spell_lengths_flags: pl.DataFrame) -> pl.DataFrame:
