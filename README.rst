@@ -17,6 +17,9 @@ Quality control procedure for rainfall data
 
 Please email tomkee@ceh.ac.uk if you have any questions.
 
+Project ToDos:
+
+- check https://github.com/nclwater/intense-qc/tree/affinity_indx
 
 Proof of concept
 ----------------

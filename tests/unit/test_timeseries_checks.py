@@ -40,3 +40,41 @@ def test_dry_period_cdd_check_daily_gdsr(daily_gdsr_data, gdsr_metadata):
         gauge_lon=gdsr_metadata["longitude"],
     )
     assert len(result.filter(pl.col("dry_spell_flag") == 4)) == 91
+
+
+def test_daily_accumulations(hourly_gdsr_data, gdsr_metadata):
+    result = timeseries_checks.daily_accumulations(
+        hourly_gdsr_data,
+        rain_col=DEFAULT_RAIN_COL,
+        gauge_lat=gdsr_metadata["latitude"],
+        gauge_lon=gdsr_metadata["longitude"],
+        rain_intensity_threshold=1.0,
+    )
+    assert len(result.filter(pl.col("daily_accumulation") == 1)) == 120
+
+    result = timeseries_checks.daily_accumulations(
+        hourly_gdsr_data,
+        rain_col=DEFAULT_RAIN_COL,
+        gauge_lat=gdsr_metadata["latitude"],
+        gauge_lon=gdsr_metadata["longitude"],
+        rain_intensity_threshold=2.0,
+    )
+    assert len(result.filter(pl.col("daily_accumulation") == 1)) == 72
+
+    result = timeseries_checks.daily_accumulations(
+        hourly_gdsr_data,
+        rain_col=DEFAULT_RAIN_COL,
+        gauge_lat=gdsr_metadata["latitude"],
+        gauge_lon=gdsr_metadata["longitude"],
+        accumulation_multiplying_factor=4,
+    )
+    assert len(result.filter(pl.col("daily_accumulation") == 1)) == 120
+
+    result = timeseries_checks.daily_accumulations(
+        hourly_gdsr_data,
+        rain_col=DEFAULT_RAIN_COL,
+        gauge_lat=gdsr_metadata["latitude"],
+        gauge_lon=gdsr_metadata["longitude"],
+        accumulation_threshold=0.5,
+    )
+    assert len(result.filter(pl.col("daily_accumulation") == 1)) == 2472
