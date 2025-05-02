@@ -177,6 +177,10 @@ def monthly_accumulations(
     data_w_monthly_accumulation_flags :
         Data with monthly accumulation flags
 
+    Notes
+    -----
+    The original method filters out dry spells less than
+
     """
     # 1. Get local mean ETCCDI SDII value (this is the default for SDII in this method)
     etccdi_sdii = get_local_etccdi_sdii_mean(gauge_lat, gauge_lon)
@@ -195,7 +199,10 @@ def monthly_accumulations(
     gauge_dry_spell_lengths = get_dry_spell_duration(data, rain_col)
 
     # 6. Get first wet value after consecutive dry spell
-    gauge_dry_spell_info = get_first_wet_after_dry_spell(gauge_dry_spell_lengths, rain_col)
+    gauge_first_wet_after_dry = get_first_wet_after_dry_spell(data, rain_col)
+
+    # 7. Join data together
+    gauge_dry_spell_info = gauge_first_wet_after_dry.join(gauge_dry_spell_lengths, on="dry_group_id", how="left")
 
     return gauge_dry_spell_info
 
@@ -523,7 +530,7 @@ def get_dry_spells(data: pl.DataFrame, rain_col: str) -> pl.DataFrame:
 
 def compute_dry_spell_days(dry_spell_data: xr.Dataset) -> xr.Dataset:
     """
-    Compute dry spells in ddys from ETCCDI Consecutive Dry Days data.
+    Compute dry spells in days from ETCCDI Consecutive Dry Days data.
 
     Parameters
     ----------
