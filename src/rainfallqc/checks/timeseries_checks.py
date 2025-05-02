@@ -367,10 +367,10 @@ def join_dry_spell_data_back_to_original(data: pl.DataFrame, dry_spell_lengths_f
     dry_spell_flag_data = pl.DataFrame({"time": data["time"], "dry_spell_flag": np.zeros(data["time"].shape)})
 
     # 2. Get all non-0 flags (i.e. suspicious dry spells)
-    dry_spell_non0 = dry_spell_lengths_flags.filter(pl.col("dry_spell_flag") > 0)
+    dry_spell_non_zero = dry_spell_lengths_flags.filter(pl.col("dry_spell_flag") > 0)
 
     # 3. Loop through problematic flags and label the original data based on duration of dry spell
-    for non_zero_data_row in dry_spell_non0.iter_rows():
+    for non_zero_data_row in dry_spell_non_zero.iter_rows():
         # overwrite flag
         dry_spell_flag_data = dry_spell_flag_data.with_columns(
             pl.when((pl.col("time") >= non_zero_data_row[1]) & (pl.col("time") <= non_zero_data_row[2]))
