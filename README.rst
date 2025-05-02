@@ -13,6 +13,14 @@ RainfallQC
 
 Quality control procedure for rainfall data
 
+**WORK IN PROGRESS**
+
+Please email tomkee@ceh.ac.uk if you have any questions.
+
+Project ToDos:
+
+- check https://github.com/nclwater/intense-qc/tree/affinity_indx
+- add meaning of flags
 
 Proof of concept
 ----------------
@@ -61,8 +69,8 @@ Also see example Jupyter Notebooks here: https://github.com/Thomasjkeel/Rainfall
 Features
 --------
 
-* TODO:
-        - 25 rainfall QC methods
+*TODO*
+    - 25 rainfall QC methods
 
 Credits
 -------
