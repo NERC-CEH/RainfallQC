@@ -194,15 +194,10 @@ def monthly_accumulations(
     # 5. Get dry spell durations (with start and end dates)
     gauge_dry_spell_lengths = get_dry_spell_duration(data, rain_col)
 
-    # 6. Get first wet value after consecutive zeros
-    gauge_data_zeros_groups = gauge_dry_spell_lengths.with_columns(
-        pl.when((pl.col("is_dry") == 0) & (pl.col("dry_group_id").diff().fill_null(0) == 1))
-        .then(pl.col("time"))
-        .otherwise(None)
-        .alias("first_wet_after_dry")
-    )
+    # 6. Get first wet value after consecutive dry spell
+    gauge_dry_spell_info = get_first_wet_after_dry_spell(gauge_dry_spell_lengths, rain_col)
 
-    return gauge_data_zeros_groups
+    return gauge_dry_spell_info
 
 
 def get_daily_non_wr_data(data: pl.DataFrame, rain_col: str) -> pl.DataFrame:
@@ -453,6 +448,37 @@ def get_dry_spell_duration(data: pl.DataFrame, rain_col: str) -> pl.DataFrame:
         .sort("dry_group_id")
     )
     return gauge_dry_spell_lengths
+
+
+def get_first_wet_after_dry_spell(data: pl.DataFrame, rain_col: str) -> pl.DataFrame:
+    """
+    Get first non-zero rainfall value after dry spell.
+
+    Parameters
+    ----------
+    data :
+        Rainfall data
+    rain_col :
+        Column with rainfall data
+
+    Returns
+    -------
+    data_w_first_wet :
+        Data with binary column denoting first wet after dry spell
+
+    """
+    # 1. Get dry spells
+    gauge_dry_spells = get_dry_spells(data, rain_col)
+
+    # 2. Get consecutive groups of dry spells
+    gauge_dry_spell_groups = get_consecutive_dry_days(gauge_dry_spells)
+
+    return gauge_dry_spell_groups.with_columns(
+        pl.when((pl.col("is_dry") == 0) & (pl.col("dry_group_id").diff().fill_null(0) == 1))
+        .then(pl.col("time"))
+        .otherwise(None)
+        .alias("first_wet_after_dry")
+    )
 
 
 def get_consecutive_dry_days(gauge_dry_spells: pl.DataFrame) -> pl.DataFrame:
