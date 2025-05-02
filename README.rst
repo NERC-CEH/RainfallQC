@@ -20,6 +20,7 @@ Please email tomkee@ceh.ac.uk if you have any questions.
 Project ToDos:
 
 - check https://github.com/nclwater/intense-qc/tree/affinity_indx
+- add meaning of flags
 
 Proof of concept
 ----------------
