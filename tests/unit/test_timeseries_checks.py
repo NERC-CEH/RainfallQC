@@ -103,6 +103,5 @@ def test_monthly_accumulations(hourly_gdsr_data, gdsr_metadata):
         rain_col=DEFAULT_RAIN_COL,
         gauge_lat=gdsr_metadata["latitude"],
         gauge_lon=gdsr_metadata["longitude"],
-        accumulation_threshold=0.5,
     )
-    assert len(result.filter(pl.col("monthly_accumulation") == 1)) == 2472
+    assert len(result.filter(pl.col("monthly_accumulation") == 1)) == 3

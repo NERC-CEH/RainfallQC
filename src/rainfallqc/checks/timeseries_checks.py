@@ -198,23 +198,28 @@ def monthly_accumulations(
     # 5. Get info about dry spells in rainfall record
     gauge_dry_spell_info = get_dry_spell_info(data, rain_col)
 
-    # 6. Get previous and next dry spell durations for flagging
-    gauge_dry_spell_info = get_surrounding_dry_spell_lengths(gauge_dry_spell_info)
+    # TODO: Original method subsets by 720 hours so that is 30 days, but what about months with 31 days?
+    min_dry_spell_length = 720  # hours
 
-    # 7. Flag possible accumulations
-    gauge_data_possible_accumulations = flag_possible_accumulations(
+    # 7. Get possible accumulations
+    gauge_data_possible_accumulations = get_possible_accumulations(
         gauge_dry_spell_info, rain_col, accumulation_threshold
     )
 
     # 8. Flag monthly (720 h) accumulations
-    # TODO: Original method subsets by 720 hours so that is 30 days, but what about months with 31 days?
     gauge_data_monthly_accumulations = gauge_data_possible_accumulations.with_columns(
-        pl.when((pl.col("dry_spell_length").fill_null(0.0) <= 720) & (pl.col("next_dry_spell").is_not_null()))
+        pl.when(
+            (pl.col("possible_accumulation") == 1)
+            & (pl.col("dry_spell_length").fill_null(0.0) <= min_dry_spell_length)
+            & (pl.col("next_dry_spell").is_not_null())
+        )
         .then(2)
-        .when(pl.col("dry_spell_length").fill_null(0.0) <= 720)
+        .when(
+            (pl.col("possible_accumulation") == 1) & (pl.col("dry_spell_length").fill_null(0.0) <= min_dry_spell_length)
+        )
         .then(1)
         .otherwise(0)
-        .alias("monthly_accumulations")
+        .alias("monthly_accumulation")
     )
 
     # 9. Remove unnecessary columns
@@ -246,11 +251,11 @@ def get_surrounding_dry_spell_lengths(data: pl.DataFrame) -> pl.DataFrame:
     )
 
 
-def flag_possible_accumulations(
+def get_possible_accumulations(
     gauge_dry_spell_info: pl.DataFrame, rain_col: str, accumulation_threshold: float
 ) -> pl.DataFrame:
     """
-    Flag possible accumulations based on dry spell info.
+    Get possible accumulations as 0 or 1 based on dry spell info.
 
     Parameters
     ----------
@@ -264,7 +269,7 @@ def flag_possible_accumulations(
     Returns
     -------
     gauge_data_possible_accumulations :
-        Data with flag denoting a possible accumulation
+        Data with 1 is possible accumulation, otherwise 0.
 
     """
     # 1. Get values above daily accumulation threshold in one hour
@@ -566,7 +571,7 @@ def get_first_wet_after_dry_spell(data: pl.DataFrame, rain_col: str) -> pl.DataF
 
 def get_dry_spell_info(data: pl.DataFrame, rain_col: str) -> pl.DataFrame:
     """
-    Get summary of dry spell info including duration and first wet value after dry.
+    Get summary of dry spells (i.e. duration and first wet value after dry and previous and next dry spells duration).
 
     Parameters
     ----------
@@ -588,7 +593,10 @@ def get_dry_spell_info(data: pl.DataFrame, rain_col: str) -> pl.DataFrame:
     gauge_first_wet_after_dry = get_first_wet_after_dry_spell(data, rain_col)
 
     # 3. Join data together
-    return gauge_first_wet_after_dry.join(gauge_dry_spell_lengths, on="dry_group_id", how="left")
+    gauge_dry_spell_info = gauge_first_wet_after_dry.join(gauge_dry_spell_lengths, on="dry_group_id", how="left")
+
+    # 4. Get previous and next dry spell durations for flagging
+    return get_surrounding_dry_spell_lengths(gauge_dry_spell_info)
 
 
 def get_consecutive_dry_days(gauge_dry_spells: pl.DataFrame) -> pl.DataFrame:
