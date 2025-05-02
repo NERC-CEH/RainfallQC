@@ -67,7 +67,8 @@ def dry_period_cdd_check(
     # 7. Join data back to main data and flag
     data_w_dry_spell_flags = join_dry_spell_data_back_to_original(data, gauge_dry_spell_lengths_flags)
 
-    return data_w_dry_spell_flags
+    # 8. Remove unnecessary columns
+    return data_w_dry_spell_flags.select(["time", rain_col, "dry_spell_flag"])
 
 
 def daily_accumulations(
