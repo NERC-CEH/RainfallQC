@@ -84,10 +84,10 @@ def check_annual_exceedance_etccdi_prcptot(
 
     """
     # 1. Load PRCPTOT data
-    etcddi_prcptot = data_readers.load_etccdi_data(etccdi_var="PRCPTOT")
+    etccdi_prcptot = data_readers.load_etccdi_data(etccdi_var="PRCPTOT")
 
     # 2. Get nearest local PRCPTOT value to the gauge coordinates
-    nearby_etcddi_prcptot = neighbourhood_utils.get_nearest_etccdi_val_to_gauge(etcddi_prcptot, gauge_lat, gauge_lon)
+    nearby_etccdi_prcptot = neighbourhood_utils.get_nearest_etccdi_val_to_gauge(etccdi_prcptot, gauge_lat, gauge_lon)
 
     # 3. Get sum of rainfall above the 99th percentile per year
     sum_rainfall_above_99percentile_per_year = get_sum_rainfall_above_percentile_per_year(
@@ -96,7 +96,7 @@ def check_annual_exceedance_etccdi_prcptot(
 
     # 4. Get flags of exceedance for PRCPTOT variable where the 0.99 percentile sum is more than ETCCDI max
     exceedance_flags = flag_exceedance_of_max_etccdi_variable(
-        sum_rainfall_above_99percentile_per_year, rain_col, nearby_etcddi_prcptot, etccdi_var="PRCPTOT"
+        sum_rainfall_above_99percentile_per_year, rain_col, nearby_etccdi_prcptot, etccdi_var="PRCPTOT"
     )
 
     return exceedance_flags
@@ -159,17 +159,17 @@ def check_annual_exceedance_etccdi_rx1day(
 
     """
     # 1. Load Rx1day data
-    etcddi_rx1day = data_readers.load_etccdi_data(etccdi_var="Rx1day")
+    etccdi_rx1day = data_readers.load_etccdi_data(etccdi_var="Rx1day")
 
     # 2. Get nearest local Rx1day value to the gauge coordinates
-    nearby_etcddi_rx1day = neighbourhood_utils.get_nearest_etccdi_val_to_gauge(etcddi_rx1day, gauge_lat, gauge_lon)
+    nearby_etccdi_rx1day = neighbourhood_utils.get_nearest_etccdi_val_to_gauge(etccdi_rx1day, gauge_lat, gauge_lon)
 
     # 3. Get local maximum ETCCDI value
-    max_nearby_etcddi_rx1day = np.max(nearby_etcddi_rx1day["Rx1day"])
+    max_nearby_etccdi_rx1day = np.max(nearby_etccdi_rx1day["Rx1day"])
 
     # 4. Flag exceedance of max ETCCDI value
     return flag_exceedance_of_ref_val_as_col(
-        data, rain_col, ref_val=max_nearby_etcddi_rx1day, new_col_name="rx1day_check"
+        data, rain_col, ref_val=max_nearby_etccdi_rx1day, new_col_name="rx1day_check"
     )
 
 
