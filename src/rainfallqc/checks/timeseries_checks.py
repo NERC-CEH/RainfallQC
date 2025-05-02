@@ -198,19 +198,31 @@ def monthly_accumulations(
     # 5. Get info about dry spells in rainfall record
     gauge_dry_spell_info = get_dry_spell_info(data, rain_col)
 
-    # 6. Flag possible accumulations
+    # 6. Get previous and next dry spell durations for flagging
+    gauge_dry_spell_info = get_surrounding_dry_spell_lengths(gauge_dry_spell_info)
+
+    # 7. Flag possible accumulations
     gauge_data_possible_accumulations = flag_possible_accumulations(
         gauge_dry_spell_info, rain_col, accumulation_threshold
     )
 
-    get_surrounding_dry_spell_lengths(gauge_dry_spell_info)
-
+    # 8. Flag monthly (720 h) accumulations
     # TODO: Original method subsets by 720 hours so that is 30 days, but what about months with 31 days?
-    gauge_data_possible_accumulations = gauge_data_possible_accumulations.filter(
-        pl.col("dry_spell_length").fill_null(0.0) <= 720
+    gauge_data_monthly_accumulations = gauge_data_possible_accumulations.with_columns(
+        pl.when((pl.col("dry_spell_length").fill_null(0.0) <= 720) & (pl.col("next_dry_spell").is_not_null()))
+        .then(2)
+        .when(pl.col("dry_spell_length").fill_null(0.0) <= 720)
+        .then(1)
+        .otherwise(0)
+        .alias("monthly_accumulations")
     )
 
-    return gauge_data_possible_accumulations
+    # 9. Remove unnecessary columns
+    gauge_data_monthly_accumulations = gauge_data_monthly_accumulations.select(
+        ["time", rain_col, "monthly_accumulation"]
+    )
+
+    return gauge_data_monthly_accumulations
 
 
 def get_surrounding_dry_spell_lengths(data: pl.DataFrame) -> pl.DataFrame:
