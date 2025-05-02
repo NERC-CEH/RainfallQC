@@ -195,16 +195,51 @@ def monthly_accumulations(
     if not accumulation_threshold:
         accumulation_threshold = get_accumulation_threshold(accumulation_multiplying_factor, etccdi_sdii, gauge_sdii)
 
-    # 5. Get dry spell durations (with start and end dates)
-    gauge_dry_spell_lengths = get_dry_spell_duration(data, rain_col)
+    # 5. Get info about dry spells in rainfall record
+    gauge_dry_spell_info = get_dry_spell_info(data, rain_col)
 
-    # 6. Get first wet value after consecutive dry spell
-    gauge_first_wet_after_dry = get_first_wet_after_dry_spell(data, rain_col)
+    gauge_data_possible_accumulations = flag_possible_accumulations(
+        gauge_dry_spell_info, rain_col, accumulation_threshold
+    )
 
-    # 7. Join data together
-    gauge_dry_spell_info = gauge_first_wet_after_dry.join(gauge_dry_spell_lengths, on="dry_group_id", how="left")
+    return gauge_data_possible_accumulations
 
-    return gauge_dry_spell_info
+
+def flag_possible_accumulations(
+    gauge_dry_spell_info: pl.DataFrame, rain_col: str, accumulation_threshold: float
+) -> pl.DataFrame:
+    """
+    Flag possible accumulations based on dry spell info.
+
+    Parameters
+    ----------
+    gauge_dry_spell_info :
+        Rainfall data with columns with dry spell info (durations, first_wet_after_dry, etc.)
+    rain_col :
+        Column with rainfall data
+    accumulation_threshold :
+        Threshold of rainfall intensity
+
+    Returns
+    -------
+    gauge_data_possible_accumulations :
+        Data with flag denoting a possible accumulation
+
+    """
+    # 1. Get values above daily accumulation threshold in one hour
+    gauge_data_possible_accumulations = gauge_dry_spell_info.with_columns(
+        pl.when(pl.col("dry_spell_end") == pl.col("time"))
+        .then(pl.col(rain_col).shift(-1).fill_nan(0.0) > accumulation_threshold)
+        .otherwise(np.nan)
+        .alias("possible_accumulation")
+    )
+
+    # 2. Shift the value along
+    gauge_data_possible_accumulations = gauge_data_possible_accumulations.with_columns(
+        possible_accumulation=pl.col("possible_accumulation").shift(1)
+    )
+
+    return gauge_data_possible_accumulations
 
 
 def get_daily_non_wr_data(data: pl.DataFrame, rain_col: str) -> pl.DataFrame:
@@ -486,6 +521,33 @@ def get_first_wet_after_dry_spell(data: pl.DataFrame, rain_col: str) -> pl.DataF
         .otherwise(None)
         .alias("first_wet_after_dry")
     )
+
+
+def get_dry_spell_info(data: pl.DataFrame, rain_col: str) -> pl.DataFrame:
+    """
+    Get summary of dry spell info including duration and first wet value after dry.
+
+    Parameters
+    ----------
+    data :
+        Hourly rainfall data
+    rain_col :
+        Column with rainfall data
+
+    Returns
+    -------
+    gauge_dry_spell_info :
+        Data with dry spell information
+
+    """
+    # 1. Get dry spell durations (with start and end dates)
+    gauge_dry_spell_lengths = get_dry_spell_duration(data, rain_col)
+
+    # 2. Get first wet value after consecutive dry spell
+    gauge_first_wet_after_dry = get_first_wet_after_dry_spell(data, rain_col)
+
+    # 3. Join data together
+    return gauge_first_wet_after_dry.join(gauge_dry_spell_lengths, on="dry_group_id", how="left")
 
 
 def get_consecutive_dry_days(gauge_dry_spells: pl.DataFrame) -> pl.DataFrame:
