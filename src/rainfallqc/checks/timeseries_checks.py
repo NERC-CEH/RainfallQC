@@ -210,7 +210,7 @@ def monthly_accumulations(
 
     # 7. Flag monthly (720 h) accumulations
     gauge_data_monthly_accumulations = flag_accumulation_based_on_next_dry_spell_duration(
-        gauge_data_possible_accumulations, min_dry_spell_length=720, accumulation_col_name="monthly_accumulation"
+        gauge_data_possible_accumulations, min_dry_spell_duration=720, accumulation_col_name="monthly_accumulation"
     )
 
     # 8. Remove unnecessary columns
