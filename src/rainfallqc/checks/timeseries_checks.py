@@ -132,7 +132,11 @@ def daily_accumulations(
     # 5. Flag monthly accumulations in hourly data based on SDII threshold
     da_flags = flag_daily_accumulations(data, rain_col, accumulation_threshold)
 
-    return data.with_columns(daily_accumulation=pl.Series(da_flags))
+    # 6. Add daily_accumulation column
+    data = data.with_columns(daily_accumulation=pl.Series(da_flags))
+
+    # 7. Remove unnecessary columns
+    return data.select(["time", rain_col, "daily_accumulation"])
 
 
 def monthly_accumulations(
@@ -198,20 +202,17 @@ def monthly_accumulations(
     # 5. Get info about dry spells in rainfall record
     gauge_dry_spell_info = get_dry_spell_info(data, rain_col)
 
-    # TODO: Original method subsets by 720 hours so that is 30 days, but what about months with 31 days?
-    min_dry_spell_length = 720  # hours
-
-    # 7. Get possible accumulations
+    # 6. Get possible accumulations
     gauge_data_possible_accumulations = get_possible_accumulations(
         gauge_dry_spell_info, rain_col, accumulation_threshold
     )
 
-    # 8. Flag monthly (720 h) accumulations
+    # 7. Flag monthly (720 h) accumulations
     gauge_data_monthly_accumulations = flag_accumulation_based_on_next_dry_spell_duration(
-        gauge_data_possible_accumulations, min_dry_spell_length, accumulation_col_name="monthly_accumulation"
+        gauge_data_possible_accumulations, min_dry_spell_length=720, accumulation_col_name="monthly_accumulation"
     )
 
-    # 9. Remove unnecessary columns
+    # 8. Remove unnecessary columns
     gauge_data_monthly_accumulations = gauge_data_monthly_accumulations.select(
         ["time", rain_col, "monthly_accumulation"]
     )
