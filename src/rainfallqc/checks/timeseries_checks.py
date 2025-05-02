@@ -80,11 +80,13 @@ def daily_accumulations(
     accumulation_threshold: float = None,
 ) -> pl.DataFrame:
     """
-    Identify suspicious periods when rainfall is preceded by 23 hours with no rain.
+    Identify suspicious periods where an hour of rainfall is preceded by 23 hours with no rain.
 
     Uses a simple precipitation intensity index (SDII) from ETCCDI.
 
     This is QC13 from the IntenseQC framework.
+
+    Please see 'Notes' below for any additional information about the implementation of this method.
 
     Parameters
     ----------
@@ -105,42 +107,148 @@ def daily_accumulations(
 
     Returns
     -------
-    data_w_dry_spell_flags :
-        Data with dry spell flags
+    data_w_daily_accumulation_flags :
+        Data with daily accumulation flags
+
+    Notes
+    -----
+    This method returns only 0 and 1 flags. This differs from the description of the daily accumulation check from
+    IntenseQC. This decision was taken as the IntenseQC python package only returns 0 and 1 flags.
+
+    """
+    # 1. Get local mean ETCCDI SDII value (this is the default for SDII in this method)
+    etccdi_sdii = get_local_etccdi_sdii_mean(gauge_lat, gauge_lon)
+
+    # 2. Filter out world records
+    daily_data_not_wr = get_daily_non_wr_data(data, rain_col)
+
+    # 3. Calculate simple precipitation intensity index
+    gauge_sdii = stats.calculate_simple_precip_intensity_index(daily_data_not_wr, rain_col, rain_intensity_threshold)
+
+    # 4. Get rain gauge accumulation threshold
+    if not accumulation_threshold:
+        accumulation_threshold = get_accumulation_threshold(accumulation_multiplying_factor, etccdi_sdii, gauge_sdii)
+
+    # 5. Flag daily accumulations in hourly data based on SDII threshold
+    da_flags = flag_daily_accumulations(data, rain_col, accumulation_threshold)
+
+    return data.with_columns(daily_accumulation=pl.Series(da_flags))
+
+
+def monthly_accumulations(
+    data: pl.DataFrame,
+    rain_col: str,
+    gauge_lat: int | float,
+    gauge_lon: int | float,
+    rain_intensity_threshold: int | float = 1.0,
+    accumulation_multiplying_factor: int | float = 2.0,
+    accumulation_threshold: float = None,
+) -> pl.DataFrame:
+    """
+    Identify suspicious periods when an hour of rainfall is preceded by 1 month with no rain.
+
+    Flags two different types of accumulations:
+    1) dry, when the isolated high value
+    2) wet, when the isolated value is followed by a few more wet values
+
+    Uses a simple precipitation intensity index (SDII) from ETCCDI.
+
+    This is QC14 from the IntenseQC framework.
+
+    Parameters
+    ----------
+    data :
+        Hourly rainfall data
+    rain_col :
+        Column with rainfall data
+    gauge_lat :
+        latitude of the rain gauge
+    gauge_lon :
+        longitude of the rain gauge
+    rain_intensity_threshold :
+        Threshold for rainfall intensity in one day (default is 1 mm)
+    accumulation_multiplying_factor :
+        Factor to multiply SDII value for to identify an accumulation of rain recordings
+    accumulation_threshold :
+        Rain accumulation for detecting possible monthly accumulations
+
+    Returns
+    -------
+    data_w_monthly_accumulation_flags :
+        Data with monthly accumulation flags
+
+    """
+    # 1. Get local mean ETCCDI SDII value (this is the default for SDII in this method)
+    etccdi_sdii = get_local_etccdi_sdii_mean(gauge_lat, gauge_lon)
+
+    # 2. Filter out world records
+    daily_data_not_wr = get_daily_non_wr_data(data, rain_col)
+
+    # 3. Calculate simple precipitation intensity index
+    gauge_sdii = stats.calculate_simple_precip_intensity_index(daily_data_not_wr, rain_col, rain_intensity_threshold)
+
+    # 4. Get rain gauge accumulation threshold
+    if not accumulation_threshold:
+        accumulation_threshold = get_accumulation_threshold(accumulation_multiplying_factor, etccdi_sdii, gauge_sdii)
+
+    # 5. Flag daily accumulations in hourly data based on SDII threshold
+    da_flags = flag_daily_accumulations(data, rain_col, accumulation_threshold)
+
+    return data.with_columns(monthly_accumulation=pl.Series(da_flags))
+
+
+def get_daily_non_wr_data(data: pl.DataFrame, rain_col: str) -> pl.DataFrame:
+    """
+    Get daily non-world record data.
+
+    Parameters
+    ----------
+    data :
+        Hourly rainfall data
+    rain_col :
+        Column with rainfall data
+
+    Returns
+    -------
+    daily_data_not_wr :
+        Daily rainfall data with world records filtered out
+
+    """
+    # 1. Filter out hourly world records
+    data_not_wr = stats.filter_out_rain_world_records(data, rain_col, time_res="hourly")
+    # 2. Group into daily resolution
+    daily_data = data_not_wr.group_by_dynamic("time", every="1d").agg(pl.col(rain_col).sum())
+    # 3. Filter out daily world records
+    daily_data_not_wr = stats.filter_out_rain_world_records(daily_data, rain_col, time_res="daily")
+    return daily_data_not_wr
+
+
+def get_local_etccdi_sdii_mean(gauge_lat: int | float, gauge_lon: int | float) -> float:
+    """
+    Get the nearby ETCCDI Standard Precipitation Index mean SDII.
+
+    Parameters
+    ----------
+    gauge_lat :
+        latitude of the rain gauge
+    gauge_lon :
+        longitude of the rain gauge
+
+    Returns
+    -------
+    nearby_etccdi_sdii_mean :
+        Local mean SDII value
 
     """
     # 1. Load SDII data
     etccdi_sdii = data_readers.load_etccdi_data(etccdi_var="SDII")
-
     # 2. Compute spatial mean
     etccdi_sdii = spatial_utils.compute_spatial_mean_xr(etccdi_sdii, var_name="SDII")
-
     # 3. Get nearest local CDD value to the gauge coordinates
     nearby_etccdi_sdii = neighbourhood_utils.get_nearest_etccdi_val_to_gauge(etccdi_sdii, gauge_lat, gauge_lon)
-
     # 4. Get local maximum CDD_days value
-    etccdi_sdii = np.max(nearby_etccdi_sdii["SDII_mean"])
-
-    # 5. Filter out world records
-    data_not_wr = stats.filter_out_rain_world_records(data, rain_col, time_res="hourly")
-
-    # 6. Group into daily resolution
-    daily_data = data_not_wr.group_by_dynamic("time", every="1d").agg(pl.col(rain_col).sum())
-
-    # 7. Filter out daily world records
-    daily_data_not_wr = stats.filter_out_rain_world_records(daily_data, rain_col, time_res="daily")
-
-    # 8. Calculate simple precipitation intensity index
-    gauge_sdii = stats.calculate_simple_precip_intensity_index(daily_data_not_wr, rain_col, rain_intensity_threshold)
-
-    # 9. Get rain gauge accumulation threshold
-    if not accumulation_threshold:
-        accumulation_threshold = get_accumulation_threshold(accumulation_multiplying_factor, etccdi_sdii, gauge_sdii)
-
-    # 10. Flag daily accumulations in hourly data based on SDII threshold
-    da_flags = flag_daily_accumulations(data, rain_col, accumulation_threshold)
-
-    return data.with_columns(daily_accumulation=pl.Series(da_flags))
+    nearby_etccdi_sdii_mean = np.max(nearby_etccdi_sdii["SDII_mean"])
+    return nearby_etccdi_sdii_mean
 
 
 def flag_daily_accumulations(data: pl.DataFrame, rain_col: str, accumulation_threshold: float) -> np.ndarray:
@@ -162,7 +270,7 @@ def flag_daily_accumulations(data: pl.DataFrame, rain_col: str, accumulation_thr
         Daily accumulation flags
 
     """
-    # Note uses 24 hour moving window
+    # Note uses 24-hour moving window
     rain_vals = data[rain_col]
     da_flags = np.zeros_like(rain_vals)
     for i in range(len(rain_vals) - 24):

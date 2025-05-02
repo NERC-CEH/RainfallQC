@@ -95,3 +95,14 @@ def test_daily_accumulations(hourly_gdsr_data, gdsr_metadata):
 
 def test_get_accumulation_threshold(daily_gdsr_data):
     timeseries_checks.get_accumulation_threshold(np.nan, 1.2, 1)
+
+
+def test_monthly_accumulations(hourly_gdsr_data, gdsr_metadata):
+    result = timeseries_checks.monthly_accumulations(
+        hourly_gdsr_data,
+        rain_col=DEFAULT_RAIN_COL,
+        gauge_lat=gdsr_metadata["latitude"],
+        gauge_lon=gdsr_metadata["longitude"],
+        accumulation_threshold=0.5,
+    )
+    assert len(result.filter(pl.col("monthly_accumulation") == 1)) == 2472
