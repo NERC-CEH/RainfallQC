@@ -207,27 +207,58 @@ def monthly_accumulations(
     )
 
     # 8. Flag monthly (720 h) accumulations
-    gauge_data_monthly_accumulations = gauge_data_possible_accumulations.with_columns(
-        pl.when(
-            (pl.col("possible_accumulation") == 1)
-            & (pl.col("dry_spell_length").fill_null(0.0) <= min_dry_spell_length)
-            & (pl.col("next_dry_spell").is_not_null())
-        )
-        .then(2)
-        .when(
-            (pl.col("possible_accumulation") == 1) & (pl.col("dry_spell_length").fill_null(0.0) <= min_dry_spell_length)
-        )
-        .then(1)
-        .otherwise(0)
-        .alias("monthly_accumulation")
+    gauge_data_monthly_accumulations = flag_accumulation_based_on_next_dry_spell_duration(
+        gauge_data_possible_accumulations, min_dry_spell_length, accumulation_col_name="monthly_accumulation"
     )
 
     # 9. Remove unnecessary columns
     gauge_data_monthly_accumulations = gauge_data_monthly_accumulations.select(
         ["time", rain_col, "monthly_accumulation"]
     )
-
     return gauge_data_monthly_accumulations
+
+
+def flag_accumulation_based_on_next_dry_spell_duration(
+    data: pl.DataFrame, min_dry_spell_duration: int | float, accumulation_col_name: str
+) -> pl.DataFrame:
+    """
+    Flag possible accumulation based on subsequent minimum dry spell duration.
+
+    Flags:
+    2, if dry spell followed with high value then wet period (wet)
+    1, if dry spell followed with high value then no rain for next 23 hours (dry)
+    0, if neither
+
+    Parameters
+    ----------
+    data :
+        Rainfall data with dry spell info and possible accumulation label
+    min_dry_spell_duration :
+        Minimum dry spell duration
+    accumulation_col_name :
+        Name for accumulation column
+
+    Returns
+    -------
+    data_w_flag :
+        Data with accumulation flag
+
+    """
+    return data.with_columns(
+        pl.when(
+            (pl.col("possible_accumulation") == 1)
+            & (pl.col("dry_spell_length").fill_null(0.0) <= min_dry_spell_duration)
+            & (pl.col("next_dry_spell").is_not_null())
+        )
+        .then(2)
+        .when(
+            (pl.col("possible_accumulation") == 1)
+            & (pl.col("dry_spell_length").fill_null(0.0) <= min_dry_spell_duration)
+        )
+        .then(1)
+        .otherwise(0)
+        .alias(accumulation_col_name)
+    )
 
 
 def get_surrounding_dry_spell_lengths(data: pl.DataFrame) -> pl.DataFrame:

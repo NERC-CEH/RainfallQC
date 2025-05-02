@@ -104,4 +104,4 @@ def test_monthly_accumulations(hourly_gdsr_data, gdsr_metadata):
         gauge_lat=gdsr_metadata["latitude"],
         gauge_lon=gdsr_metadata["longitude"],
     )
-    assert len(result.filter(pl.col("monthly_accumulation") == 1)) == 3
+    assert len(result.filter(pl.col("monthly_accumulation") == 2)) == 5
