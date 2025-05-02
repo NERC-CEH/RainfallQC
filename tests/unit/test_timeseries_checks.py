@@ -2,11 +2,24 @@
 
 """Tests for time-series QC checks."""
 
+import numpy as np
 import polars as pl
+import pytest
 
 from rainfallqc.checks import timeseries_checks
 
 DEFAULT_RAIN_COL = "rain_mm"
+
+
+def test_dry_period_cdd_check(hourly_gdsr_data, gdsr_metadata):
+    with pytest.raises(ValueError):
+        timeseries_checks.dry_period_cdd_check(
+            hourly_gdsr_data,
+            rain_col=DEFAULT_RAIN_COL,
+            time_res="weekly",
+            gauge_lat=gdsr_metadata["latitude"],
+            gauge_lon=gdsr_metadata["longitude"],
+        )
 
 
 def test_dry_period_cdd_check_hourly(hourly_gdsr_data, gdsr_metadata):
@@ -78,3 +91,7 @@ def test_daily_accumulations(hourly_gdsr_data, gdsr_metadata):
         accumulation_threshold=0.5,
     )
     assert len(result.filter(pl.col("daily_accumulation") == 1)) == 2472
+
+
+def test_get_accumulation_threshold(daily_gdsr_data):
+    timeseries_checks.get_accumulation_threshold(np.nan, 1.2, 1)
