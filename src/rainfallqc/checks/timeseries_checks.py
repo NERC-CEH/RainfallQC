@@ -140,7 +140,7 @@ def daily_accumulations(
     # 10. Flag daily accumulations in hourly data based on SDII threshold
     da_flags = flag_daily_accumulations(data, rain_col, accumulation_threshold)
 
-    return data.with_columns(daily_accumulation=da_flags)
+    return data.with_columns(daily_accumulation=pl.Series(da_flags))
 
 
 def flag_daily_accumulations(data: pl.DataFrame, rain_col: str, accumulation_threshold: float) -> np.ndarray:
