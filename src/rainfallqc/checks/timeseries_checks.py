@@ -120,16 +120,16 @@ def daily_accumulations(
     etccdi_sdii = get_local_etccdi_sdii_mean(gauge_lat, gauge_lon)
 
     # 2. Filter out world records
-    daily_data_not_wr = get_daily_non_wr_data(data, rain_col)
+    daily_data_non_wr = get_daily_non_wr_data(data, rain_col)
 
-    # 3. Calculate simple precipitation intensity index
-    gauge_sdii = stats.calculate_simple_precip_intensity_index(daily_data_not_wr, rain_col, rain_intensity_threshold)
+    # 3. Calculate simple precipitation intensity index from daily data
+    gauge_sdii = stats.calculate_simple_precip_intensity_index(daily_data_non_wr, rain_col, rain_intensity_threshold)
 
     # 4. Get rain gauge accumulation threshold
     if not accumulation_threshold:
         accumulation_threshold = get_accumulation_threshold(accumulation_multiplying_factor, etccdi_sdii, gauge_sdii)
 
-    # 5. Flag daily accumulations in hourly data based on SDII threshold
+    # 5. Flag monthly accumulations in hourly data based on SDII threshold
     da_flags = flag_daily_accumulations(data, rain_col, accumulation_threshold)
 
     return data.with_columns(daily_accumulation=pl.Series(da_flags))
@@ -182,19 +182,27 @@ def monthly_accumulations(
     etccdi_sdii = get_local_etccdi_sdii_mean(gauge_lat, gauge_lon)
 
     # 2. Filter out world records
-    daily_data_not_wr = get_daily_non_wr_data(data, rain_col)
+    daily_data_non_wr = get_daily_non_wr_data(data, rain_col)
 
-    # 3. Calculate simple precipitation intensity index
-    gauge_sdii = stats.calculate_simple_precip_intensity_index(daily_data_not_wr, rain_col, rain_intensity_threshold)
+    # 3. Calculate simple precipitation intensity index from daily data
+    gauge_sdii = stats.calculate_simple_precip_intensity_index(daily_data_non_wr, rain_col, rain_intensity_threshold)
 
     # 4. Get rain gauge accumulation threshold
     if not accumulation_threshold:
         accumulation_threshold = get_accumulation_threshold(accumulation_multiplying_factor, etccdi_sdii, gauge_sdii)
 
-    # 5. Flag daily accumulations in hourly data based on SDII threshold
-    da_flags = flag_daily_accumulations(data, rain_col, accumulation_threshold)
+    # 5. Get dry spell durations (with start and end dates)
+    gauge_dry_spell_lengths = get_dry_spell_duration(data, rain_col)
 
-    return data.with_columns(monthly_accumulation=pl.Series(da_flags))
+    # 6. Get first wet value after consecutive zeros
+    gauge_data_zeros_groups = gauge_dry_spell_lengths.with_columns(
+        pl.when((pl.col("is_dry") == 0) & (pl.col("dry_group_id").diff().fill_null(0) == 1))
+        .then(pl.col("time"))
+        .otherwise(None)
+        .alias("first_wet_after_dry")
+    )
+
+    return gauge_data_zeros_groups
 
 
 def get_daily_non_wr_data(data: pl.DataFrame, rain_col: str) -> pl.DataFrame:
@@ -427,15 +435,13 @@ def get_dry_spell_duration(data: pl.DataFrame, rain_col: str) -> pl.DataFrame:
         Data with dry spell start, end and duration
 
     """
-    # 1. Get dry spells and their lengths
-    gauge_dry_spells = data.with_columns(
-        (pl.col(rain_col) == 0).cast(pl.Int8()).alias("is_dry"),
-    )
+    # 1. Get dry spells
+    gauge_dry_spells = get_dry_spells(data, rain_col)
+
     # 2. Get consecutive groups of dry spells
-    gauge_dry_spell_groups = gauge_dry_spells.with_columns(
-        ((pl.col("is_dry").diff().fill_null(0) == 1).cum_sum()).alias("dry_group_id")
-    )
-    # 3. Get
+    gauge_dry_spell_groups = get_consecutive_dry_days(gauge_dry_spells)
+
+    # 3. Get dry spell lengths
     gauge_dry_spell_lengths = (
         gauge_dry_spell_groups.filter(pl.col("is_dry") == 1)
         .group_by("dry_group_id")
@@ -447,6 +453,46 @@ def get_dry_spell_duration(data: pl.DataFrame, rain_col: str) -> pl.DataFrame:
         .sort("dry_group_id")
     )
     return gauge_dry_spell_lengths
+
+
+def get_consecutive_dry_days(gauge_dry_spells: pl.DataFrame) -> pl.DataFrame:
+    """
+    Get consecutive groups of 0 rainfall days.
+
+    Parameters
+    ----------
+    gauge_dry_spells :
+        Data with 'is_dry' column
+
+    Returns
+    -------
+    gauge_dry_spell_groups :
+        Data with group ids for consecutive dry days
+
+    """
+    return gauge_dry_spells.with_columns(((pl.col("is_dry").diff().fill_null(0) == 1).cum_sum()).alias("dry_group_id"))
+
+
+def get_dry_spells(data: pl.DataFrame, rain_col: str) -> pl.DataFrame:
+    """
+    Get dry spell column.
+
+    Parameters
+    ----------
+    data :
+        Rainfall data
+    rain_col :
+        Column with rainfall data
+
+    Returns
+    -------
+    data_w_dry_spells :
+        Data with is_dry binary column
+
+    """
+    return data.with_columns(
+        (pl.col(rain_col) == 0).cast(pl.Int8()).alias("is_dry"),
+    )
 
 
 def compute_dry_spell_days(dry_spell_data: xr.Dataset) -> xr.Dataset:
