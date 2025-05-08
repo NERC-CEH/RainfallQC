@@ -553,8 +553,8 @@ def get_accumulation_threshold_from_etccdi(
     rain_col: str,
     gauge_lat: int | float,
     gauge_lon: int | float,
-    wet_day_threshold: float = 1.0,
-    accumulation_multiplying_factor: float = 2.0,
+    wet_day_threshold: float,
+    accumulation_multiplying_factor: float,
 ) -> float:
     """
     Get rain accumulation threshold from ETCCDI data.
@@ -570,9 +570,9 @@ def get_accumulation_threshold_from_etccdi(
     gauge_lon :
         longitude of the rain gauge.
     wet_day_threshold :
-        Threshold for rainfall intensity in one day (default is 1 mm)
+        Threshold for rainfall intensity in one day (whether it is a wet day or not)
     accumulation_multiplying_factor :
-        Factor to multiply SDII value for to identify an accumulation of rain recordings (default is 2)
+        Factor to multiply SDII value for to identify an accumulation of rain recordings
 
     Returns
     -------

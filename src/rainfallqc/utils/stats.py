@@ -122,5 +122,5 @@ def calculate_simple_precip_intensity_index(data: pl.DataFrame, rain_col: str, w
 
     """
     data_rain_sum = data.filter(pl.col(rain_col) >= wet_day_threshold).fill_nan(0.0).sum()[rain_col][0]
-    data_wet_day_count = data.filter(pl.col(rain_col) >= wet_day_threshold).fill_nan(0.0).count()[rain_col][0]
+    data_wet_day_count = data.filter(pl.col(rain_col) >= wet_day_threshold).drop_nans().count()[rain_col][0]
     return data_rain_sum / float(data_wet_day_count)
