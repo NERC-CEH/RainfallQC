@@ -201,7 +201,7 @@ def monthly_accumulations(
 
     # 4. Get rain gauge accumulation threshold
     if not accumulation_threshold:
-        accumulation_threshold = get_accumulation_threshold(accumulation_multiplying_factor, etccdi_sdii, gauge_sdii)
+        accumulation_threshold = get_accumulation_threshold(etccdi_sdii, gauge_sdii, accumulation_multiplying_factor)
 
     # 5. Get info about dry spells in rainfall record
     gauge_dry_spell_info = get_dry_spell_info(data, rain_col)

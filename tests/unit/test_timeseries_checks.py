@@ -98,3 +98,31 @@ def test_get_accumulation_threshold():
     assert result == 1
     result = timeseries_checks.get_accumulation_threshold(2, np.nan, 1)
     assert result == 2
+
+
+def test_monthly_accumulations(hourly_gdsr_data, gdsr_metadata):
+    result = timeseries_checks.monthly_accumulations(
+        hourly_gdsr_data,
+        rain_col=DEFAULT_RAIN_COL,
+        gauge_lat=gdsr_metadata["latitude"],
+        gauge_lon=gdsr_metadata["longitude"],
+    )
+    assert len(result.filter(pl.col("monthly_accumulation") == 2)) == 22
+    result = timeseries_checks.monthly_accumulations(
+        hourly_gdsr_data,
+        rain_col=DEFAULT_RAIN_COL,
+        gauge_lat=gdsr_metadata["latitude"],
+        gauge_lon=gdsr_metadata["longitude"],
+        accumulation_threshold=5.0,
+    )
+    assert len(result.filter(pl.col("monthly_accumulation") == 2)) == 55
+
+    result = timeseries_checks.monthly_accumulations(
+        hourly_gdsr_data,
+        rain_col=DEFAULT_RAIN_COL,
+        gauge_lat=gdsr_metadata["latitude"],
+        gauge_lon=gdsr_metadata["longitude"],
+        rain_intensity_threshold=12.0,
+        accumulation_threshold=11,
+    )
+    assert len(result.filter(pl.col("monthly_accumulation") == 2)) == 23
