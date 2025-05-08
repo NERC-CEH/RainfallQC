@@ -17,6 +17,14 @@ def test_check_data_has_consistent_time_step(hourly_gdsr_data, inconsistent_time
         data_utils.check_data_has_consistent_time_step(inconsistent_timestep_data)
 
 
+def test_check_data_is_specific_time_res(hourly_gdsr_data):
+    data_utils.check_data_is_specific_time_res(hourly_gdsr_data, time_res="1h")
+    with pytest.raises(TypeError):
+        data_utils.check_data_is_specific_time_res(hourly_gdsr_data, time_res=120)
+    with pytest.raises(ValueError):
+        data_utils.check_data_is_specific_time_res(hourly_gdsr_data, time_res="1d")
+
+
 def test_get_data_timesteps(hourly_gdsr_data, inconsistent_timestep_data):
     result = data_utils.get_data_timesteps(hourly_gdsr_data)
     assert len(result) == 1
