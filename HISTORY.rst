@@ -2,13 +2,14 @@
 History
 =======
 
-0.0.6 (2025-05-X)
+0.0.6 (2025-05-09)
 ------------------
 * Add QC12-QC15
 * Add GPCC and GDSR daily fixtures
 * Package ETCCDI data with RainfallQC
 * Add description of each different type of QC check to header of files
-* remove unecessary files
+* Add checks for temporal resolution of data inputs
+* remove unnecessary files
 
 0.0.5 (2025-04-29)
 ------------------

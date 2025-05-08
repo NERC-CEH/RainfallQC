@@ -119,6 +119,22 @@ def gappy_daily_data() -> pl.DataFrame:
 
 
 @pytest.fixture()
+def inconsistent_timestep_data():
+    return pl.DataFrame(
+        {
+            "time": [
+                datetime.datetime(2023, 1, 1, 0, 0),
+                datetime.datetime(2023, 1, 1, 0, 1),  # +1 min
+                datetime.datetime(2023, 1, 1, 0, 4),  # +3 min
+                datetime.datetime(2023, 1, 1, 0, 5),  # +1 min
+                datetime.datetime(2023, 1, 1, 0, 10),  # +5 min
+            ],
+            DEFAULT_RAIN_COL: [0.0, 1.2, 1.3, 1.4, 1.6],
+        }
+    )
+
+
+@pytest.fixture()
 def daily_gdsr_data_w_breakpoint(daily_gdsr_data):
     # Modify 'values' column: add 10 to rows after index 10
     return daily_gdsr_data.with_columns(

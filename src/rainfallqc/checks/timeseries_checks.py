@@ -79,7 +79,7 @@ def daily_accumulations(
     rain_col: str,
     gauge_lat: int | float,
     gauge_lon: int | float,
-    rain_intensity_threshold: int | float = 1.0,
+    wet_day_threshold: int | float = 1.0,
     accumulation_multiplying_factor: int | float = 2.0,
     accumulation_threshold: float = None,
 ) -> pl.DataFrame:
@@ -102,7 +102,7 @@ def daily_accumulations(
         latitude of the rain gauge
     gauge_lon :
         longitude of the rain gauge
-    rain_intensity_threshold :
+    wet_day_threshold :
         Threshold for rainfall intensity in one day (default is 1 mm)
     accumulation_multiplying_factor :
         Factor to multiply SDII value for to identify an accumulation of rain recordings
@@ -120,26 +120,19 @@ def daily_accumulations(
     IntenseQC. This decision was taken as the IntenseQC python package only returns 0 and 1 flags.
 
     """
-    # 1. Get local mean ETCCDI SDII value (this is the default for SDII in this method)
-    etccdi_sdii = get_local_etccdi_sdii_mean(gauge_lat, gauge_lon)
-
-    # 2. Filter out world records
-    daily_data_non_wr = get_daily_non_wr_data(data, rain_col)
-
-    # 3. Calculate simple precipitation intensity index from daily data
-    gauge_sdii = stats.calculate_simple_precip_intensity_index(daily_data_non_wr, rain_col, rain_intensity_threshold)
-
-    # 4. Get rain gauge accumulation threshold
+    # 1. Get accumulation threshold from ETCCDI SDII value, if not given
     if not accumulation_threshold:
-        accumulation_threshold = get_accumulation_threshold(accumulation_multiplying_factor, etccdi_sdii, gauge_sdii)
+        accumulation_threshold = get_accumulation_threshold_from_etccdi(
+            data, rain_col, gauge_lat, gauge_lon, wet_day_threshold, accumulation_multiplying_factor
+        )
 
-    # 5. Flag monthly accumulations in hourly data based on SDII threshold
+    # 2. Flag monthly accumulations in hourly data based on SDII threshold
     da_flags = flag_daily_accumulations(data, rain_col, accumulation_threshold)
 
-    # 6. Add daily_accumulation column
+    # 3. Add daily_accumulation column
     data = data.with_columns(daily_accumulation=pl.Series(da_flags))
 
-    # 7. Remove unnecessary columns
+    # 4. Remove unnecessary columns
     return data.select(["time", rain_col, "daily_accumulation"])
 
 
@@ -148,7 +141,7 @@ def monthly_accumulations(
     rain_col: str,
     gauge_lat: int | float,
     gauge_lon: int | float,
-    rain_intensity_threshold: int | float = 1.0,
+    wet_day_threshold: int | float = 1.0,
     accumulation_multiplying_factor: int | float = 2.0,
     accumulation_threshold: float = None,
 ) -> pl.DataFrame:
@@ -166,17 +159,17 @@ def monthly_accumulations(
     Parameters
     ----------
     data :
-        Hourly rainfall data
+        Daily or Hourly rainfall data
     rain_col :
         Column with rainfall data
     gauge_lat :
         latitude of the rain gauge
     gauge_lon :
         longitude of the rain gauge
-    rain_intensity_threshold :
+    wet_day_threshold :
         Threshold for rainfall intensity in one day (default is 1 mm)
     accumulation_multiplying_factor :
-        Factor to multiply SDII value for to identify an accumulation of rain recordings
+        Factor to multiply SDII value for to identify an accumulation of rain recordings (default is 2)
     accumulation_threshold :
         Rain accumulation for detecting possible monthly accumulations
 
@@ -190,37 +183,340 @@ def monthly_accumulations(
     The original method filters out dry spells less than
 
     """
-    # 1. Get local mean ETCCDI SDII value (this is the default for SDII in this method)
-    etccdi_sdii = get_local_etccdi_sdii_mean(gauge_lat, gauge_lon)
+    # 0. Check time step of data
+    data_utils.check_data_is_specific_time_res(data, time_res=["1h", "1d"])
+    time_step = data_utils.get_data_timestep_as_str(data)
+    if time_step == "1h":
+        min_dry_spell_duration = 720  # roughly 720 hours in month
+    else:
+        min_dry_spell_duration = 30  # roughly 30 days in month
 
-    # 2. Filter out world records
-    daily_data_non_wr = get_daily_non_wr_data(data, rain_col)
-
-    # 3. Calculate simple precipitation intensity index from daily data
-    gauge_sdii = stats.calculate_simple_precip_intensity_index(daily_data_non_wr, rain_col, rain_intensity_threshold)
-
-    # 4. Get rain gauge accumulation threshold
+    # 1. Get accumulation threshold from ETCCDI SDII value, if not given
     if not accumulation_threshold:
-        accumulation_threshold = get_accumulation_threshold(accumulation_multiplying_factor, etccdi_sdii, gauge_sdii)
+        accumulation_threshold = get_accumulation_threshold_from_etccdi(
+            data, rain_col, gauge_lat, gauge_lon, wet_day_threshold, accumulation_multiplying_factor
+        )
 
-    # 5. Get info about dry spells in rainfall record
+    # 2. Get info about dry spells in rainfall record
     gauge_dry_spell_info = get_dry_spell_info(data, rain_col)
 
-    # 6. Get possible accumulations
+    # 3. Get possible accumulations
     gauge_data_possible_accumulations = get_possible_accumulations(
         gauge_dry_spell_info, rain_col, accumulation_threshold
     )
 
-    # 7. Flag monthly (720 h) accumulations
+    # 4. Flag monthly (720 h) accumulations
     gauge_data_monthly_accumulations = flag_accumulation_based_on_next_dry_spell_duration(
-        gauge_data_possible_accumulations, min_dry_spell_duration=720, accumulation_col_name="monthly_accumulation"
+        gauge_data_possible_accumulations,
+        min_dry_spell_duration=min_dry_spell_duration,
+        accumulation_col_name="monthly_accumulation",
     )
 
-    # 8. Remove unnecessary columns
+    # 5. Remove unnecessary columns
     gauge_data_monthly_accumulations = gauge_data_monthly_accumulations.select(
         ["time", rain_col, "monthly_accumulation"]
     )
     return gauge_data_monthly_accumulations
+
+
+def streaks_check(
+    data: pl.DataFrame,
+    rain_col: str,
+    gauge_lat: int | float,
+    gauge_lon: int | float,
+    data_resolution: float,
+    accumulation_threshold: float = None,
+) -> pl.DataFrame:
+    """
+    Check for suspected repeated values.
+
+    Flags (TODO: change numbers as original includes unuseful 2):
+    1, if streaks of 2 or more repeated values exceeding 2* mean wet day rainfall
+    3, if streaks of 12 or more greater than data resolution
+    4, if streaks of 24 or more greater than zero
+    5, if period of zeros bounded by streaks of >= 24
+
+    This is QC15 from the IntenseQC framework.
+
+    Parameters
+    ----------
+    data :
+        Hourly data with rainfall.
+    rain_col :
+        Column with rainfall data.
+    gauge_lat :
+        latitude of the rain gauge.
+    gauge_lon :
+        longitude of the rain gauge.
+    data_resolution :
+        Resolution of rainfall data (i.e. minimum rainfall recording).
+    accumulation_threshold :
+        Rain accumulation for detecting possible monthly accumulations
+
+    Returns
+    -------
+    data_w_streak_flags :
+        Data with streak flags.
+
+    """
+    # 1. Get accumulation threshold from ETCCDI SDII value, if not given
+    if not accumulation_threshold:
+        accumulation_threshold = get_accumulation_threshold_from_etccdi(
+            data, rain_col, gauge_lat, gauge_lon, wet_day_threshold=1.0, accumulation_multiplying_factor=2.0
+        )
+
+    # 2. Get streaks of repeated values
+    streak_data = get_streaks_of_repeated_values(data, rain_col)
+
+    # 3. Flag streaks of 2 or more repeated large values exceeding 2 * mean wet day rainfall (from ETCCDI SDII)
+    streak_flag1 = flag_streaks_exceeding_wet_day_rainfall_threshold(
+        streak_data, rain_col, streak_length=2, accumulation_threshold=accumulation_threshold
+    )
+
+    # 4. Flag streaks of 12 or more greater than data resolution
+    streak_flag3 = flag_streaks_exceeding_data_resolution(
+        streak_data, rain_col, streak_length=12, data_resolution=data_resolution
+    )
+
+    # 5. Flag streaks of 24 or more greater than zero
+    streak_flag4 = flag_streaks_exceeding_zero(streak_data, rain_col, streak_length=24)
+
+    # 6. Flag periods of zeros bounded by streaks of multiples of 24
+    streak_flag5 = flag_streaks_of_zero_bounded_by_days(streak_data, rain_col)
+
+    # 7. Join flags together
+    data_w_streak_flags = data.with_columns(
+        streak_flag1=streak_flag1["streak_flag1"],
+        streak_flag3=streak_flag3["streak_flag3"],
+        streak_flag4=streak_flag4["streak_flag4"],
+        streak_flag5=streak_flag5["streak_flag5"],
+    )
+    return data_w_streak_flags
+
+
+def flag_streaks_of_zero_bounded_by_days(data: pl.DataFrame, rain_col: str) -> pl.DataFrame:
+    """
+    Flag streak of zeros bounded by record that are a multiple of 24 hours.
+
+    TODO: make work for daily using: DAILY_DIVIDING_FACTOR
+
+    Parameters
+    ----------
+    data :
+        Hourly data with rainfall.
+    rain_col :
+        Column with rainfall data.
+
+    Returns
+    -------
+    streaks_w_flag5 :
+        Data with streak flag 5.
+
+    """
+    # 1. group of streaks
+    data_streak_groups = (
+        data.group_by("streak_id").agg(streak_len=pl.len(), rain_amount=pl.col(rain_col).first()).sort(by="streak_id")
+    )
+
+    # 2. get dry spells
+    streak_w_dry_spells = get_dry_spells(data_streak_groups, rain_col="rain_amount")
+
+    # 3. Flag streaks of multiples of 1 day
+    streaks_w_flag5 = streak_w_dry_spells.with_columns(
+        (
+            pl.when((pl.col("is_dry") == 1) & (pl.col("streak_len") % 24 == 0) & (pl.col("streak_len").shift(-1) >= 24))
+            .then(1)
+            .otherwise(0)
+            .alias("streak_flag5_next")
+        ),
+        (
+            pl.when((pl.col("is_dry") == 1) & (pl.col("streak_len") % 24 == 0) & (pl.col("streak_len").shift(1) >= 24))
+            .then(1)
+            .otherwise(0)
+            .alias("streak_flag5_prev")
+        ),
+    )
+
+    # 4. Filter out only streaks where next or previous are multiples of 24
+    streaks_w_flag5 = streaks_w_flag5.filter((pl.col("streak_flag5_next") == 1) | (pl.col("streak_flag5_prev") == 1))
+
+    # 2. Label original data
+    data_w_flags = data.with_columns(
+        pl.when(pl.col("streak_id").is_in(streaks_w_flag5["streak_id"].unique().to_list()))
+        .then(5)
+        .otherwise(0)
+        .alias("streak_flag5")
+    )
+    return data_w_flags
+
+
+def flag_streaks_exceeding_zero(data: pl.DataFrame, rain_col: str, streak_length: int) -> pl.DataFrame:
+    """
+    Flag values exceeding wet day rainfall accumulation threshold.
+
+    Parameters
+    ----------
+    data :
+        Rainfall data with streak_id.
+    rain_col :
+        Column with rainfall data.
+    streak_length :
+        Only streaks longer than this will be considered.
+
+    Returns
+    -------
+    data_w_flags :
+        Data with streak flag 4
+
+    """
+    # 1. Get streak above length and exceeding zero
+    streaks_exceeding_zero = get_streaks_above_threshold(data, rain_col, streak_length, 0.0)
+
+    # 2. Label original data
+    data_w_flags = data.with_columns(
+        pl.when(pl.col("streak_id").is_in(streaks_exceeding_zero["streak_id"].unique().to_list()))
+        .then(4)
+        .otherwise(0)
+        .alias("streak_flag4")
+    )
+    return data_w_flags
+
+
+def flag_streaks_exceeding_data_resolution(
+    data: pl.DataFrame, rain_col: str, streak_length: int, data_resolution: float
+) -> pl.DataFrame:
+    """
+    Flag streaks exceeding data resolution.
+
+    Parameters
+    ----------
+    data:
+        Rainfall data with streak_id..
+    rain_col:
+        Column with rainfall data.
+    streak_length :
+        Only streaks longer than this will be considered
+    data_resolution:
+        Resolution of rainfall data (i.e. minimum rainfall recording).
+
+    Returns
+    -------
+    data_w_flags :
+        Data with streak flag 3
+
+    """
+    # 1. Get streak above length and data resolution
+    streaks_above_data_resolution = get_streaks_above_threshold(data, rain_col, streak_length, data_resolution)
+
+    # 2. Label original data
+    data_w_flags = data.with_columns(
+        pl.when(pl.col("streak_id").is_in(streaks_above_data_resolution["streak_id"].unique().to_list()))
+        .then(3)
+        .otherwise(0)
+        .alias("streak_flag3")
+    )
+    return data_w_flags
+
+
+def flag_streaks_exceeding_wet_day_rainfall_threshold(
+    data: pl.DataFrame, rain_col: str, streak_length: int, accumulation_threshold: float
+) -> pl.DataFrame:
+    """
+    Flag values exceeding wet day rainfall accumulation threshold.
+
+    Parameters
+    ----------
+    data :
+        Rainfall data with streak_id..
+    rain_col :
+        Column with rainfall data.
+    streak_length :
+        Only streaks longer than this will be considered
+    accumulation_threshold :
+        Threshold for rain accumulation.
+
+    Returns
+    -------
+    data_w_flags :
+        Data with streak flag 1
+
+    """
+    # 1. Get streak above length and accumulation threshold
+    streaks_above_accumulation = get_streaks_above_threshold(data, rain_col, streak_length, accumulation_threshold)
+
+    # 2. Label original data
+    data_w_flags = data.with_columns(
+        pl.when(pl.col("streak_id").is_in(streaks_above_accumulation["streak_id"].unique().to_list()))
+        .then(1)
+        .otherwise(0)
+        .alias("streak_flag1")
+    )
+    return data_w_flags
+
+
+def get_streaks_above_threshold(
+    data: pl.DataFrame, rain_col: str, streak_length: int, value_threshold: int | float
+) -> pl.DataFrame:
+    """
+        Get streak groups above given threshold.
+
+    Parameters
+    ----------
+    data :
+        Rainfall data with streak_id..
+    rain_col :
+        Column with rainfall data.
+    streak_length :
+        Minimum length of streaks.
+    value_threshold :
+        Threshold to check .
+
+    Returns
+    -------
+    streaks_above_accumulation :
+        Get all streaks above given value
+
+    """
+    # 0. Cast threshold to float
+    value_threshold = float(value_threshold)
+
+    # 1. group of streaks
+    data_streak_groups = (
+        data.group_by("streak_id").agg(streak_len=pl.len(), rain_amount=pl.col(rain_col).first()).sort(by="streak_id")
+    )
+    # 2. Get streaks above streak length and threshold
+    streaks_above_accumulation = data_streak_groups.drop_nans().filter(
+        (pl.col("streak_len") >= streak_length) & (pl.col("rain_amount") > value_threshold)
+    )
+    return streaks_above_accumulation
+
+
+def get_streaks_of_repeated_values(data: pl.DataFrame, data_col: str) -> pl.DataFrame:
+    """
+    Get streaks of repeated values in time series.
+
+    Parameters
+    ----------
+    data :
+        Data with time column.
+    data_col :
+        Column with values to check streaks in.
+
+    Returns
+    -------
+    streak_data :
+        Data with streak column.
+
+    """
+    # Step 1. get streaks columns
+    streak_data = data.with_columns(
+        (pl.when(pl.col(data_col) == pl.col(data_col).shift(1)).then(1).otherwise(0).alias("same_as_prev"))
+    )
+
+    # Step 2. Label groups of streaks
+    return streak_data.with_columns(
+        streak_id=(1 - pl.col("same_as_prev")).cum_sum(),
+    )
 
 
 def flag_accumulation_based_on_next_dry_spell_duration(
@@ -382,6 +678,8 @@ def flag_daily_accumulations(data: pl.DataFrame, rain_col: str, accumulation_thr
     """
     Flag daily accumulation of hourly data.
 
+    TODO: make work for daily using: DAILY_DIVIDING_FACTOR
+
     Parameters
     ----------
     data :
@@ -459,10 +757,52 @@ def get_accumulation_threshold(
 
     """
     if np.isnan(etccdi_sdii):
-        accumulation_threshold = etccdi_sdii * accumulation_multiplying_factor
-    else:
         accumulation_threshold = gauge_sdii * accumulation_multiplying_factor
+    else:
+        accumulation_threshold = etccdi_sdii * accumulation_multiplying_factor
     return accumulation_threshold
+
+
+def get_accumulation_threshold_from_etccdi(
+    data: pl.DataFrame,
+    rain_col: str,
+    gauge_lat: int | float,
+    gauge_lon: int | float,
+    wet_day_threshold: float,
+    accumulation_multiplying_factor: float,
+) -> float:
+    """
+    Get rain accumulation threshold from ETCCDI data.
+
+    Parameters
+    ----------
+    data :
+        Rainfall data.
+    rain_col :
+        Column with rainfall data.
+    gauge_lat :
+        latitude of the rain gauge.
+    gauge_lon :
+        longitude of the rain gauge.
+    wet_day_threshold :
+        Threshold for rainfall intensity in one day (whether it is a wet day or not)
+    accumulation_multiplying_factor :
+        Factor to multiply SDII value for to identify an accumulation of rain recordings
+
+    Returns
+    -------
+    accumulation_threshold :
+        Rain accumulation threshold that is e.g.  2*standard precipitation intensity threshold
+
+    """
+    # 1. Get local mean ETCCDI SDII value (this is the default for SDII in this method)
+    etccdi_sdii = get_local_etccdi_sdii_mean(gauge_lat, gauge_lon)
+    # 2. Filter out world records
+    daily_data_non_wr = get_daily_non_wr_data(data, rain_col)
+    # 3. Calculate simple precipitation intensity index from daily data
+    gauge_sdii = stats.simple_precip_intensity_index(daily_data_non_wr, rain_col, wet_day_threshold)
+    # 4. Get rain gauge accumulation threshold
+    return get_accumulation_threshold(etccdi_sdii, gauge_sdii, accumulation_multiplying_factor)
 
 
 def join_dry_spell_data_back_to_original(data: pl.DataFrame, dry_spell_lengths_flags: pl.DataFrame) -> pl.DataFrame:
