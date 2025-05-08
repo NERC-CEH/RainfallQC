@@ -139,7 +139,7 @@ def test_streaks_check(hourly_gdsr_data, gdsr_metadata):
     assert len(result.filter(pl.col("streak_flag1") == 1)) == 31
     assert len(result.filter(pl.col("streak_flag3") == 3)) == 455
     assert len(result.filter(pl.col("streak_flag4") == 4)) == 288
-    # assert len(result.filter(pl.col("streak_flag5") == 5)) == 31
+    assert len(result.filter(pl.col("streak_flag5") == 5)) == 120
 
 
 def test_get_streaks_of_repeated_values(hourly_gdsr_data):
@@ -158,7 +158,7 @@ def test_flag_streaks_exceeding_data_resolution(hourly_gdsr_data, gdsr_metadata)
         streak_length=12,
         data_resolution=gdsr_metadata["resolution"],
     )
-    assert len(result.filter(pl.col("flag3") > 0)) == 455
+    assert len(result.filter(pl.col("streak_flag3") > 0)) == 455
 
     result = timeseries_checks.flag_streaks_exceeding_data_resolution(
         streak_data,
@@ -166,7 +166,7 @@ def test_flag_streaks_exceeding_data_resolution(hourly_gdsr_data, gdsr_metadata)
         streak_length=36,
         data_resolution=gdsr_metadata["resolution"],
     )
-    assert len(result.filter(pl.col("flag3") > 0)) == 288
+    assert len(result.filter(pl.col("streak_flag3") > 0)) == 288
 
 
 def test_flag_streaks_exceeding_wet_day_rainfall_threshold(hourly_gdsr_data, gdsr_metadata):
@@ -177,7 +177,7 @@ def test_flag_streaks_exceeding_wet_day_rainfall_threshold(hourly_gdsr_data, gds
         streak_length=12,
         accumulation_threshold=11,
     )
-    assert len(result.filter(pl.col("flag1") > 0)) == 23
+    assert len(result.filter(pl.col("streak_flag1") > 0)) == 23
 
     result = timeseries_checks.flag_streaks_exceeding_wet_day_rainfall_threshold(
         streak_data,
@@ -185,4 +185,4 @@ def test_flag_streaks_exceeding_wet_day_rainfall_threshold(hourly_gdsr_data, gds
         streak_length=6,
         accumulation_threshold=6,
     )
-    assert len(result.filter(pl.col("flag1") > 0)) == 71
+    assert len(result.filter(pl.col("streak_flag1") > 0)) == 71

@@ -282,16 +282,72 @@ def streaks_check(
     streak_flag4 = flag_streaks_exceeding_zero(streak_data, rain_col, streak_length=24)
 
     # 6. Flag periods of zeros bounded by streaks of multiples of 24
-    # streak_flag5 =
+    streak_flag5 = flag_streaks_of_zero_bounded_by_days(streak_data, rain_col)
 
     # 7. Join flags together
     data_w_streak_flags = data.with_columns(
         streak_flag1=streak_flag1["streak_flag1"],
         streak_flag3=streak_flag3["streak_flag3"],
         streak_flag4=streak_flag4["streak_flag4"],
-        # streak_flag5=streak_flag5['streak_flag5'],
+        streak_flag5=streak_flag5["streak_flag5"],
     )
     return data_w_streak_flags
+
+
+def flag_streaks_of_zero_bounded_by_days(data: pl.DataFrame, rain_col: str) -> pl.DataFrame:
+    """
+    Flag streak of zeros bounded by record that are a multiple of 24 hours.
+
+    TODO: make work for daily using: DAILY_DIVIDING_FACTOR
+
+    Parameters
+    ----------
+    data :
+        Hourly data with rainfall.
+    rain_col :
+        Column with rainfall data.
+
+    Returns
+    -------
+    streaks_w_flag5 :
+        Data with streak flag 5.
+
+    """
+    # 1. group of streaks
+    data_streak_groups = (
+        data.group_by("streak_id").agg(streak_len=pl.len(), rain_amount=pl.col(rain_col).first()).sort(by="streak_id")
+    )
+
+    # 2. get dry spells
+    streak_w_dry_spells = get_dry_spells(data_streak_groups, rain_col="rain_amount")
+
+    # 3. Flag streaks of multiples of 1 day
+    streaks_w_flag5 = streak_w_dry_spells.with_columns(
+        (
+            pl.when((pl.col("is_dry") == 1) & (pl.col("streak_len") % 24 == 0) & (pl.col("streak_len").shift(-1) >= 24))
+            .then(1)
+            .otherwise(0)
+            .alias("streak_flag5_next")
+        ),
+        (
+            pl.when((pl.col("is_dry") == 1) & (pl.col("streak_len") % 24 == 0) & (pl.col("streak_len").shift(1) >= 24))
+            .then(1)
+            .otherwise(0)
+            .alias("streak_flag5_prev")
+        ),
+    )
+
+    # 4. Filter out only streaks where next or previous are multiples of 24
+    streaks_w_flag5 = streaks_w_flag5.filter((pl.col("streak_flag5_next") == 1) | (pl.col("streak_flag5_prev") == 1))
+
+    # 2. Label original data
+    data_w_flags = data.with_columns(
+        pl.when(pl.col("streak_id").is_in(streaks_w_flag5["streak_id"].unique().to_list()))
+        .then(5)
+        .otherwise(0)
+        .alias("streak_flag5")
+    )
+    return data_w_flags
 
 
 def flag_streaks_exceeding_zero(data: pl.DataFrame, rain_col: str, streak_length: int) -> pl.DataFrame:
@@ -301,7 +357,7 @@ def flag_streaks_exceeding_zero(data: pl.DataFrame, rain_col: str, streak_length
     Parameters
     ----------
     data :
-        Rainfall data.
+        Rainfall data with streak_id.
     rain_col :
         Column with rainfall data.
     streak_length :
@@ -313,12 +369,12 @@ def flag_streaks_exceeding_zero(data: pl.DataFrame, rain_col: str, streak_length
         Data with streak flag 4
 
     """
-    # 1. Get streak above length and accumulation threshold
-    streaks_above_accumulation = get_streaks_above_threshold(data, rain_col, streak_length, 0.0)
+    # 1. Get streak above length and exceeding zero
+    streaks_exceeding_zero = get_streaks_above_threshold(data, rain_col, streak_length, 0.0)
 
     # 2. Label original data
     data_w_flags = data.with_columns(
-        pl.when(pl.col("streak_id").is_in(streaks_above_accumulation["streak_id"].unique().to_list()))
+        pl.when(pl.col("streak_id").is_in(streaks_exceeding_zero["streak_id"].unique().to_list()))
         .then(4)
         .otherwise(0)
         .alias("streak_flag4")
@@ -335,7 +391,7 @@ def flag_streaks_exceeding_data_resolution(
     Parameters
     ----------
     data:
-        Rainfall data.
+        Rainfall data with streak_id..
     rain_col:
         Column with rainfall data.
     streak_length :
@@ -349,12 +405,12 @@ def flag_streaks_exceeding_data_resolution(
         Data with streak flag 3
 
     """
-    # 1. Get streak above length and accumulation threshold
-    streaks_above_accumulation = get_streaks_above_threshold(data, rain_col, streak_length, data_resolution)
+    # 1. Get streak above length and data resolution
+    streaks_above_data_resolution = get_streaks_above_threshold(data, rain_col, streak_length, data_resolution)
 
     # 2. Label original data
     data_w_flags = data.with_columns(
-        pl.when(pl.col("streak_id").is_in(streaks_above_accumulation["streak_id"].unique().to_list()))
+        pl.when(pl.col("streak_id").is_in(streaks_above_data_resolution["streak_id"].unique().to_list()))
         .then(3)
         .otherwise(0)
         .alias("streak_flag3")
@@ -371,7 +427,7 @@ def flag_streaks_exceeding_wet_day_rainfall_threshold(
     Parameters
     ----------
     data :
-        Rainfall data.
+        Rainfall data with streak_id..
     rain_col :
         Column with rainfall data.
     streak_length :
@@ -407,7 +463,7 @@ def get_streaks_above_threshold(
     Parameters
     ----------
     data :
-        Rainfall data with streaks.
+        Rainfall data with streak_id..
     rain_col :
         Column with rainfall data.
     streak_length :
@@ -426,11 +482,11 @@ def get_streaks_above_threshold(
 
     # 1. group of streaks
     data_streak_groups = (
-        data.group_by("streak_id").agg(count=pl.len(), value=pl.col(rain_col).first()).sort(by="streak_id")
+        data.group_by("streak_id").agg(streak_len=pl.len(), rain_amount=pl.col(rain_col).first()).sort(by="streak_id")
     )
     # 2. Get streaks above streak length and threshold
     streaks_above_accumulation = data_streak_groups.drop_nans().filter(
-        (pl.col("count") > streak_length) & (pl.col("value") > value_threshold)
+        (pl.col("streak_len") > streak_length) & (pl.col("rain_amount") > value_threshold)
     )
     return streaks_above_accumulation
 
@@ -621,6 +677,8 @@ def get_local_etccdi_sdii_mean(gauge_lat: int | float, gauge_lon: int | float) -
 def flag_daily_accumulations(data: pl.DataFrame, rain_col: str, accumulation_threshold: float) -> np.ndarray:
     """
     Flag daily accumulation of hourly data.
+
+    TODO: make work for daily using: DAILY_DIVIDING_FACTOR
 
     Parameters
     ----------
