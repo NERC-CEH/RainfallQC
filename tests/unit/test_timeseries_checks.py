@@ -59,16 +59,16 @@ def test_daily_accumulations(hourly_gdsr_data, gdsr_metadata):
         rain_col=DEFAULT_RAIN_COL,
         gauge_lat=gdsr_metadata["latitude"],
         gauge_lon=gdsr_metadata["longitude"],
-        rain_intensity_threshold=1.0,
+        wet_day_threshold=1.0,
     )
-    assert len(result.filter(pl.col("daily_accumulation") == 1)) == 312
+    assert len(result.filter(pl.col("daily_accumulation") == 1)) == 432
 
     result = timeseries_checks.daily_accumulations(
         hourly_gdsr_data,
         rain_col=DEFAULT_RAIN_COL,
         gauge_lat=gdsr_metadata["latitude"],
         gauge_lon=gdsr_metadata["longitude"],
-        rain_intensity_threshold=4.0,
+        wet_day_threshold=12.0,
     )
     assert len(result.filter(pl.col("daily_accumulation") == 1)) == 264
 
@@ -122,7 +122,7 @@ def test_monthly_accumulations(hourly_gdsr_data, gdsr_metadata):
         rain_col=DEFAULT_RAIN_COL,
         gauge_lat=gdsr_metadata["latitude"],
         gauge_lon=gdsr_metadata["longitude"],
-        rain_intensity_threshold=12.0,
+        wet_day_threshold=12.0,
         accumulation_threshold=11,
     )
     assert len(result.filter(pl.col("monthly_accumulation") == 2)) == 23
@@ -138,8 +138,13 @@ def test_monthly_accumulations_daily(daily_gdsr_data, gdsr_metadata):
     assert len(result.filter(pl.col("monthly_accumulation") > 0)) == 2
 
 
-def test_streaks_check(hourly_gdsr_data):
-    timeseries_checks.streaks_check(hourly_gdsr_data, rain_col=DEFAULT_RAIN_COL)
+def test_streaks_check(hourly_gdsr_data, gdsr_metadata):
+    timeseries_checks.streaks_check(
+        hourly_gdsr_data,
+        rain_col=DEFAULT_RAIN_COL,
+        gauge_lat=gdsr_metadata["latitude"],
+        gauge_lon=gdsr_metadata["longitude"],
+    )
 
 
 def test_get_streaks_of_repeated_values(hourly_gdsr_data):
