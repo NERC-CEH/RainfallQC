@@ -122,14 +122,14 @@ def gappy_daily_data() -> pl.DataFrame:
 def inconsistent_timestep_data():
     return pl.DataFrame(
         {
-            "timestamp": [
+            "time": [
                 datetime.datetime(2023, 1, 1, 0, 0),
                 datetime.datetime(2023, 1, 1, 0, 1),  # +1 min
                 datetime.datetime(2023, 1, 1, 0, 4),  # +3 min
                 datetime.datetime(2023, 1, 1, 0, 5),  # +1 min
                 datetime.datetime(2023, 1, 1, 0, 10),  # +5 min
             ],
-            DEFAULT_RAIN_COL: [0, 1.2, 1.3, 1.4, 1.6],
+            DEFAULT_RAIN_COL: [0.0, 1.2, 1.3, 1.4, 1.6],
         }
     )
 
