@@ -240,7 +240,7 @@ def streaks_check(
     Parameters
     ----------
     data :
-        Hourly data with rainfall data.
+        Hourly data with rainfall.
     rain_col :
         Column with rainfall data.
     gauge_lat :
@@ -266,16 +266,50 @@ def streaks_check(
         )
 
     # 3. Flag streaks of 2 or more repeated large values exceeding 2 * mean wet day rainfall (from ETCCDI SDII)
-    streaks_w_value = (
-        streak_data.group_by("streak_id").agg(count=pl.len(), value=pl.col(rain_col).first()).sort(by="streak_id")
+    streaks_flag1 = flag_values_exceeding_wet_day_rainfall_threshold(streak_data, rain_col, accumulation_threshold)
+
+    return streaks_flag1
+
+
+def flag_values_exceeding_wet_day_rainfall_threshold(
+    data: pl.DataFrame, rain_col: str, accumulation_threshold: float
+) -> pl.DataFrame:
+    """
+    Flag values exceeding wet day rainfall accumulation threshold.
+
+    Parameters
+    ----------
+    data :
+        Rainfall data.
+    rain_col :
+        Column with rainfall data.
+    accumulation_threshold :
+        Threshold for rain accumulation.
+
+    Returns
+    -------
+    data_w_flags :
+        Data with flags
+
+    """
+    # 1. group of streaks
+    data_streak_groups = (
+        data.group_by("streak_id").agg(count=pl.len(), value=pl.col(rain_col).first()).sort(by="streak_id")
     )
-    streaks_flag1 = streaks_w_value.drop_nans().filter(
+
+    # 2. Get streaks above accumulation threshold
+    streaks_above_accumulation = data_streak_groups.drop_nans().filter(
         (pl.col("count") > 2) & (pl.col("value") > accumulation_threshold)
     )
-    streaks_flag1 = streak_data.with_columns(
-        pl.when(pl.col("streak_id").is_in(streaks_flag1["streak_id"].unique())).then(1).otherwise(0).alias("flag1")
+
+    # 3. Label original data
+    data_w_flags = data.with_columns(
+        pl.when(pl.col("streak_id").is_in(streaks_above_accumulation["streak_id"].unique()))
+        .then(1)
+        .otherwise(0)
+        .alias("flag1")
     )
-    return streaks_flag1
+    return data_w_flags
 
 
 def get_streaks_of_repeated_values(data: pl.DataFrame, data_col: str) -> pl.DataFrame:
