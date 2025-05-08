@@ -128,5 +128,15 @@ def test_monthly_accumulations(hourly_gdsr_data, gdsr_metadata):
     assert len(result.filter(pl.col("monthly_accumulation") == 2)) == 23
 
 
+def test_monthly_accumulations_daily(daily_gpcc_data, gdsr_metadata):
+    result = timeseries_checks.monthly_accumulations(
+        daily_gpcc_data,
+        rain_col=DEFAULT_RAIN_COL,
+        gauge_lat=gdsr_metadata["latitude"],
+        gauge_lon=gdsr_metadata["longitude"],
+    )
+    assert len(result.filter(pl.col("monthly_accumulation") == 2)) == 22
+
+
 def test_streaks_check(hourly_gdsr_data):
     return
