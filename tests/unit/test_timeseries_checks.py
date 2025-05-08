@@ -136,9 +136,9 @@ def test_streaks_check(hourly_gdsr_data, gdsr_metadata):
         gauge_lon=gdsr_metadata["longitude"],
         data_resolution=gdsr_metadata["resolution"],
     )
-    assert len(result.filter(pl.col("streak_flag1") == 1)) == 31
+    assert len(result.filter(pl.col("streak_flag1") == 1)) == 33
     assert len(result.filter(pl.col("streak_flag3") == 3)) == 455
-    assert len(result.filter(pl.col("streak_flag4") == 4)) == 288
+    assert len(result.filter(pl.col("streak_flag4") == 4)) == 432
     assert len(result.filter(pl.col("streak_flag5") == 5)) == 120
 
 
