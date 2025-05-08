@@ -140,3 +140,11 @@ def test_monthly_accumulations_daily(daily_gdsr_data, gdsr_metadata):
 
 def test_streaks_check(hourly_gdsr_data):
     timeseries_checks.streaks_check(hourly_gdsr_data, rain_col=DEFAULT_RAIN_COL)
+
+
+def test_get_streaks_of_repeated_values(hourly_gdsr_data):
+    result = timeseries_checks.get_streak_of_repeated_values(
+        hourly_gdsr_data,
+        data_col=DEFAULT_RAIN_COL,
+    )
+    assert result["streak_id"].unique().len() == 8775

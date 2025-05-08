@@ -243,6 +243,8 @@ def streaks_check(data: pl.DataFrame, rain_col: str) -> pl.DataFrame:
     4, if streaks of 24 or more greater than zero
     5, if period of zeros bounded by streaks of >= 24
 
+    This is QC15 from the IntenseQC framework.
+
     Parameters
     ----------
     data :
@@ -256,6 +258,37 @@ def streaks_check(data: pl.DataFrame, rain_col: str) -> pl.DataFrame:
         Data with streak flags.
 
     """
+    # Step 1. Get streaks of repeated values
+    streak_data = get_streak_of_repeated_values(data, rain_col)
+    return streak_data
+
+
+def get_streak_of_repeated_values(data: pl.DataFrame, data_col: str) -> pl.DataFrame:
+    """
+    Get streaks of repeated values in time series.
+
+    Parameters
+    ----------
+    data :
+        Data with time column.
+    data_col :
+        Column with values to check streaks in.
+
+    Returns
+    -------
+    streak_data :
+        Data with streak column.
+
+    """
+    # Step 1. get streaks columns
+    streak_data = data.with_columns(
+        (pl.when(pl.col(data_col) == pl.col(data_col).shift(1)).then(1).otherwise(0).alias("same_as_prev"))
+    )
+
+    # Step 2. Label groups of streaks
+    return streak_data.with_columns(
+        streak_id=(1 - pl.col("same_as_prev")).cum_sum(),
+    )
 
 
 def flag_accumulation_based_on_next_dry_spell_duration(
