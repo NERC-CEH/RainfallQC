@@ -134,6 +134,7 @@ def test_streaks_check(hourly_gdsr_data, gdsr_metadata):
         rain_col=DEFAULT_RAIN_COL,
         gauge_lat=gdsr_metadata["latitude"],
         gauge_lon=gdsr_metadata["longitude"],
+        data_resolution=gdsr_metadata["resolution"],
     )
 
 
@@ -143,3 +144,22 @@ def test_get_streaks_of_repeated_values(hourly_gdsr_data):
         data_col=DEFAULT_RAIN_COL,
     )
     assert result["streak_id"].unique().len() == 8775
+
+
+def test_flag_streaks_exceeding_data_resolution(hourly_gdsr_data, gdsr_metadata):
+    streak_data = timeseries_checks.get_streaks_of_repeated_values(hourly_gdsr_data, DEFAULT_RAIN_COL)
+    result = timeseries_checks.flag_streaks_exceeding_data_resolution(
+        streak_data,
+        rain_col=DEFAULT_RAIN_COL,
+        streak_length=12,
+        data_resolution=gdsr_metadata["resolution"],
+    )
+    assert len(result.filter(pl.col("flag3") > 0)) == 455
+
+    result = timeseries_checks.flag_streaks_exceeding_data_resolution(
+        streak_data,
+        rain_col=DEFAULT_RAIN_COL,
+        streak_length=36,
+        data_resolution=gdsr_metadata["resolution"],
+    )
+    assert len(result.filter(pl.col("flag3") > 0)) == 288

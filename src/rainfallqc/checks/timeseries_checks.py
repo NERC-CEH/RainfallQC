@@ -224,6 +224,7 @@ def streaks_check(
     rain_col: str,
     gauge_lat: int | float,
     gauge_lon: int | float,
+    data_resolution: float,
     accumulation_threshold: float = None,
 ) -> pl.DataFrame:
     """
@@ -247,6 +248,8 @@ def streaks_check(
         latitude of the rain gauge.
     gauge_lon :
         longitude of the rain gauge.
+    data_resolution :
+        Resolution of rainfall data (i.e. minimum rainfall recording).
     accumulation_threshold :
         Rain accumulation for detecting possible monthly accumulations
 
@@ -266,13 +269,55 @@ def streaks_check(
         )
 
     # 3. Flag streaks of 2 or more repeated large values exceeding 2 * mean wet day rainfall (from ETCCDI SDII)
-    streaks_flag1 = flag_values_exceeding_wet_day_rainfall_threshold(streak_data, rain_col, accumulation_threshold)
+    streaks_flag1 = flag_streaks_exceeding_wet_day_rainfall_threshold(
+        streak_data, rain_col, streak_length=2, accumulation_threshold=accumulation_threshold
+    )
 
-    return streaks_flag1
+    # 4. Flag streaks of 12 or more greater than data resolution
+    streaks_flag2 = flag_streaks_exceeding_data_resolution(
+        streak_data, rain_col, streak_length=2, data_resolution=data_resolution
+    )
+    return streaks_flag1, streaks_flag2
 
 
-def flag_values_exceeding_wet_day_rainfall_threshold(
-    data: pl.DataFrame, rain_col: str, accumulation_threshold: float
+def flag_streaks_exceeding_data_resolution(
+    data: pl.DataFrame, rain_col: str, streak_length: int, data_resolution: float
+) -> pl.DataFrame:
+    """
+    Flag streaks exceeding data resolution.
+
+    Parameters
+    ----------
+    data:
+        Rainfall data.
+    rain_col:
+        Column with rainfall data.
+    streak_length :
+        Only streaks longer than this will be considered
+    data_resolution:
+        Resolution of rainfall data (i.e. minimum rainfall recording).
+
+    Returns
+    -------
+    data_w_flags :
+        Data with streak flag 3
+
+    """
+    # 1. Get streak above length and accumulation threshold
+    streaks_above_accumulation = get_streaks_above_threshold(data, rain_col, streak_length, data_resolution)
+
+    # 2. Label original data
+    data_w_flags = data.with_columns(
+        pl.when(pl.col("streak_id").is_in(streaks_above_accumulation["streak_id"].unique()))
+        .then(3)
+        .otherwise(0)
+        .alias("flag3")
+    )
+    return data_w_flags
+
+
+def flag_streaks_exceeding_wet_day_rainfall_threshold(
+    data: pl.DataFrame, rain_col: str, streak_length: int, accumulation_threshold: float
 ) -> pl.DataFrame:
     """
     Flag values exceeding wet day rainfall accumulation threshold.
@@ -283,26 +328,21 @@ def flag_values_exceeding_wet_day_rainfall_threshold(
         Rainfall data.
     rain_col :
         Column with rainfall data.
+    streak_length :
+        Only streaks longer than this will be considered
     accumulation_threshold :
         Threshold for rain accumulation.
 
     Returns
     -------
     data_w_flags :
-        Data with flags
+        Data with streak flag 1
 
     """
-    # 1. group of streaks
-    data_streak_groups = (
-        data.group_by("streak_id").agg(count=pl.len(), value=pl.col(rain_col).first()).sort(by="streak_id")
-    )
+    # 1. Get streak above length and accumulation threshold
+    streaks_above_accumulation = get_streaks_above_threshold(data, rain_col, streak_length, accumulation_threshold)
 
-    # 2. Get streaks above accumulation threshold
-    streaks_above_accumulation = data_streak_groups.drop_nans().filter(
-        (pl.col("count") > 2) & (pl.col("value") > accumulation_threshold)
-    )
-
-    # 3. Label original data
+    # 2. Label original data
     data_w_flags = data.with_columns(
         pl.when(pl.col("streak_id").is_in(streaks_above_accumulation["streak_id"].unique()))
         .then(1)
@@ -310,6 +350,43 @@ def flag_values_exceeding_wet_day_rainfall_threshold(
         .alias("flag1")
     )
     return data_w_flags
+
+
+def get_streaks_above_threshold(
+    data: pl.DataFrame, rain_col: str, streak_length: int, value_threshold: int | float
+) -> pl.DataFrame:
+    """
+        Get streak groups above given threshold.
+
+    Parameters
+    ----------
+    data :
+        Rainfall data with streaks.
+    rain_col :
+        Column with rainfall data.
+    streak_length :
+        Minimum length of streaks.
+    value_threshold :
+        Threshold to check .
+
+    Returns
+    -------
+    streaks_above_accumulation :
+        Get all streaks above given value
+
+    """
+    # 0. Cast threshold to float
+    value_threshold = float(value_threshold)
+
+    # 1. group of streaks
+    data_streak_groups = (
+        data.group_by("streak_id").agg(count=pl.len(), value=pl.col(rain_col).first()).sort(by="streak_id")
+    )
+    # 2. Get streaks above streak length and threshold
+    streaks_above_accumulation = data_streak_groups.drop_nans().filter(
+        (pl.col("count") > streak_length) & (pl.col("value") > value_threshold)
+    )
+    return streaks_above_accumulation
 
 
 def get_streaks_of_repeated_values(data: pl.DataFrame, data_col: str) -> pl.DataFrame:
