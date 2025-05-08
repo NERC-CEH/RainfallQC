@@ -120,26 +120,19 @@ def daily_accumulations(
     IntenseQC. This decision was taken as the IntenseQC python package only returns 0 and 1 flags.
 
     """
-    # 1. Get local mean ETCCDI SDII value (this is the default for SDII in this method)
-    etccdi_sdii = get_local_etccdi_sdii_mean(gauge_lat, gauge_lon)
-
-    # 2. Filter out world records
-    daily_data_non_wr = get_daily_non_wr_data(data, rain_col)
-
-    # 3. Calculate simple precipitation intensity index from daily data
-    gauge_sdii = stats.calculate_simple_precip_intensity_index(daily_data_non_wr, rain_col, rain_intensity_threshold)
-
-    # 4. Get rain gauge accumulation threshold
+    # 1. Get accumulation threshold from ETCCDI SDII value, if not given
     if not accumulation_threshold:
-        accumulation_threshold = get_accumulation_threshold(accumulation_multiplying_factor, etccdi_sdii, gauge_sdii)
+        accumulation_threshold = get_accumulation_threshold_from_etccdi(
+            data, rain_col, gauge_lat, gauge_lon, rain_intensity_threshold, accumulation_multiplying_factor
+        )
 
-    # 5. Flag monthly accumulations in hourly data based on SDII threshold
+    # 2. Flag monthly accumulations in hourly data based on SDII threshold
     da_flags = flag_daily_accumulations(data, rain_col, accumulation_threshold)
 
-    # 6. Add daily_accumulation column
+    # 3. Add daily_accumulation column
     data = data.with_columns(daily_accumulation=pl.Series(da_flags))
 
-    # 7. Remove unnecessary columns
+    # 4. Remove unnecessary columns
     return data.select(["time", rain_col, "daily_accumulation"])
 
 
@@ -176,7 +169,7 @@ def monthly_accumulations(
     rain_intensity_threshold :
         Threshold for rainfall intensity in one day (default is 1 mm)
     accumulation_multiplying_factor :
-        Factor to multiply SDII value for to identify an accumulation of rain recordings
+        Factor to multiply SDII value for to identify an accumulation of rain recordings (default is 2)
     accumulation_threshold :
         Rain accumulation for detecting possible monthly accumulations
 
@@ -198,42 +191,83 @@ def monthly_accumulations(
     else:
         min_dry_spell_duration = 30  # roughly 30 days in month
 
-    # 1. Get local mean ETCCDI SDII value (this is the default for SDII in this method)
-    etccdi_sdii = get_local_etccdi_sdii_mean(gauge_lat, gauge_lon)
-
-    # 2. Filter out world records
-    daily_data_non_wr = get_daily_non_wr_data(data, rain_col)
-
-    # 3. Calculate simple precipitation intensity index from daily data
-    gauge_sdii = stats.calculate_simple_precip_intensity_index(daily_data_non_wr, rain_col, rain_intensity_threshold)
-
-    # 4. Get rain gauge accumulation threshold
+    # 1. Get accumulation threshold from ETCCDI SDII value, if not given
     if not accumulation_threshold:
-        accumulation_threshold = get_accumulation_threshold(etccdi_sdii, gauge_sdii, accumulation_multiplying_factor)
+        accumulation_threshold = get_accumulation_threshold_from_etccdi(
+            data, rain_col, gauge_lat, gauge_lon, rain_intensity_threshold, accumulation_multiplying_factor
+        )
 
-    # 5. Get info about dry spells in rainfall record
+    # 2. Get info about dry spells in rainfall record
     gauge_dry_spell_info = get_dry_spell_info(data, rain_col)
 
-    # 6. Get possible accumulations
+    # 3. Get possible accumulations
     gauge_data_possible_accumulations = get_possible_accumulations(
         gauge_dry_spell_info, rain_col, accumulation_threshold
     )
 
-    # 7. Flag monthly (720 h) accumulations
+    # 4. Flag monthly (720 h) accumulations
     gauge_data_monthly_accumulations = flag_accumulation_based_on_next_dry_spell_duration(
         gauge_data_possible_accumulations,
         min_dry_spell_duration=min_dry_spell_duration,
         accumulation_col_name="monthly_accumulation",
     )
 
-    # 8. Remove unnecessary columns
+    # 5. Remove unnecessary columns
     gauge_data_monthly_accumulations = gauge_data_monthly_accumulations.select(
         ["time", rain_col, "monthly_accumulation"]
     )
     return gauge_data_monthly_accumulations
 
 
-def streaks_check(data: pl.DataFrame, rain_col: str) -> pl.DataFrame:
+def get_accumulation_threshold_from_etccdi(
+    data: pl.DataFrame,
+    rain_col: str,
+    gauge_lat: int | float,
+    gauge_lon: int | float,
+    rain_intensity_threshold: float = 1.0,
+    accumulation_multiplying_factor: float = 2.0,
+) -> float:
+    """
+    Get rain accumulation threshold from ETCCDI data.
+
+    Parameters
+    ----------
+    data :
+        Rainfall data.
+    rain_col :
+        Column with rainfall data.
+    gauge_lat :
+        latitude of the rain gauge.
+    gauge_lon :
+        longitude of the rain gauge.
+    rain_intensity_threshold :
+        Threshold for rainfall intensity in one day (default is 1 mm)
+    accumulation_multiplying_factor :
+        Factor to multiply SDII value for to identify an accumulation of rain recordings (default is 2)
+
+    Returns
+    -------
+    accumulation_threshold :
+        Rain accumulation threshold that is e.g.  2*standard precipitation intensity threshold
+
+    """
+    # 1. Get local mean ETCCDI SDII value (this is the default for SDII in this method)
+    etccdi_sdii = get_local_etccdi_sdii_mean(gauge_lat, gauge_lon)
+    # 2. Filter out world records
+    daily_data_non_wr = get_daily_non_wr_data(data, rain_col)
+    # 3. Calculate simple precipitation intensity index from daily data
+    gauge_sdii = stats.calculate_simple_precip_intensity_index(daily_data_non_wr, rain_col, rain_intensity_threshold)
+    # 4. Get rain gauge accumulation threshold
+    return get_accumulation_threshold(etccdi_sdii, gauge_sdii, accumulation_multiplying_factor)
+
+
+def streaks_check(
+    data: pl.DataFrame,
+    rain_col: str,
+    gauge_lat: int | float,
+    gauge_lon: int | float,
+    accumulation_threshold: float = None,
+) -> pl.DataFrame:
     """
     Check for suspected repeated values.
 
@@ -251,6 +285,12 @@ def streaks_check(data: pl.DataFrame, rain_col: str) -> pl.DataFrame:
         Hourly data with rainfall data.
     rain_col :
         Column with rainfall data.
+    gauge_lat :
+        latitude of the rain gauge.
+    gauge_lon :
+        longitude of the rain gauge.
+    accumulation_threshold :
+        Rain accumulation for detecting possible monthly accumulations
 
     Returns
     -------
@@ -258,9 +298,26 @@ def streaks_check(data: pl.DataFrame, rain_col: str) -> pl.DataFrame:
         Data with streak flags.
 
     """
-    # Step 1. Get streaks of repeated values
+    # 1. Get streaks of repeated values
     streak_data = get_streaks_of_repeated_values(data, rain_col)
-    return streak_data
+
+    # 2. Get accumulation threshold from ETCCDI SDII value, if not given
+    if not accumulation_threshold:
+        accumulation_threshold = get_accumulation_threshold_from_etccdi(
+            data, rain_col, gauge_lat, gauge_lon, rain_intensity_threshold=1.0, accumulation_multiplying_factor=2.0
+        )
+
+    # 3. Flag streaks of 2 or more repeated large values exceeding 2 * mean wet day rainfall (from ETCCDI SDII)
+    streaks_w_value = (
+        streak_data.group_by("streak_id").agg(count=pl.len(), value=pl.col(rain_col).first()).sort(by="streak_id")
+    )
+    streaks_flag1 = streaks_w_value.drop_nans().filter(
+        (pl.col("count") > 2) & (pl.col("value") > accumulation_threshold)
+    )
+    streaks_flag1 = streak_data.with_columns(
+        pl.when(pl.col("streak_id").is_in(streaks_flag1["streak_id"].unique())).then(1).otherwise(0).alias("flag1")
+    )
+    return streaks_flag1
 
 
 def get_streaks_of_repeated_values(data: pl.DataFrame, data_col: str) -> pl.DataFrame:
