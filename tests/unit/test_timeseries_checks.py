@@ -139,4 +139,4 @@ def test_monthly_accumulations_daily(daily_gdsr_data, gdsr_metadata):
 
 
 def test_streaks_check(hourly_gdsr_data):
-    return
+    timeseries_checks.streaks_check(hourly_gdsr_data, rain_col=DEFAULT_RAIN_COL)

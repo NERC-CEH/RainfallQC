@@ -166,7 +166,7 @@ def monthly_accumulations(
     Parameters
     ----------
     data :
-        Hourly rainfall data
+        Daily or Hourly rainfall data
     rain_col :
         Column with rainfall data
     gauge_lat :
@@ -231,6 +231,31 @@ def monthly_accumulations(
         ["time", rain_col, "monthly_accumulation"]
     )
     return gauge_data_monthly_accumulations
+
+
+def streaks_check(data: pl.DataFrame, rain_col: str) -> pl.DataFrame:
+    """
+    Check for suspected repeated values.
+
+    Flags (TODO: change numbers as original includes unuseful 2):
+    1, if streaks of 2 or more repeated values exceeding 2* mean wet day rainfall
+    3, if streaks of 12 or more greater than data resolution
+    4, if streaks of 24 or more greater than zero
+    5, if period of zeros bounded by streaks of >= 24
+
+    Parameters
+    ----------
+    data :
+        Hourly data with rainfall data.
+    rain_col :
+        Column with rainfall data.
+
+    Returns
+    -------
+    data_w_streak_flags :
+        Data with streak flags.
+
+    """
 
 
 def flag_accumulation_based_on_next_dry_spell_duration(
