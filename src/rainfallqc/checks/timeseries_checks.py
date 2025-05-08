@@ -190,6 +190,14 @@ def monthly_accumulations(
     The original method filters out dry spells less than
 
     """
+    # 0. Check time step of data
+    data_utils.check_data_is_specific_time_res(data, time_res=["1h", "1d"])
+    time_step = data_utils.get_data_timestep_as_str(data)
+    if time_step == "1h":
+        min_dry_spell_duration = 720  # roughly 720 hours in month
+    else:
+        min_dry_spell_duration = 30  # roughly 30 days in month
+
     # 1. Get local mean ETCCDI SDII value (this is the default for SDII in this method)
     etccdi_sdii = get_local_etccdi_sdii_mean(gauge_lat, gauge_lon)
 
@@ -213,7 +221,9 @@ def monthly_accumulations(
 
     # 7. Flag monthly (720 h) accumulations
     gauge_data_monthly_accumulations = flag_accumulation_based_on_next_dry_spell_duration(
-        gauge_data_possible_accumulations, min_dry_spell_duration=720, accumulation_col_name="monthly_accumulation"
+        gauge_data_possible_accumulations,
+        min_dry_spell_duration=min_dry_spell_duration,
+        accumulation_col_name="monthly_accumulation",
     )
 
     # 8. Remove unnecessary columns

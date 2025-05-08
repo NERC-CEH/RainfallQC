@@ -6,6 +6,7 @@ Classes and functions ordered alphabetically.
 """
 
 import datetime
+from collections.abc import Sequence
 
 import numpy as np
 import polars as pl
@@ -33,6 +34,38 @@ def check_data_has_consistent_time_step(data: pl.DataFrame) -> None:
     if unique_timesteps.len() != 1:
         timestep_strings = [format_timedelta_duration(td) for td in unique_timesteps]
         raise ValueError(f"Data has a inconsistent time step. Data has following time steps: {timestep_strings}")
+
+
+def check_data_is_specific_time_res(data: pl.DataFrame, time_res: str | list) -> None:
+    """
+    Check data has a hourly or daily time step.
+
+    Parameters
+    ----------
+    data :
+        Data with time column.
+    time_res :
+        Time resolutions either a single string or list of strings
+
+    Raises
+    ------
+    ValueError :
+        If data is not hourly or daily.
+
+    """
+    # Normalize to list
+    if isinstance(time_res, str):
+        allowed_res = [time_res]
+    elif isinstance(time_res, Sequence):
+        allowed_res = list(time_res)
+    else:
+        raise TypeError("time_res must be a string or list of strings")
+
+    # Get actual time step as a string like "1h"
+    time_step = get_data_timestep_as_str(data)
+
+    if time_step not in allowed_res:
+        raise ValueError(f"Invalid time step. Expected one of {allowed_res}, but got: {time_step}")
 
 
 def convert_datarray_seconds_to_days(series_seconds: xr.DataArray) -> np.ndarray:
@@ -65,12 +98,14 @@ def format_timedelta_duration(td: datetime.timedelta) -> str:
     Returns
     -------
     td :
-        human readable timedelta string.
+        Human-readable timedelta string using largest unit (d, h, m, s).
 
     """
     total_seconds = int(td.total_seconds())
 
-    if total_seconds % 3600 == 0:
+    if total_seconds % 86400 == 0:  # 86400 seconds in a day
+        return f"{total_seconds // 86400}d"
+    elif total_seconds % 3600 == 0:
         return f"{total_seconds // 3600}h"
     elif total_seconds % 60 == 0:
         return f"{total_seconds // 60}m"
