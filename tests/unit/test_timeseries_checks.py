@@ -143,7 +143,7 @@ def test_streaks_check(hourly_gdsr_data):
 
 
 def test_get_streaks_of_repeated_values(hourly_gdsr_data):
-    result = timeseries_checks.get_streak_of_repeated_values(
+    result = timeseries_checks.get_streaks_of_repeated_values(
         hourly_gdsr_data,
         data_col=DEFAULT_RAIN_COL,
     )

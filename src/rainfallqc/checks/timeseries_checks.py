@@ -259,11 +259,11 @@ def streaks_check(data: pl.DataFrame, rain_col: str) -> pl.DataFrame:
 
     """
     # Step 1. Get streaks of repeated values
-    streak_data = get_streak_of_repeated_values(data, rain_col)
+    streak_data = get_streaks_of_repeated_values(data, rain_col)
     return streak_data
 
 
-def get_streak_of_repeated_values(data: pl.DataFrame, data_col: str) -> pl.DataFrame:
+def get_streaks_of_repeated_values(data: pl.DataFrame, data_col: str) -> pl.DataFrame:
     """
     Get streaks of repeated values in time series.
 
