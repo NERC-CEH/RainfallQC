@@ -8,7 +8,7 @@ History
 * Add GPCC and GDSR daily fixtures
 * Package ETCCDI data with RainfallQC
 * Add description of each different type of QC check to header of files
-* remove unecessary files
+* remove unnecessary files
 
 0.0.5 (2025-04-29)
 ------------------

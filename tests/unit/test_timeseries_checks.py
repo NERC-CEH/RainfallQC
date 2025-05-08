@@ -3,6 +3,7 @@
 """Tests for time-series QC checks."""
 
 import polars as pl
+import pytest
 
 from rainfallqc.checks import timeseries_checks
 
@@ -18,6 +19,15 @@ def test_dry_period_cdd_check_hourly(hourly_gdsr_data, gdsr_metadata):
         gauge_lon=gdsr_metadata["longitude"],
     )
     assert len(result.filter(pl.col("dry_spell_flag") == 4)) == 2200
+
+    with pytest.raises(ValueError):
+        timeseries_checks.dry_period_cdd_check(
+            hourly_gdsr_data,
+            rain_col=DEFAULT_RAIN_COL,
+            time_res="decadal",
+            gauge_lat=gdsr_metadata["latitude"],
+            gauge_lon=gdsr_metadata["longitude"],
+        )
 
 
 def test_dry_period_cdd_check_daily_gpcc(daily_gpcc_data, gdsr_metadata):
