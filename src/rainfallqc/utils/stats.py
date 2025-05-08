@@ -102,7 +102,7 @@ def pettitt_test(arr: pl.Series | np.ndarray) -> (int | float, int | float):
     return tau, p
 
 
-def calculate_simple_precip_intensity_index(data: pl.DataFrame, rain_col: str, wet_day_threshold: int | float) -> float:
+def simple_precip_intensity_index(data: pl.DataFrame, rain_col: str, wet_day_threshold: int | float) -> float:
     """
     Calculate simple precipitation intensity index.
 

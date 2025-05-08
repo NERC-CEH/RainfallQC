@@ -585,7 +585,7 @@ def get_accumulation_threshold_from_etccdi(
     # 2. Filter out world records
     daily_data_non_wr = get_daily_non_wr_data(data, rain_col)
     # 3. Calculate simple precipitation intensity index from daily data
-    gauge_sdii = stats.calculate_simple_precip_intensity_index(daily_data_non_wr, rain_col, wet_day_threshold)
+    gauge_sdii = stats.simple_precip_intensity_index(daily_data_non_wr, rain_col, wet_day_threshold)
     # 4. Get rain gauge accumulation threshold
     return get_accumulation_threshold(etccdi_sdii, gauge_sdii, accumulation_multiplying_factor)
 
