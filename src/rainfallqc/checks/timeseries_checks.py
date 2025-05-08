@@ -67,7 +67,11 @@ def dry_period_cdd_check(
     # 7. Join data back to main data and flag
     data_w_dry_spell_flags = join_dry_spell_data_back_to_original(data, gauge_dry_spell_lengths_flags)
 
-    return data_w_dry_spell_flags
+    # 8. Join rain col back
+    data_w_dry_spell_flags = data_w_dry_spell_flags.with_columns(pl.lit(data[rain_col]).alias(rain_col))
+
+    # 9. Remove unnecessary columns
+    return data_w_dry_spell_flags.select(["time", rain_col, "dry_spell_flag"])
 
 
 def daily_accumulations(
@@ -80,11 +84,13 @@ def daily_accumulations(
     accumulation_threshold: float = None,
 ) -> pl.DataFrame:
     """
-    Identify suspicious periods when rainfall is preceded by 23 hours with no rain.
+    Identify suspicious periods where an hour of rainfall is preceded by 23 hours with no rain.
 
     Uses a simple precipitation intensity index (SDII) from ETCCDI.
 
     This is QC13 from the IntenseQC framework.
+
+    Please see 'Notes' below for any additional information about the implementation of this method.
 
     Parameters
     ----------
@@ -105,42 +111,271 @@ def daily_accumulations(
 
     Returns
     -------
-    data_w_dry_spell_flags :
-        Data with dry spell flags
+    data_w_daily_accumulation_flags :
+        Data with daily accumulation flags
+
+    Notes
+    -----
+    This method returns only 0 and 1 flags. This differs from the description of the daily accumulation check from
+    IntenseQC. This decision was taken as the IntenseQC python package only returns 0 and 1 flags.
+
+    """
+    # 1. Get local mean ETCCDI SDII value (this is the default for SDII in this method)
+    etccdi_sdii = get_local_etccdi_sdii_mean(gauge_lat, gauge_lon)
+
+    # 2. Filter out world records
+    daily_data_non_wr = get_daily_non_wr_data(data, rain_col)
+
+    # 3. Calculate simple precipitation intensity index from daily data
+    gauge_sdii = stats.calculate_simple_precip_intensity_index(daily_data_non_wr, rain_col, rain_intensity_threshold)
+
+    # 4. Get rain gauge accumulation threshold
+    if not accumulation_threshold:
+        accumulation_threshold = get_accumulation_threshold(accumulation_multiplying_factor, etccdi_sdii, gauge_sdii)
+
+    # 5. Flag monthly accumulations in hourly data based on SDII threshold
+    da_flags = flag_daily_accumulations(data, rain_col, accumulation_threshold)
+
+    # 6. Add daily_accumulation column
+    data = data.with_columns(daily_accumulation=pl.Series(da_flags))
+
+    # 7. Remove unnecessary columns
+    return data.select(["time", rain_col, "daily_accumulation"])
+
+
+def monthly_accumulations(
+    data: pl.DataFrame,
+    rain_col: str,
+    gauge_lat: int | float,
+    gauge_lon: int | float,
+    rain_intensity_threshold: int | float = 1.0,
+    accumulation_multiplying_factor: int | float = 2.0,
+    accumulation_threshold: float = None,
+) -> pl.DataFrame:
+    """
+    Identify suspicious periods when an hour of rainfall is preceded by 1 month with no rain.
+
+    Flags two different types of accumulations:
+    1) dry, when the isolated high value
+    2) wet, when the isolated value is followed by a few more wet values
+
+    Uses a simple precipitation intensity index (SDII) from ETCCDI.
+
+    This is QC14 from the IntenseQC framework.
+
+    Parameters
+    ----------
+    data :
+        Hourly rainfall data
+    rain_col :
+        Column with rainfall data
+    gauge_lat :
+        latitude of the rain gauge
+    gauge_lon :
+        longitude of the rain gauge
+    rain_intensity_threshold :
+        Threshold for rainfall intensity in one day (default is 1 mm)
+    accumulation_multiplying_factor :
+        Factor to multiply SDII value for to identify an accumulation of rain recordings
+    accumulation_threshold :
+        Rain accumulation for detecting possible monthly accumulations
+
+    Returns
+    -------
+    data_w_monthly_accumulation_flags :
+        Data with monthly accumulation flags
+
+    Notes
+    -----
+    The original method filters out dry spells less than
+
+    """
+    # 1. Get local mean ETCCDI SDII value (this is the default for SDII in this method)
+    etccdi_sdii = get_local_etccdi_sdii_mean(gauge_lat, gauge_lon)
+
+    # 2. Filter out world records
+    daily_data_non_wr = get_daily_non_wr_data(data, rain_col)
+
+    # 3. Calculate simple precipitation intensity index from daily data
+    gauge_sdii = stats.calculate_simple_precip_intensity_index(daily_data_non_wr, rain_col, rain_intensity_threshold)
+
+    # 4. Get rain gauge accumulation threshold
+    if not accumulation_threshold:
+        accumulation_threshold = get_accumulation_threshold(accumulation_multiplying_factor, etccdi_sdii, gauge_sdii)
+
+    # 5. Get info about dry spells in rainfall record
+    gauge_dry_spell_info = get_dry_spell_info(data, rain_col)
+
+    # 6. Get possible accumulations
+    gauge_data_possible_accumulations = get_possible_accumulations(
+        gauge_dry_spell_info, rain_col, accumulation_threshold
+    )
+
+    # 7. Flag monthly (720 h) accumulations
+    gauge_data_monthly_accumulations = flag_accumulation_based_on_next_dry_spell_duration(
+        gauge_data_possible_accumulations, min_dry_spell_duration=720, accumulation_col_name="monthly_accumulation"
+    )
+
+    # 8. Remove unnecessary columns
+    gauge_data_monthly_accumulations = gauge_data_monthly_accumulations.select(
+        ["time", rain_col, "monthly_accumulation"]
+    )
+    return gauge_data_monthly_accumulations
+
+
+def flag_accumulation_based_on_next_dry_spell_duration(
+    data: pl.DataFrame, min_dry_spell_duration: int | float, accumulation_col_name: str
+) -> pl.DataFrame:
+    """
+    Flag possible accumulation based on subsequent minimum dry spell duration.
+
+    Flags:
+    2, if dry spell followed with high value then wet period (wet)
+    1, if dry spell followed with high value then no rain for next 23 hours (dry)
+    0, if neither
+
+    Parameters
+    ----------
+    data :
+        Rainfall data with dry spell info and possible accumulation label
+    min_dry_spell_duration :
+        Minimum dry spell duration
+    accumulation_col_name :
+        Name for accumulation column
+
+    Returns
+    -------
+    data_w_flag :
+        Data with accumulation flag
+
+    """
+    return data.with_columns(
+        pl.when(
+            (pl.col("possible_accumulation") == 1)
+            & (pl.col("dry_spell_length").fill_null(0.0) <= min_dry_spell_duration)
+            & (pl.col("next_dry_spell").is_not_null())
+        )
+        .then(2)
+        .when(
+            (pl.col("possible_accumulation") == 1)
+            & (pl.col("dry_spell_length").fill_null(0.0) <= min_dry_spell_duration)
+        )
+        .then(1)
+        .otherwise(0)
+        .alias(accumulation_col_name)
+    )
+
+
+def get_surrounding_dry_spell_lengths(data: pl.DataFrame) -> pl.DataFrame:
+    """
+    Make prev_dry_spell and next_dry_spell columns from dry_spell_lengths.
+
+    Parameters
+    ----------
+    data :
+        Data with dry_spell_lengths
+
+    Returns
+    -------
+    data :
+        Data with columns of previous and next dry spell durations
+
+    """
+    return data.with_columns(
+        prev_dry_spell=pl.col("dry_spell_length").shift(1),
+        next_dry_spell=pl.col("dry_spell_length").shift(-1),
+    )
+
+
+def get_possible_accumulations(
+    gauge_dry_spell_info: pl.DataFrame, rain_col: str, accumulation_threshold: float
+) -> pl.DataFrame:
+    """
+    Get possible accumulations as 0 or 1 based on dry spell info.
+
+    Parameters
+    ----------
+    gauge_dry_spell_info :
+        Rainfall data with columns with dry spell info (durations, first_wet_after_dry, etc.)
+    rain_col :
+        Column with rainfall data
+    accumulation_threshold :
+        Threshold of rainfall intensity
+
+    Returns
+    -------
+    gauge_data_possible_accumulations :
+        Data with 1 is possible accumulation, otherwise 0.
+
+    """
+    # 1. Get values above daily accumulation threshold in one hour
+    gauge_data_possible_accumulations = gauge_dry_spell_info.with_columns(
+        pl.when(pl.col("dry_spell_end") == pl.col("time"))
+        .then(pl.col(rain_col).shift(-1).fill_nan(0.0) > accumulation_threshold)
+        .otherwise(np.nan)
+        .alias("possible_accumulation")
+    )
+
+    # 2. Shift the value along
+    gauge_data_possible_accumulations = gauge_data_possible_accumulations.with_columns(
+        possible_accumulation=pl.col("possible_accumulation").shift(1)
+    )
+
+    return gauge_data_possible_accumulations
+
+
+def get_daily_non_wr_data(data: pl.DataFrame, rain_col: str) -> pl.DataFrame:
+    """
+    Get daily non-world record data.
+
+    Parameters
+    ----------
+    data :
+        Hourly rainfall data
+    rain_col :
+        Column with rainfall data
+
+    Returns
+    -------
+    daily_data_not_wr :
+        Daily rainfall data with world records filtered out
+
+    """
+    # 1. Filter out hourly world records
+    data_not_wr = stats.filter_out_rain_world_records(data, rain_col, time_res="hourly")
+    # 2. Group into daily resolution
+    daily_data = data_not_wr.group_by_dynamic("time", every="1d").agg(pl.col(rain_col).sum())
+    # 3. Filter out daily world records
+    daily_data_not_wr = stats.filter_out_rain_world_records(daily_data, rain_col, time_res="daily")
+    return daily_data_not_wr
+
+
+def get_local_etccdi_sdii_mean(gauge_lat: int | float, gauge_lon: int | float) -> float:
+    """
+    Get the nearby ETCCDI Standard Precipitation Index mean SDII.
+
+    Parameters
+    ----------
+    gauge_lat :
+        latitude of the rain gauge
+    gauge_lon :
+        longitude of the rain gauge
+
+    Returns
+    -------
+    nearby_etccdi_sdii_mean :
+        Local mean SDII value
 
     """
     # 1. Load SDII data
     etccdi_sdii = data_readers.load_etccdi_data(etccdi_var="SDII")
-
     # 2. Compute spatial mean
     etccdi_sdii = spatial_utils.compute_spatial_mean_xr(etccdi_sdii, var_name="SDII")
-
     # 3. Get nearest local CDD value to the gauge coordinates
     nearby_etccdi_sdii = neighbourhood_utils.get_nearest_etccdi_val_to_gauge(etccdi_sdii, gauge_lat, gauge_lon)
-
     # 4. Get local maximum CDD_days value
-    etccdi_sdii = np.max(nearby_etccdi_sdii["SDII_mean"])
-
-    # 5. Filter out world records
-    data_not_wr = stats.filter_out_rain_world_records(data, rain_col, time_res="hourly")
-
-    # 6. Group into daily resolution
-    daily_data = data_not_wr.group_by_dynamic("time", every="1d").agg(pl.col(rain_col).sum())
-
-    # 7. Filter out daily world records
-    daily_data_not_wr = stats.filter_out_rain_world_records(daily_data, rain_col, time_res="daily")
-
-    # 8. Calculate simple precipitation intensity index
-    gauge_sdii = stats.calculate_simple_precip_intensity_index(daily_data_not_wr, rain_col, rain_intensity_threshold)
-
-    # 9. Get rain gauge accumulation threshold
-    if not accumulation_threshold:
-        accumulation_threshold = get_accumulation_threshold(accumulation_multiplying_factor, etccdi_sdii, gauge_sdii)
-
-    # 10. Flag daily accumulations in hourly data based on SDII threshold
-    da_flags = flag_daily_accumulations(data, rain_col, accumulation_threshold)
-
-    return data.with_columns(daily_accumulation=da_flags)
+    nearby_etccdi_sdii_mean = np.max(nearby_etccdi_sdii["SDII_mean"])
+    return nearby_etccdi_sdii_mean
 
 
 def flag_daily_accumulations(data: pl.DataFrame, rain_col: str, accumulation_threshold: float) -> np.ndarray:
@@ -162,7 +397,7 @@ def flag_daily_accumulations(data: pl.DataFrame, rain_col: str, accumulation_thr
         Daily accumulation flags
 
     """
-    # Note uses 24 hour moving window
+    # Note uses 24-hour moving window
     rain_vals = data[rain_col]
     da_flags = np.zeros_like(rain_vals)
     for i in range(len(rain_vals) - 24):
@@ -250,15 +485,15 @@ def join_dry_spell_data_back_to_original(data: pl.DataFrame, dry_spell_lengths_f
     # 1. Make template of new data
     dry_spell_flag_data = pl.DataFrame({"time": data["time"], "dry_spell_flag": np.zeros(data["time"].shape)})
 
-    # 2. Get all problematic flags
-    dry_spell_errors = dry_spell_lengths_flags.filter(pl.col("dry_spell_flag") > 0)
+    # 2. Get all non-0 flags (i.e. suspicious dry spells)
+    dry_spell_non_zero = dry_spell_lengths_flags.filter(pl.col("dry_spell_flag") > 0)
 
     # 3. Loop through problematic flags and label the original data based on duration of dry spell
-    for errored_data_row in dry_spell_errors.iter_rows():
+    for non_zero_data_row in dry_spell_non_zero.iter_rows():
         # overwrite flag
         dry_spell_flag_data = dry_spell_flag_data.with_columns(
-            pl.when((pl.col("time") >= errored_data_row[1]) & (pl.col("time") <= errored_data_row[2]))
-            .then(errored_data_row[4])
+            pl.when((pl.col("time") >= non_zero_data_row[1]) & (pl.col("time") <= non_zero_data_row[2]))
+            .then(non_zero_data_row[4])
             .otherwise(pl.col("dry_spell_flag"))
             .alias("dry_spell_flag")
         )
@@ -319,15 +554,13 @@ def get_dry_spell_duration(data: pl.DataFrame, rain_col: str) -> pl.DataFrame:
         Data with dry spell start, end and duration
 
     """
-    # 1. Get dry spells and their lengths
-    gauge_dry_spells = data.with_columns(
-        (pl.col(rain_col) == 0).cast(pl.Int8()).alias("is_dry"),
-    )
+    # 1. Get dry spells
+    gauge_dry_spells = get_dry_spells(data, rain_col)
+
     # 2. Get consecutive groups of dry spells
-    gauge_dry_spell_groups = gauge_dry_spells.with_columns(
-        ((pl.col("is_dry").diff().fill_null(0) == 1).cum_sum()).alias("dry_group_id")
-    )
-    # 3. Get
+    gauge_dry_spell_groups = get_consecutive_dry_days(gauge_dry_spells)
+
+    # 3. Get dry spell lengths
     gauge_dry_spell_lengths = (
         gauge_dry_spell_groups.filter(pl.col("is_dry") == 1)
         .group_by("dry_group_id")
@@ -341,9 +574,110 @@ def get_dry_spell_duration(data: pl.DataFrame, rain_col: str) -> pl.DataFrame:
     return gauge_dry_spell_lengths
 
 
+def get_first_wet_after_dry_spell(data: pl.DataFrame, rain_col: str) -> pl.DataFrame:
+    """
+    Get first non-zero rainfall value after dry spell.
+
+    Parameters
+    ----------
+    data :
+        Rainfall data
+    rain_col :
+        Column with rainfall data
+
+    Returns
+    -------
+    data_w_first_wet :
+        Data with binary column denoting first wet after dry spell
+
+    """
+    # 1. Get dry spells
+    gauge_dry_spells = get_dry_spells(data, rain_col)
+
+    # 2. Get consecutive groups of dry spells
+    gauge_dry_spell_groups = get_consecutive_dry_days(gauge_dry_spells)
+
+    return gauge_dry_spell_groups.with_columns(
+        pl.when((pl.col("is_dry") == 0) & (pl.col("dry_group_id").diff().fill_null(0) == 1))
+        .then(pl.col("time"))
+        .otherwise(None)
+        .alias("first_wet_after_dry")
+    )
+
+
+def get_dry_spell_info(data: pl.DataFrame, rain_col: str) -> pl.DataFrame:
+    """
+    Get summary of dry spells (i.e. duration and first wet value after dry and previous and next dry spells duration).
+
+    Parameters
+    ----------
+    data :
+        Hourly rainfall data
+    rain_col :
+        Column with rainfall data
+
+    Returns
+    -------
+    gauge_dry_spell_info :
+        Data with dry spell information
+
+    """
+    # 1. Get dry spell durations (with start and end dates)
+    gauge_dry_spell_lengths = get_dry_spell_duration(data, rain_col)
+
+    # 2. Get first wet value after consecutive dry spell
+    gauge_first_wet_after_dry = get_first_wet_after_dry_spell(data, rain_col)
+
+    # 3. Join data together
+    gauge_dry_spell_info = gauge_first_wet_after_dry.join(gauge_dry_spell_lengths, on="dry_group_id", how="left")
+
+    # 4. Get previous and next dry spell durations for flagging
+    return get_surrounding_dry_spell_lengths(gauge_dry_spell_info)
+
+
+def get_consecutive_dry_days(gauge_dry_spells: pl.DataFrame) -> pl.DataFrame:
+    """
+    Get consecutive groups of 0 rainfall days.
+
+    Parameters
+    ----------
+    gauge_dry_spells :
+        Data with 'is_dry' column
+
+    Returns
+    -------
+    gauge_dry_spell_groups :
+        Data with group ids for consecutive dry days
+
+    """
+    return gauge_dry_spells.with_columns(((pl.col("is_dry").diff().fill_null(0) == 1).cum_sum()).alias("dry_group_id"))
+
+
+def get_dry_spells(data: pl.DataFrame, rain_col: str) -> pl.DataFrame:
+    """
+    Get dry spell column.
+
+    Parameters
+    ----------
+    data :
+        Rainfall data
+    rain_col :
+        Column with rainfall data
+
+    Returns
+    -------
+    data_w_dry_spells :
+        Data with is_dry binary column
+
+    """
+    return data.with_columns(
+        (pl.col(rain_col) == 0).cast(pl.Int8()).alias("is_dry"),
+    )
+
+
 def compute_dry_spell_days(dry_spell_data: xr.Dataset) -> xr.Dataset:
     """
-    Compute dry spells in ddys from ETCCDI Consecutive Dry Days data.
+    Compute dry spells in days from ETCCDI Consecutive Dry Days data.
 
     Parameters
     ----------

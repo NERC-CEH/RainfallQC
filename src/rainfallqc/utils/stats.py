@@ -113,7 +113,7 @@ def calculate_simple_precip_intensity_index(data: pl.DataFrame, rain_col: str, w
     rain_col :
         Column with rainfall data
     wet_day_threshold :
-        Threshold for rainfall intensity.
+        Threshold for rainfall intensity in given time period
 
     Returns
     -------
