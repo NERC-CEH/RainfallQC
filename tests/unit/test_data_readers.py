@@ -8,28 +8,28 @@ from rainfallqc.utils import data_readers
 
 
 def test_load_CDD_ETCCDI_data():
-    data_readers.load_ETCCDI_data(etccdi_var="CDD")
+    data_readers.load_etccdi_data(etccdi_var="CDD")
 
 
 def test_load_CWD_ETCCDI_data():
-    data_readers.load_ETCCDI_data(etccdi_var="CWD")
+    data_readers.load_etccdi_data(etccdi_var="CWD")
 
 
 def test_load_PRCPTOT_ETCCDI_data():
-    data_readers.load_ETCCDI_data(etccdi_var="PRCPTOT")
+    data_readers.load_etccdi_data(etccdi_var="PRCPTOT")
 
 
 def test_load_R99p_ETCCDI_data():
-    data_readers.load_ETCCDI_data(etccdi_var="R99p")
+    data_readers.load_etccdi_data(etccdi_var="R99p")
 
 
 def test_load_Rx1day_ETCCDI_data():
-    data_readers.load_ETCCDI_data(etccdi_var="Rx1day")
+    data_readers.load_etccdi_data(etccdi_var="Rx1day")
 
 
 def test_load_SDII_ETCCDI_data():
-    data_readers.load_ETCCDI_data(etccdi_var="SDII")
+    data_readers.load_etccdi_data(etccdi_var="SDII")
 
 
 def test_load_userpath_ETCCDI_data():
-    data_readers.load_ETCCDI_data(etccdi_var="PRCPTOT", path_to_etccdi="./src/rainfallqc/data/ETCCDI/")
+    data_readers.load_etccdi_data(etccdi_var="PRCPTOT", path_to_etccdi="./src/rainfallqc/data/ETCCDI/")

@@ -2,8 +2,10 @@
 """Data loading tools."""
 
 import datetime
+import zipfile
 from importlib import resources
 
+import pandas as pd
 import polars as pl
 import xarray as xr
 
@@ -14,12 +16,12 @@ def read_gdsr_metadata(data_path: str) -> dict:
 
     Parameters
     ----------
-    data_path : str
+    data_path :
         path to GDSR data file (.txt)
 
     Returns
     -------
-    metadata : dict
+    metadata :
         Metadata from GDSR file
 
     """
@@ -36,6 +38,44 @@ def read_gdsr_metadata(data_path: str) -> dict:
                 break
     metadata = convert_gdsr_metadata_dates_to_datetime(metadata)
     return metadata
+
+
+def read_gpcc_data_from_zip(data_path: str, gpcc_file_name: str, rain_col: str) -> dict:
+    """
+    Read the specific format and header of Global Precipitation Climatology Centre (GPCC) files.
+
+    Parameters
+    ----------
+    data_path :
+        path to GPCC zip file
+    gpcc_file_name :
+        Name of GPCC file within zip
+    rain_col :
+        Name of rainfall column
+
+    Returns
+    -------
+    gpcc_data : dict
+        Data from GPCC file
+
+    """
+    # 0. Load GPCC data
+    f = zipfile.ZipFile(data_path).open(gpcc_file_name)
+    gpcc_data = pl.from_pandas(pd.read_csv(f, skiprows=1, header=None, sep=r"\s+"))
+
+    # 1. drop unnecessary columns
+    gpcc_data = gpcc_data.drop([str(i) for i in range(4, 16)])
+
+    # 2. make datetime column (apparently it's 7am-7pm)
+    gpcc_data = gpcc_data.with_columns(pl.datetime(pl.col("2"), pl.col("1"), pl.col("0"), 7).alias("time")).drop(
+        ["0", "1", "2"]
+    )
+
+    # 3. rename and reorder
+    gpcc_data = gpcc_data.rename({"3": rain_col})
+    gpcc_data = gpcc_data.select(["time", rain_col])  # Reorder (to look nice)
+
+    return gpcc_data
 
 
 def convert_gdsr_metadata_dates_to_datetime(gdsr_metadata: dict) -> dict:
@@ -127,7 +167,7 @@ def convert_gdsr_hourly_to_daily(hourly_data: pl.DataFrame, rain_col: str, offse
     )
 
 
-def load_ETCCDI_data(etccdi_var: str, path_to_etccdi: str = None) -> xr.Dataset:
+def load_etccdi_data(etccdi_var: str, path_to_etccdi: str = None) -> xr.Dataset:
     """
     Load ETCCDI data.
 

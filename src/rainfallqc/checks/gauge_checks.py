@@ -154,7 +154,9 @@ def intermittency_check(
     no_data_period_groups = gauge_data_missing_group_counts.filter(pl.col("count") >= no_data_threshold)["group"]
 
     # 5. Select rows belonging to 'no data periods'
-    gauge_data_no_data_periods = gauge_data_missing_groups.filter(pl.col("group").is_in(no_data_period_groups))
+    gauge_data_no_data_periods = gauge_data_missing_groups.filter(
+        pl.col("group").is_in(no_data_period_groups.to_list())
+    )
 
     # 6. Get annual counts of no data periods
     gauge_data_year_counts = gauge_data_no_data_periods.select(pl.col("time").dt.year()).to_series().value_counts()
