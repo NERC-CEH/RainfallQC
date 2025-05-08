@@ -2,6 +2,7 @@
 
 """Tests for time-series QC checks."""
 
+import numpy as np
 import polars as pl
 import pytest
 
@@ -60,16 +61,16 @@ def test_daily_accumulations(hourly_gdsr_data, gdsr_metadata):
         gauge_lon=gdsr_metadata["longitude"],
         rain_intensity_threshold=1.0,
     )
-    assert len(result.filter(pl.col("daily_accumulation") == 1)) == 120
+    assert len(result.filter(pl.col("daily_accumulation") == 1)) == 312
 
     result = timeseries_checks.daily_accumulations(
         hourly_gdsr_data,
         rain_col=DEFAULT_RAIN_COL,
         gauge_lat=gdsr_metadata["latitude"],
         gauge_lon=gdsr_metadata["longitude"],
-        rain_intensity_threshold=2.0,
+        rain_intensity_threshold=4.0,
     )
-    assert len(result.filter(pl.col("daily_accumulation") == 1)) == 72
+    assert len(result.filter(pl.col("daily_accumulation") == 1)) == 264
 
     result = timeseries_checks.daily_accumulations(
         hourly_gdsr_data,
@@ -78,7 +79,7 @@ def test_daily_accumulations(hourly_gdsr_data, gdsr_metadata):
         gauge_lon=gdsr_metadata["longitude"],
         accumulation_multiplying_factor=4,
     )
-    assert len(result.filter(pl.col("daily_accumulation") == 1)) == 120
+    assert len(result.filter(pl.col("daily_accumulation") == 1)) == 168
 
     result = timeseries_checks.daily_accumulations(
         hourly_gdsr_data,
@@ -88,3 +89,12 @@ def test_daily_accumulations(hourly_gdsr_data, gdsr_metadata):
         accumulation_threshold=0.5,
     )
     assert len(result.filter(pl.col("daily_accumulation") == 1)) == 2472
+
+
+def test_get_accumulation_threshold():
+    result = timeseries_checks.get_accumulation_threshold(2, 1, 1)
+    assert result == 2
+    result = timeseries_checks.get_accumulation_threshold(np.nan, 1, 1)
+    assert result == 1
+    result = timeseries_checks.get_accumulation_threshold(2, np.nan, 1)
+    assert result == 2

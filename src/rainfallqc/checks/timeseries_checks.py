@@ -224,9 +224,9 @@ def get_accumulation_threshold(
 
     """
     if np.isnan(etccdi_sdii):
-        accumulation_threshold = etccdi_sdii * accumulation_multiplying_factor
-    else:
         accumulation_threshold = gauge_sdii * accumulation_multiplying_factor
+    else:
+        accumulation_threshold = etccdi_sdii * accumulation_multiplying_factor
     return accumulation_threshold
 
 
