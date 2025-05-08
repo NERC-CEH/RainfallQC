@@ -259,14 +259,14 @@ def streaks_check(
         Data with streak flags.
 
     """
-    # 1. Get streaks of repeated values
-    streak_data = get_streaks_of_repeated_values(data, rain_col)
-
-    # 2. Get accumulation threshold from ETCCDI SDII value, if not given
+    # 1. Get accumulation threshold from ETCCDI SDII value, if not given
     if not accumulation_threshold:
         accumulation_threshold = get_accumulation_threshold_from_etccdi(
             data, rain_col, gauge_lat, gauge_lon, wet_day_threshold=1.0, accumulation_multiplying_factor=2.0
         )
+
+    # 2. Get streaks of repeated values
+    streak_data = get_streaks_of_repeated_values(data, rain_col)
 
     # 3. Flag streaks of 2 or more repeated large values exceeding 2 * mean wet day rainfall (from ETCCDI SDII)
     streak_flag1 = flag_streaks_exceeding_wet_day_rainfall_threshold(
