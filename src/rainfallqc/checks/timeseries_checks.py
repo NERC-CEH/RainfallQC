@@ -486,7 +486,7 @@ def get_streaks_above_threshold(
     )
     # 2. Get streaks above streak length and threshold
     streaks_above_accumulation = data_streak_groups.drop_nans().filter(
-        (pl.col("streak_len") > streak_length) & (pl.col("rain_amount") > value_threshold)
+        (pl.col("streak_len") >= streak_length) & (pl.col("rain_amount") > value_threshold)
     )
     return streaks_above_accumulation
 
