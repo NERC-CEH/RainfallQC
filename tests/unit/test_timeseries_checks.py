@@ -126,3 +126,7 @@ def test_monthly_accumulations(hourly_gdsr_data, gdsr_metadata):
         accumulation_threshold=11,
     )
     assert len(result.filter(pl.col("monthly_accumulation") == 2)) == 23
+
+
+def test_streaks_check(hourly_gdsr_data):
+    return
