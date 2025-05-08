@@ -129,13 +129,17 @@ def test_monthly_accumulations_daily_data(daily_gdsr_data, gdsr_metadata):
 
 
 def test_streaks_check(hourly_gdsr_data, gdsr_metadata):
-    timeseries_checks.streaks_check(
+    result = timeseries_checks.streaks_check(
         hourly_gdsr_data,
         rain_col=DEFAULT_RAIN_COL,
         gauge_lat=gdsr_metadata["latitude"],
         gauge_lon=gdsr_metadata["longitude"],
         data_resolution=gdsr_metadata["resolution"],
     )
+    assert len(result.filter(pl.col("streak_flag1") == 1)) == 31
+    assert len(result.filter(pl.col("streak_flag3") == 3)) == 455
+    assert len(result.filter(pl.col("streak_flag4") == 4)) == 288
+    # assert len(result.filter(pl.col("streak_flag5") == 5)) == 31
 
 
 def test_get_streaks_of_repeated_values(hourly_gdsr_data):
