@@ -308,7 +308,7 @@ def flag_streaks_exceeding_data_resolution(
 
     # 2. Label original data
     data_w_flags = data.with_columns(
-        pl.when(pl.col("streak_id").is_in(streaks_above_accumulation["streak_id"].unique()))
+        pl.when(pl.col("streak_id").is_in(streaks_above_accumulation["streak_id"].unique().to_list()))
         .then(3)
         .otherwise(0)
         .alias("flag3")
@@ -344,7 +344,7 @@ def flag_streaks_exceeding_wet_day_rainfall_threshold(
 
     # 2. Label original data
     data_w_flags = data.with_columns(
-        pl.when(pl.col("streak_id").is_in(streaks_above_accumulation["streak_id"].unique()))
+        pl.when(pl.col("streak_id").is_in(streaks_above_accumulation["streak_id"].unique().to_list()))
         .then(1)
         .otherwise(0)
         .alias("flag1")
