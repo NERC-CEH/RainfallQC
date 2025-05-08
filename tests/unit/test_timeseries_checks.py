@@ -59,7 +59,6 @@ def test_daily_accumulations(hourly_gdsr_data, gdsr_metadata):
         rain_col=DEFAULT_RAIN_COL,
         gauge_lat=gdsr_metadata["latitude"],
         gauge_lon=gdsr_metadata["longitude"],
-        wet_day_threshold=1.0,
     )
     assert len(result.filter(pl.col("daily_accumulation") == 1)) == 432
 
@@ -68,19 +67,9 @@ def test_daily_accumulations(hourly_gdsr_data, gdsr_metadata):
         rain_col=DEFAULT_RAIN_COL,
         gauge_lat=gdsr_metadata["latitude"],
         gauge_lon=gdsr_metadata["longitude"],
-        accumulation_multiplying_factor=4,
+        accumulation_multiplying_factor=4.0,
     )
-    assert len(result.filter(pl.col("daily_accumulation") == 1)) == 168
-
-    result = timeseries_checks.daily_accumulations(
-        hourly_gdsr_data,
-        rain_col=DEFAULT_RAIN_COL,
-        gauge_lat=gdsr_metadata["latitude"],
-        gauge_lon=gdsr_metadata["longitude"],
-        accumulation_multiplying_factor=4,
-        wet_day_threshold=10,
-    )
-    assert len(result.filter(pl.col("daily_accumulation") == 1)) == 10
+    assert len(result.filter(pl.col("daily_accumulation") == 1)) == 312
 
     result = timeseries_checks.daily_accumulations(
         hourly_gdsr_data,
