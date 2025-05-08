@@ -14,7 +14,7 @@ import xarray as xr
 SECONDS_IN_DAY = 86400.0
 
 
-def check_data_has_consistent_time_step(data: pl.Dataset) -> None:
+def check_data_has_consistent_time_step(data: pl.DataFrame) -> None:
     """
     Check data has a consistent time step i.e. '1h'.
 
@@ -78,7 +78,7 @@ def format_timedelta_duration(td: datetime.timedelta) -> str:
         return f"{total_seconds}s"
 
 
-def get_data_time_step_as_str(data: pl.Dataset) -> str:
+def get_data_time_step_as_str(data: pl.DataFrame) -> str:
     """
     Get time step of data.
 
@@ -98,7 +98,7 @@ def get_data_time_step_as_str(data: pl.Dataset) -> str:
     return format_timedelta_duration(unique_timestep[0])
 
 
-def get_data_timesteps(data: pl.Dataset) -> pl.Series:
+def get_data_timesteps(data: pl.DataFrame) -> pl.Series:
     """
     Get data timesteps. Ideally the data should have 1.
 
