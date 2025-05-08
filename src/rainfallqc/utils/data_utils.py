@@ -78,7 +78,7 @@ def format_timedelta_duration(td: datetime.timedelta) -> str:
         return f"{total_seconds}s"
 
 
-def get_data_time_step_as_str(data: pl.DataFrame) -> str:
+def get_data_timestep_as_str(data: pl.DataFrame) -> str:
     """
     Get time step of data.
 
