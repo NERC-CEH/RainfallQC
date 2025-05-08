@@ -5,7 +5,8 @@ All data operations.
 Classes and functions ordered alphabetically.
 """
 
-import datatime
+import datetime
+
 import numpy as np
 import polars as pl
 import xarray as xr
@@ -52,7 +53,7 @@ def convert_datarray_seconds_to_days(series_seconds: xr.DataArray) -> np.ndarray
     return series_seconds.values.astype("timedelta64[s]").astype("float32") / SECONDS_IN_DAY
 
 
-def format_timedelta_duration(td: datatime.timedelta) -> str:
+def format_timedelta_duration(td: datetime.timedelta) -> str:
     """
     Convert timedelta to custom strings.
 
