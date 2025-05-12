@@ -45,3 +45,18 @@ def test_compute_temporal_overlap_days():
         datetime.datetime(2000, 5, 1),
     )
     assert result == 0
+
+
+def test_compute_temporal_overlap_days_from_target_id(gdsr_gauge_network):
+    result = neighbourhood_utils.compute_temporal_overlap_days_from_target_id(gdsr_gauge_network, target_id="DE_00310")
+    assert result.filter(pl.col("station_id") == "DE_02483")["overlap_days"][0] == 1825
+    assert result.filter(pl.col("station_id") == "DE_00389")["overlap_days"][0] == 425
+
+
+def test_get_neighbours_with_min_overlap_days(gdsr_gauge_network):
+    neighbour_overlap_days_df = neighbourhood_utils.compute_temporal_overlap_days_from_target_id(
+        gdsr_gauge_network, target_id="DE_00310"
+    )
+    result = neighbourhood_utils.get_neighbours_with_min_overlap_days(neighbour_overlap_days_df, min_overlap_days=1500)
+    assert len(result) == 8
+    assert len(neighbour_overlap_days_df) == 10

@@ -62,7 +62,7 @@ def compute_temporal_overlap_days(
     """
     Compute temporal overlap in days.
 
-    Note: assumes that the data is contiguous
+    Note: assumes that the data is contiguous.
 
     Parameters
     ----------
@@ -85,6 +85,76 @@ def compute_temporal_overlap_days(
     overlap_end = min(end_1, end_2)
     overlap_days = max(0, (overlap_end - overlap_start).days)
     return overlap_days
+
+
+def compute_temporal_overlap_days_from_target_id(gauge_network_metadata: pl.DataFrame, target_id: str) -> pl.DataFrame:
+    """
+    Compute overlap in days between target gauges and its neighbours.
+
+    Note: assumes that the data is contiguous.
+
+    Parameters
+    ----------
+    gauge_network_metadata :
+        Metadata for gauge network. Each gauge must have 'longitude' and 'latitude'.
+    target_id :
+        Target gauge to compare against.
+
+    Returns
+    -------
+    neighbour_overlap_days_df :
+        Neighbouring gauges with overlap days to target gauge.
+
+    """
+    # 1. Get target station and start and end date
+    target_station = gauge_network_metadata.filter(pl.col("station_id") == target_id)
+    start_1, end_1 = (
+        target_station["start_datetime"].item(),
+        target_station["end_datetime"].item(),
+    )
+
+    # 2. Compute overlap days between target station to other start and end date
+    neighbour_overlap_days = {}
+    for other_station_id, start_2, end_2 in gauge_network_metadata[
+        ["station_id", "start_datetime", "end_datetime"]
+    ].rows():
+        if target_id == other_station_id:
+            continue
+
+        neighbour_overlap_days[other_station_id] = compute_temporal_overlap_days(start_1, end_1, start_2, end_2)
+
+    # 3. Convert to pl.Dataframe
+    neighbour_overlap_days_df = pl.DataFrame(
+        {
+            "station_id": neighbour_overlap_days.keys(),
+            "overlap_days": neighbour_overlap_days.values(),
+        }
+    )
+    return neighbour_overlap_days_df
+
+
+def get_neighbours_with_min_overlap_days(
+    neighbour_overlap_days_df: pl.DataFrame, min_overlap_days: int
+) -> pl.DataFrame:
+    """
+    Get neighbours around gauge at least min_overlap_days of overlapping time steps.
+
+    Note: assumes that the data is contiguous.
+
+    Parameters
+    ----------
+    neighbour_overlap_days_df :
+        Neighbouring gauges with overlap days to target gauge.
+    min_overlap_days :
+        Minimum overlap between target and neighbouring gauges
+
+    Returns
+    -------
+    neighbour_overlap_days_df :
+        Neighbouring gauges with at least min_overlap_days overlap days.
+
+    """
+    return neighbour_overlap_days_df.filter(pl.col("overlap_days") >= min_overlap_days)
 
 
 def get_n_closest_neighbours(
