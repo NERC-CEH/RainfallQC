@@ -2,6 +2,8 @@
 
 """Tests for neighbourhood utility functions."""
 
+import datetime
+
 import polars as pl
 
 from rainfallqc.utils import neighbourhood_utils
@@ -25,3 +27,21 @@ def test_get_n_closest_neighbours(gdsr_gauge_network):
     assert round(result["distance"].min(), 2) == 9.35
     result = neighbourhood_utils.get_n_closest_neighbours(neighbouring_gauges, distance_threshold=10, n_closest=10)
     assert len(result) == 1
+
+
+def test_compute_temporal_overlap_days():
+    result = neighbourhood_utils.compute_temporal_overlap_days(
+        datetime.datetime(2001, 1, 1),
+        datetime.datetime(2004, 5, 1),
+        datetime.datetime(1997, 1, 1),
+        datetime.datetime(2002, 5, 1),
+    )
+    assert result == 485
+
+    result = neighbourhood_utils.compute_temporal_overlap_days(
+        datetime.datetime(2001, 1, 1),
+        datetime.datetime(2004, 5, 1),
+        datetime.datetime(1997, 1, 1),
+        datetime.datetime(2000, 5, 1),
+    )
+    assert result == 0

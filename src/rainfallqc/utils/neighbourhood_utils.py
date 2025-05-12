@@ -5,6 +5,8 @@ All neighbourhood and nearby related operations.
 Classes and functions ordered alphabetically.
 """
 
+import datetime
+
 import geopy.distance
 import polars as pl
 import xarray as xr
@@ -52,6 +54,37 @@ def compute_km_distance_from_target_id(gauge_network_metadata: pl.DataFrame, tar
     )
 
     return neighbour_distances_df
+
+
+def compute_temporal_overlap_days(
+    start_1: datetime.datetime, end_1: datetime.datetime, start_2: datetime.datetime, end_2: datetime.datetime
+) -> int:
+    """
+    Compute temporal overlap in days.
+
+    Note: assumes that the data is contiguous
+
+    Parameters
+    ----------
+    start_1 :
+        Start time of timestamp 1
+    end_1 :
+        End time of timestamp 2
+    start_2 :
+        Start time of timestamp 2
+    end_2 :
+        End time of timestamp 2
+
+    Returns
+    -------
+    overlap_days :
+        Days that overlap between the two timestamps
+
+    """
+    overlap_start = max(start_1, start_2)
+    overlap_end = min(end_1, end_2)
+    overlap_days = max(0, (overlap_end - overlap_start).days)
+    return overlap_days
 
 
 def get_n_closest_neighbours(
