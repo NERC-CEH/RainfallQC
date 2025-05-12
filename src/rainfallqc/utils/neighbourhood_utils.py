@@ -24,7 +24,7 @@ def compute_km_distance_from_target_id(gauge_network_metadata: pl.DataFrame, tar
     Returns
     -------
     neighbour_distances_df :
-        Dataframe with distances to target gauge in kilometers
+        Data of distances to a target gauge in kilometers
 
     """
     # 1. Get target station lat and lon
@@ -47,11 +47,53 @@ def compute_km_distance_from_target_id(gauge_network_metadata: pl.DataFrame, tar
     neighbour_distances_df = pl.DataFrame(
         {
             "station_id": neighbour_distances.keys(),
-            "distances": neighbour_distances.values(),
+            "distance": neighbour_distances.values(),
         }
     )
 
     return neighbour_distances_df
+
+
+def get_n_closest_neighbours(
+    neighbour_distances_df: pl.DataFrame, distance_threshold: int | float, n_closest: int
+) -> pl.DataFrame:
+    """
+    Get closest neighbours from neighbour distances data.
+
+    Will return more than number of n_closest if there is multiple values that are equal at that index.
+    Will not return values that are 0 dist away.
+
+    Parameters
+    ----------
+    neighbour_distances_df :
+        Data of distances to a target gauge
+    distance_threshold :
+        Threshold for maximum distance considered
+    n_closest :
+        Number of closest neighbours.
+
+    Returns
+    -------
+    n_closest_neighbour_df :
+        Data of n_closest neighbours
+
+    """
+    # 1. Subset based on distance threshold
+    close_neighbours = neighbour_distances_df.filter(
+        (pl.col("distance") <= distance_threshold) & (pl.col("distance") != 0)
+    )
+
+    # 2. Sort neighbours by distance
+    sorted_close_neighbours = close_neighbours.sort("distance")
+
+    # 3. Get distances at the n-th position
+    if sorted_close_neighbours.height < n_closest:
+        # 3.1 return all if not enough rows
+        return sorted_close_neighbours
+    else:
+        nth_distance = sorted_close_neighbours[n_closest - 1, "distance"]
+        # 3.2 Filter all neighbours by distance less or equal to nth_closest
+        return sorted_close_neighbours.filter(pl.col("distance") <= nth_distance)
 
 
 def get_nearest_etccdi_val_to_gauge(

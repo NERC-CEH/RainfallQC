@@ -11,5 +11,17 @@ def test_compute_distance_from_target_id(gdsr_gauge_network):
     result = neighbourhood_utils.compute_km_distance_from_target_id(
         gauge_network_metadata=gdsr_gauge_network, target_id="DE_00310"
     )
-    assert round(result.filter(pl.col("station_id") == "DE_02483")["distances"][0], 2) == 13.13
-    assert round(result.filter(pl.col("station_id") == "DE_00310")["distances"][0], 2) == 0.0
+    assert round(result.filter(pl.col("station_id") == "DE_02483")["distance"][0], 2) == 13.13
+    assert round(result.filter(pl.col("station_id") == "DE_00310")["distance"][0], 2) == 0.0
+
+
+def test_get_n_closest_neighbours(gdsr_gauge_network):
+    neighbouring_gauges = neighbourhood_utils.compute_km_distance_from_target_id(
+        gauge_network_metadata=gdsr_gauge_network, target_id="DE_00310"
+    )
+    # distance should be in km
+    result = neighbourhood_utils.get_n_closest_neighbours(neighbouring_gauges, distance_threshold=50, n_closest=10)
+    assert len(result) == 10
+    assert round(result["distance"].min(), 2) == 9.35
+    result = neighbourhood_utils.get_n_closest_neighbours(neighbouring_gauges, distance_threshold=10, n_closest=10)
+    assert len(result) == 1
