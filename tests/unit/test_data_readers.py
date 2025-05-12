@@ -2,6 +2,8 @@
 
 """Tests for data loaders."""
 
+import pytest
+
 from rainfallqc.utils import data_readers
 
 # test when start_datetime not found
@@ -33,3 +35,12 @@ def test_load_SDII_ETCCDI_data():
 
 def test_load_userpath_ETCCDI_data():
     data_readers.load_etccdi_data(etccdi_var="PRCPTOT", path_to_etccdi="./src/rainfallqc/data/ETCCDI/")
+
+
+def test_load_gdsr_gauge_network_metadata():
+    result = data_readers.load_gdsr_gauge_network_metadata(path_to_gdsr_dir="./tests/data/GDSR/")
+    assert len(result.columns) == 21
+    assert len(result) == 11
+
+    with pytest.raises(ValueError):
+        data_readers.load_gdsr_gauge_network_metadata(path_to_gdsr_dir="./tests/data/GDSR_test")

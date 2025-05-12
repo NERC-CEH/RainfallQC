@@ -2,6 +2,8 @@
 """Data loading tools."""
 
 import datetime
+import glob
+import os.path
 import zipfile
 from importlib import resources
 
@@ -40,7 +42,7 @@ def read_gdsr_metadata(data_path: str) -> dict:
     return metadata
 
 
-def read_gpcc_data_from_zip(data_path: str, gpcc_file_name: str, rain_col: str) -> dict:
+def read_gpcc_data_from_zip(data_path: str, gpcc_file_name: str, rain_col: str) -> pl.DataFrame:
     """
     Read the specific format and header of Global Precipitation Climatology Centre (GPCC) files.
 
@@ -187,10 +189,48 @@ def load_etccdi_data(etccdi_var: str, path_to_etccdi: str = None) -> xr.Dataset:
     if not path_to_etccdi:
         netcdf_file = f"RawData_HADEX2_{etccdi_var}_1951-2010_ANN_from-90to90_from-180to180.nc"
         path_to_etccdi_data = resources.files("rainfallqc.data.ETCCDI").joinpath(netcdf_file)
-        return xr.open_dataset(path_to_etccdi_data, decode_timedelta=True)
+        return xr.open_dataset(str(path_to_etccdi_data), decode_timedelta=True)
     else:
         print(f"User defined path to ETCCDI being used: {path_to_etccdi}")
         return xr.open_dataset(
             f"{path_to_etccdi}RawData_HADEX2_{etccdi_var}_1951-2010_ANN_from-90to90_from-180to180.nc",
             decode_timedelta=True,
         )
+
+
+def load_gdsr_gauge_network_metadata(path_to_gdsr_dir: str, file_format: str = ".txt") -> pl.DataFrame:
+    """
+    Load metadata from GDSR gauges from a directory.
+
+    Parameters
+    ----------
+    path_to_gdsr_dir :
+        Path to directory with GDSR gauges
+    file_format :
+        Format of file (default is .txt)
+
+    Returns
+    -------
+    all_station_metadata :
+        All GDSR gauges metadata as one dataframe.
+
+    """
+    # 1. Glob all metadata paths
+    if not os.path.isdir(path_to_gdsr_dir):
+        raise ValueError(f"Invalid GDSR metadata directory at {path_to_gdsr_dir}")
+    all_metadata_data_paths = glob.glob(f"{path_to_gdsr_dir}*{file_format}")
+
+    # 2. Load all GDSR metadata from data
+    all_station_metadata_list = []
+    for file in all_metadata_data_paths:
+        one_station_metadata = read_gdsr_metadata(data_path=file)
+        all_station_metadata_list.append(one_station_metadata)
+
+    # 3. Convert to pl.DataFrame
+    all_station_metadata = pl.from_dicts(all_station_metadata_list)
+
+    all_station_metadata = all_station_metadata.with_columns(
+        pl.col("latitude").cast(pl.Float64), pl.col("longitude").cast(pl.Float64)
+    )
+
+    return all_station_metadata
