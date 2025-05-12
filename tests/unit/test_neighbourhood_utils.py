@@ -10,3 +10,4 @@ def test_compute_distance_from_target_id(gdsr_gauge_network):
         gauge_network_metadata=gdsr_gauge_network, target_id="DE_00310"
     )
     assert round(result["DE_02483"], 2) == 13.13
+    assert round(result["DE_00310"], 2) == 0.0

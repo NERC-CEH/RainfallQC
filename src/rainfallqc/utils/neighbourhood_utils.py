@@ -10,7 +10,7 @@ import polars as pl
 import xarray as xr
 
 
-def compute_km_distance_from_target_id(gauge_network_metadata: pl.DataFrame, target_id: str) -> dict:
+def compute_km_distance_from_target_id(gauge_network_metadata: pl.DataFrame, target_id: str) -> pl.DataFrame:
     """
     Compute kilometre distances between gauges in network and target gauges.
 
@@ -23,16 +23,18 @@ def compute_km_distance_from_target_id(gauge_network_metadata: pl.DataFrame, tar
 
     Returns
     -------
-    neighbour_distances :
-        Distances to target gauge in kilometers
+    neighbour_distances_df :
+        Dataframe with distances to target gauge in kilometers
 
     """
+    # 1. Get target station lat and lon
     target_station = gauge_network_metadata.filter(pl.col("station_id") == target_id)
     target_latlon = (
         target_station["latitude"].item(),
         target_station["longitude"].item(),
     )
 
+    # 2. Calculate lat/lon distances from the target gauge
     neighbour_distances = {}
     for other_station_id, other_lat, other_lon in gauge_network_metadata[
         ["station_id", "latitude", "longitude"]
@@ -40,7 +42,16 @@ def compute_km_distance_from_target_id(gauge_network_metadata: pl.DataFrame, tar
         neighbour_distances[other_station_id] = geopy.distance.geodesic(
             target_latlon, (other_lat, other_lon)
         ).kilometers
-    return neighbour_distances
+
+    # 3. Convert to pl.Dataframe
+    neighbour_distances_df = pl.DataFrame(
+        {
+            "station_id": neighbour_distances.keys(),
+            "distances": neighbour_distances.values(),
+        }
+    )
+
+    return neighbour_distances_df
 
 
 def get_nearest_etccdi_val_to_gauge(
