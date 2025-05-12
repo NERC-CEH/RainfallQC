@@ -6,6 +6,7 @@ import glob
 import os.path
 import zipfile
 from importlib import resources
+from typing import Iterable
 
 import pandas as pd
 import polars as pl
@@ -234,3 +235,29 @@ def load_gdsr_gauge_network_metadata(path_to_gdsr_dir: str, file_format: str = "
     )
 
     return all_station_metadata
+
+
+def get_paths_using_gauge_ids(gauge_ids: Iterable, dir_path: str, file_format: str) -> dict:
+    """
+    Get data path of Gauge IDs.
+
+    Parameters
+    ----------
+    gauge_ids :
+        Array of gauge IDs
+    dir_path :
+        Path to data directory
+    file_format :
+        Format of files in directory.
+
+    Returns
+    -------
+    gauge_paths :
+        Dictionary of gauge ID and path
+
+    """
+    all_data_paths = {}
+    for g_id in gauge_ids:
+        g_id_path = glob.glob(f"{dir_path}{g_id}{file_format}")
+        all_data_paths[g_id] = g_id_path[0]
+    return all_data_paths

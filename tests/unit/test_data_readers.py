@@ -44,3 +44,10 @@ def test_load_gdsr_gauge_network_metadata():
 
     with pytest.raises(ValueError):
         data_readers.load_gdsr_gauge_network_metadata(path_to_gdsr_dir="./tests/data/GDSR_test")
+
+
+def test_get_paths_using_gauge_ids():
+    result = data_readers.get_paths_using_gauge_ids(
+        gauge_ids={"DE_00310", "DE_00390"}, dir_path="./tests/data/GDSR/", file_format=".txt"
+    )
+    assert len(result) == 2

@@ -18,7 +18,7 @@ def get_ids_of_n_nearest_overlapping_neighbouring_gauges(
     distance_threshold: int | float,
     n_closest: int,
     min_overlap_days: int,
-) -> list:
+) -> set:
     """
     Get gauge IDs of nearest n time-overlapping neighbouring gauges.
 
