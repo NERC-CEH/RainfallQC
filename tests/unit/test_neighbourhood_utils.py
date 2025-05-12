@@ -10,7 +10,7 @@ from rainfallqc.utils import neighbourhood_utils
 
 
 def test_compute_distance_from_target_id(gdsr_gauge_network):
-    result = neighbourhood_utils.compute_km_distance_from_target_id(
+    result = neighbourhood_utils.compute_km_distances_from_target_id(
         gauge_network_metadata=gdsr_gauge_network, target_id="DE_00310"
     )
     assert round(result.filter(pl.col("station_id") == "DE_02483")["distance"][0], 2) == 13.13
@@ -18,7 +18,7 @@ def test_compute_distance_from_target_id(gdsr_gauge_network):
 
 
 def test_get_n_closest_neighbours(gdsr_gauge_network):
-    neighbouring_gauges = neighbourhood_utils.compute_km_distance_from_target_id(
+    neighbouring_gauges = neighbourhood_utils.compute_km_distances_from_target_id(
         gauge_network_metadata=gdsr_gauge_network, target_id="DE_00310"
     )
     # distance should be in km
@@ -60,3 +60,15 @@ def test_get_neighbours_with_min_overlap_days(gdsr_gauge_network):
     result = neighbourhood_utils.get_neighbours_with_min_overlap_days(neighbour_overlap_days_df, min_overlap_days=1500)
     assert len(result) == 8
     assert len(neighbour_overlap_days_df) == 10
+
+
+def test_get_ids_of_n_nearest_overlapping_neighbouring_gauges(gdsr_gauge_network):
+    result = neighbourhood_utils.get_ids_of_n_nearest_overlapping_neighbouring_gauges(
+        gdsr_gauge_network, target_id="DE_00310", distance_threshold=50, n_closest=10, min_overlap_days=1500
+    )
+    assert len(result) == 8
+
+    result = neighbourhood_utils.get_ids_of_n_nearest_overlapping_neighbouring_gauges(
+        gdsr_gauge_network, target_id="DE_00310", distance_threshold=50, n_closest=10, min_overlap_days=500
+    )
+    assert len(result) == 9

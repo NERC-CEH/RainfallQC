@@ -12,9 +12,15 @@ import polars as pl
 import xarray as xr
 
 
-def compute_km_distance_from_target_id(gauge_network_metadata: pl.DataFrame, target_id: str) -> pl.DataFrame:
+def get_ids_of_n_nearest_overlapping_neighbouring_gauges(
+    gauge_network_metadata: pl.DataFrame,
+    target_id: str,
+    distance_threshold: int | float,
+    n_closest: int,
+    min_overlap_days: int,
+) -> list:
     """
-    Compute kilometre distances between gauges in network and target gauges.
+    Get gauge IDs of nearest n time-overlapping neighbouring gauges.
 
     Parameters
     ----------
@@ -22,38 +28,44 @@ def compute_km_distance_from_target_id(gauge_network_metadata: pl.DataFrame, tar
         Metadata for gauge network. Each gauge must have 'longitude' and 'latitude'.
     target_id :
         Target gauge to compare against.
+    distance_threshold :
+        Threshold for maximum distance considered
+    n_closest :
+        Number of closest neighbours.
+    min_overlap_days :
+        Minimum overlap between target and neighbouring gauges
 
     Returns
     -------
-    neighbour_distances_df :
-        Data of distances to a target gauge in kilometers
+    neighbouring_gauge_id :
+        IDs of neighbouring gauges within a given distance to target and min overlapping days
 
     """
-    # 1. Get target station lat and lon
-    target_station = gauge_network_metadata.filter(pl.col("station_id") == target_id)
-    target_latlon = (
-        target_station["latitude"].item(),
-        target_station["longitude"].item(),
+    # 1. Compute distances between neighbours and target
+    neighbour_distances_df = compute_km_distances_from_target_id(gauge_network_metadata, target_id=target_id)
+
+    # 2. Compute overlapping days between neighbours and target
+    neighbour_overlap_days_df = compute_temporal_overlap_days_from_target_id(
+        gauge_network_metadata, target_id=target_id
     )
 
-    # 2. Calculate lat/lon distances from the target gauge
-    neighbour_distances = {}
-    for other_station_id, other_lat, other_lon in gauge_network_metadata[
-        ["station_id", "latitude", "longitude"]
-    ].rows():
-        neighbour_distances[other_station_id] = geopy.distance.geodesic(
-            target_latlon, (other_lat, other_lon)
-        ).kilometers
-
-    # 3. Convert to pl.Dataframe
-    neighbour_distances_df = pl.DataFrame(
-        {
-            "station_id": neighbour_distances.keys(),
-            "distance": neighbour_distances.values(),
-        }
+    # 3. Subset n_closest based on distance threshold
+    neighbour_distances_df = get_n_closest_neighbours(
+        neighbour_distances_df, distance_threshold=distance_threshold, n_closest=n_closest
     )
 
-    return neighbour_distances_df
+    # 4. Subset based on min overlap days
+    neighbour_overlap_days_df = get_neighbours_with_min_overlap_days(
+        neighbour_overlap_days_df, min_overlap_days=min_overlap_days
+    )
+
+    # 5. get all ids of neighbouring gauges
+    neighbour_distances_ids = neighbour_distances_df["station_id"].to_list()
+    neighbour_overlap_ids = neighbour_overlap_days_df["station_id"].to_list()
+
+    # 6. Select gauge IDs meeting both conditions
+    all_neighbour_ids = set(neighbour_distances_ids).intersection(set(neighbour_overlap_ids))
+    return all_neighbour_ids
 
 
 def compute_temporal_overlap_days(
@@ -155,6 +167,50 @@ def get_neighbours_with_min_overlap_days(
 
     """
     return neighbour_overlap_days_df.filter(pl.col("overlap_days") >= min_overlap_days)
+
+
+def compute_km_distances_from_target_id(gauge_network_metadata: pl.DataFrame, target_id: str) -> pl.DataFrame:
+    """
+    Compute kilometre distances between gauges in network and target gauges.
+
+    Parameters
+    ----------
+    gauge_network_metadata :
+        Metadata for gauge network. Each gauge must have 'longitude' and 'latitude'.
+    target_id :
+        Target gauge to compare against.
+
+    Returns
+    -------
+    neighbour_distances_df :
+        Data of distances to a target gauge in kilometers
+
+    """
+    # 1. Get target station lat and lon
+    target_station = gauge_network_metadata.filter(pl.col("station_id") == target_id)
+    target_latlon = (
+        target_station["latitude"].item(),
+        target_station["longitude"].item(),
+    )
+
+    # 2. Calculate lat/lon distances from the target gauge
+    neighbour_distances = {}
+    for other_station_id, other_lat, other_lon in gauge_network_metadata[
+        ["station_id", "latitude", "longitude"]
+    ].rows():
+        neighbour_distances[other_station_id] = geopy.distance.geodesic(
+            target_latlon, (other_lat, other_lon)
+        ).kilometers
+
+    # 3. Convert to pl.Dataframe
+    neighbour_distances_df = pl.DataFrame(
+        {
+            "station_id": neighbour_distances.keys(),
+            "distance": neighbour_distances.values(),
+        }
+    )
+
+    return neighbour_distances_df
 
 
 def get_n_closest_neighbours(
