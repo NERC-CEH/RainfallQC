@@ -76,6 +76,11 @@ def daily_gdsr_data() -> pl.DataFrame:
     return gdsr_data_daily
 
 
+@pytest.fixture
+def gdsr_gauge_network() -> pl.DataFrame:
+    return data_readers.load_gdsr_gauge_network_metadata(path_to_gdsr_dir="./tests/data/GDSR/")
+
+
 @pytest.fixture()
 def daily_gpcc_data() -> pl.DataFrame:
     gpcc_data_daily = get_gpcc_data(time_res="tw")
