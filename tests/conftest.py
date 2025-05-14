@@ -100,6 +100,85 @@ def gappy_daily_data() -> pl.DataFrame:
 
 
 @pytest.fixture()
+def gauge_comparison_data():
+    return pl.DataFrame(
+        {
+            "time": pl.date_range(
+                datetime.date(year=2006, month=1, day=1), datetime.date(year=2006, month=1, day=17), eager=True
+            ),
+            "gauge1": [
+                np.nan,
+                np.nan,
+                0.1,
+                None,
+                None,
+                4.0,
+                np.nan,
+                None,
+                None,
+                0.8,
+                None,
+                1.9,
+                0.4,
+                None,
+                1.2,
+                None,
+                2.1,
+            ],
+            "gauge2": [
+                np.nan,
+                np.nan,
+                0.4,
+                None,
+                None,
+                2.1,
+                None,
+                0.0,
+                None,
+                0.2,
+                None,
+                0.7,
+                np.nan,
+                None,
+                1.2,
+                None,
+                0.1,
+            ],
+        }
+    )
+
+
+@pytest.fixture()
+def test_binary_data():
+    return pl.DataFrame(
+        {
+            "time": pl.date_range(
+                datetime.date(year=2006, month=1, day=1), datetime.date(year=2006, month=1, day=17), eager=True
+            ),
+            "col1": [
+                1,
+                1,
+                1,
+                0,
+                1,
+                1,
+                0,
+                1,
+                0,
+                0,
+                1,
+                0,
+                0,
+                1,
+                1,
+                0,
+                0,
+            ],
+        }
+    )
+
+
+@pytest.fixture()
 def inconsistent_timestep_data():
     return pl.DataFrame(
         {
