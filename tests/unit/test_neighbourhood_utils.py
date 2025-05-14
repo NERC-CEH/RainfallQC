@@ -72,3 +72,35 @@ def test_get_ids_of_n_nearest_overlapping_neighbouring_gauges(gdsr_gauge_network
         gdsr_gauge_network, target_id="DE_00310", distance_threshold=50, n_closest=10, min_overlap_days=500
     )
     assert len(result) == 9
+
+
+def test_get_target_neighbour_non_zero_minima(gauge_comparison_data):
+    result = neighbourhood_utils.get_target_neighbour_non_zero_minima(
+        gauge_comparison_data, target_col="gauge1", other_col="gauge2", default_minima=0.1
+    )
+    assert result == 0.1
+    result = neighbourhood_utils.get_target_neighbour_non_zero_minima(
+        gauge_comparison_data, target_col="gauge1", other_col="gauge2", default_minima=1.0
+    )
+    assert result == 1.2
+
+
+def test_get_gauges_not_minima_column_target_or_neighbour(gauge_comparison_data):
+    result = neighbourhood_utils.get_gauges_not_minima_column_target_or_neighbour(
+        gauge_comparison_data, target_col="gauge1", other_col="gauge2", data_minima=0.1
+    )
+    assert result["gauges_not_minima"].value_counts().filter(pl.col("gauges_not_minima") == 0)["count"].item() == 2
+    assert result["gauges_not_minima"].value_counts().filter(pl.col("gauges_not_minima") == 1)["count"].item() == 4
+    result = neighbourhood_utils.get_gauges_not_minima_column_target_or_neighbour(
+        gauge_comparison_data, target_col="gauge1", other_col="gauge2", data_minima=0.7
+    )
+    assert result["gauges_not_minima"].value_counts().filter(pl.col("gauges_not_minima") == 0)["count"].item() == 1
+    assert result["gauges_not_minima"].value_counts().filter(pl.col("gauges_not_minima") == 1)["count"].item() == 2
+    result = neighbourhood_utils.get_gauges_not_minima_column_target_or_neighbour(
+        gauge_comparison_data, target_col="gauge1", other_col="gauge2", data_minima=2.0
+    )
+    assert result["gauges_not_minima"].value_counts().filter(pl.col("gauges_not_minima") == 1)["count"].item() == 1
+
+
+def test_affinity_test(affinity_test_data):
+    return
