@@ -131,7 +131,7 @@ def add_datetime_to_gdsr_data(
     )
 
     date_interval = []
-    delta_days = (end_date + datetime.timedelta(days=1) - start_date).days
+    delta_days = ((end_date + datetime.timedelta(days=1)) - start_date).days
     for i in range(delta_days * multiplying_factor):
         date_interval.append(start_date + datetime.timedelta(hours=i))
 

@@ -20,7 +20,7 @@ def random() -> np.random.Generator:
     return np.random.default_rng(seed=list(map(ord, "𝕽𝔞𝖓𝔡𝖔𝔪")))
 
 
-def get_gdsr_data() -> pl.DataFrame:
+def get_hourly_gdsr_data() -> pl.DataFrame:
     # TODO: maybe randomise this with every call? Or use parameterise
     data_path = "./tests/data/GDSR/DE_02483.txt"
     # read in metadata of gauge
@@ -54,7 +54,7 @@ def get_gpcc_data(time_res: str) -> pl.DataFrame:
 
 @pytest.fixture
 def hourly_gdsr_data() -> pl.DataFrame:
-    return get_gdsr_data()
+    return get_hourly_gdsr_data()
 
 
 @pytest.fixture()
@@ -68,7 +68,7 @@ def gdsr_metadata() -> dict:
 
 @pytest.fixture
 def daily_gdsr_data() -> pl.DataFrame:
-    gdsr_data = get_gdsr_data()
+    gdsr_data = get_hourly_gdsr_data()
     # convert to daily
     gdsr_data_daily = data_readers.convert_gdsr_hourly_to_daily(
         gdsr_data, rain_col=DEFAULT_RAIN_COL, offset=DEFAULT_GDSR_OFFSET
