@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Statistical tests.
+Statistical tests and other indices for rainfall data quality control.
 
 Classes and functions ordered alphabetically.
 
@@ -8,6 +8,8 @@ Classes and functions ordered alphabetically.
 
 import numpy as np
 import polars as pl
+
+from rainfallqc.utils import data_utils
 
 RAINFALL_WORLD_RECORDS = {"hourly": 401.0, "daily": 1825.0}  # mm
 
@@ -37,6 +39,38 @@ def affinity_index(data: pl.DataFrame, binary_col: str, return_match_and_diff: b
     if return_match_and_diff:
         return match, diff, affinity
     return affinity
+
+
+def dry_spell_fraction(rain_daily: pl.DataFrame, rain_col: str, dry_period_days: int) -> pl.Series:
+    """
+    Make dry spell fraction column.
+
+    Parameters
+    ----------
+    rain_daily :
+        Single time-step of rainfall data with 'dry_day' column
+    rain_col :
+        Column with Rainfall data
+    dry_period_days :
+        Dry periods window in days
+
+    Returns
+    -------
+    rain_daily_w_dry_spell_fraction :
+        Single row with dry spell fraction column
+
+    """
+    assert "is_dry" in rain_daily, "No dry_day column found, please run rainfallqc.utils.data_utils.get_dry_spells()"
+
+    # 1. Get dry spells
+    rain_daily_dry_day = data_utils.get_dry_spells(rain_daily, rain_col)
+
+    # 2. Get dry spell fraction
+    rain_daily_dry_day = rain_daily_dry_day.with_columns(
+        dry_spell_fraction=pl.col("is_dry").rolling_sum(window_size=dry_period_days, min_samples=dry_period_days)
+        / dry_period_days
+    )
+    return rain_daily_dry_day["dry_spell_fraction"]
 
 
 def factor_diff(data: pl.DataFrame, target_col: str, other_col: str) -> pl.DataFrame:

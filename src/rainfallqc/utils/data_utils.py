@@ -153,6 +153,28 @@ def get_data_timesteps(data: pl.DataFrame) -> pl.Series:
     return unique_timesteps
 
 
+def get_dry_spells(data: pl.DataFrame, rain_col: str) -> pl.DataFrame:
+    """
+    Get dry spell column.
+
+    Parameters
+    ----------
+    data :
+        Rainfall data
+    rain_col :
+        Column with rainfall data
+
+    Returns
+    -------
+    data_w_dry_spells :
+        Data with is_dry binary column
+
+    """
+    return data.with_columns(
+        (pl.col(rain_col) == 0).cast(pl.Int8()).alias("is_dry"),
+    )
+
+
 def get_normalised_diff(data: pl.DataFrame, target_col: str, other_col: str, diff_col_name: str) -> pl.DataFrame:
     """
     Ger normalised difference between two columns in data.

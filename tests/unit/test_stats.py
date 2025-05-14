@@ -3,8 +3,9 @@
 """Test statistics."""
 
 import polars as pl
+import pytest
 
-from rainfallqc.utils import stats
+from rainfallqc.utils import data_utils, stats
 
 DEFAULT_RAIN_COL = "rain_mm"
 
@@ -50,5 +51,9 @@ def test_factor_diff(gauge_comparison_data):
 
 
 def test_dry_spell_fraction(hourly_gdsr_data):
-    result = stats.dry_spell_fraction(hourly_gdsr_data)
-    assert result["dry_spell_fraction"][4] == 0.5
+    hourly_gdsr_data_w_dry_spells = data_utils.get_dry_spells(hourly_gdsr_data, rain_col=DEFAULT_RAIN_COL)
+    result = stats.dry_spell_fraction(hourly_gdsr_data_w_dry_spells, rain_col=DEFAULT_RAIN_COL, dry_period_days=15)
+    assert round(result[-1], 2) == 0.87
+    assert result.max() == 1.0
+    with pytest.raises(AssertionError):
+        result = stats.dry_spell_fraction(hourly_gdsr_data, rain_col=DEFAULT_RAIN_COL, dry_period_days=15)
