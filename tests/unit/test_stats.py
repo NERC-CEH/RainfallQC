@@ -47,3 +47,8 @@ def test_gauge_correlation(gauge_comparison_data):
 def test_factor_diff(gauge_comparison_data):
     result = stats.factor_diff(gauge_comparison_data, target_col="gauge1", other_col="gauge2")
     assert round(result["factor_diff"][5], 2) == 1.90
+
+
+def test_dry_spell_fraction(hourly_gdsr_data):
+    result = stats.dry_spell_fraction(hourly_gdsr_data)
+    assert result["dry_spell_fraction"][4] == 0.5
