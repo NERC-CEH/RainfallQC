@@ -1,15 +1,85 @@
 # -*- coding: utf-8 -*-
-"""
-All neighbourhood and nearby related operations.
-
-Classes and functions ordered alphabetically.
-"""
+"""All neighbourhood and nearby related operations."""
 
 import datetime
 
 import geopy.distance
+import numpy as np
 import polars as pl
 import xarray as xr
+
+
+def get_target_neighbour_non_zero_minima(
+    data: pl.DataFrame, target_col: str, other_col: str, default_minima: float = 0.1
+) -> float:
+    """
+    Get minimum  non-zero value in rainfall data between target and neighbour.
+
+    Parameters
+    ----------
+    data :
+        Rainfall data
+    target_col :
+        Target rainfall column
+    other_col :
+        Other rainfall column
+    default_minima :
+        Default minimum to use for non-zero value
+
+    Returns
+    -------
+    non_zero_minima :
+        Minimum non-zero value.
+
+    """
+    target_col_min = np.around(data.filter(pl.col(target_col) >= default_minima).min()[target_col], 1)[0]
+    other_col_min = np.around(
+        data.filter(pl.col(other_col) >= default_minima).min()[other_col],
+        1,
+    )[0]
+    non_zero_minima = max(float(target_col_min), float(other_col_min), default_minima)
+    return non_zero_minima
+
+
+def get_gauges_not_minima_column_target_or_neighbour(
+    data: pl.DataFrame, target_col: str, other_col: str, data_minima: float
+) -> pl.DataFrame:
+    """
+    Get values that are not minima rainfall for target or neighbour.
+
+    Parameters
+    ----------
+    data :
+        Rainfall data
+    target_col :
+        Target rainfall column
+    other_col :
+        Other rainfall column
+    data_minima :
+        Data minimum (i.e. lowest non-zero value)
+
+    Returns
+    -------
+    data_w_gauges_not_minima :
+
+    """
+    valid_data = pl.col(target_col).is_not_nan() & pl.col(other_col).is_not_nan()
+    return data.with_columns(
+        pl.when(valid_data & (pl.col(target_col) > data_minima) & (pl.col(other_col) > data_minima))
+        .then(1)
+        .when(
+            valid_data & (pl.col(target_col) == data_minima) & (pl.col(other_col) == data_minima),
+        )
+        .then(1)
+        .when(
+            valid_data & (pl.col(target_col) == data_minima) & (pl.col(other_col) > data_minima),
+        )
+        .then(0)
+        .when(valid_data & (pl.col(target_col) > data_minima) & (pl.col(other_col) == data_minima))
+        .then(0)
+        .otherwise(np.nan)
+        .alias("gauges_not_minima")
+    )
 
 
 def get_ids_of_n_nearest_overlapping_neighbouring_gauges(
