@@ -39,6 +39,33 @@ def affinity_index(data: pl.DataFrame, binary_col: str, return_match_and_diff: b
     return affinity
 
 
+def factor_diff(data: pl.DataFrame, target_col: str, other_col: str) -> pl.DataFrame:
+    """
+    Compute factor diff for polars.
+
+    Parameters
+    ----------
+    data :
+        Rainfall data
+    target_col :
+        Target column to compute factor diff for
+    other_col :
+        Other column to compute factor diff for
+
+    Returns
+    -------
+    data_w_factor_diff :
+        Data with factor diff
+
+    """
+    return data.with_columns(
+        pl.when((pl.col(target_col) > 0) & (pl.col(other_col) > 0))
+        .then(pl.col(target_col) / pl.col(other_col))
+        .otherwise(np.nan)
+        .alias("factor_diff")
+    )
+
+
 def gauge_correlation(data: pl.DataFrame, target_col: str, other_col: str) -> float:
     """
     Calculate correlation between rain gauge data columns.

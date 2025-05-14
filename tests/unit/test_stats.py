@@ -39,3 +39,8 @@ def test_affinity_index(test_binary_data):
 def test_gauge_correlation(gauge_comparison_data):
     result = stats.gauge_correlation(gauge_comparison_data, target_col="gauge1", other_col="gauge2")
     assert round(result, 2) == 0.72
+
+
+def test_factor_diff(gauge_comparison_data):
+    result = stats.factor_diff(gauge_comparison_data, target_col="gauge1", other_col="gauge2")
+    assert round(result["factor_diff"][5], 2) == 1.90

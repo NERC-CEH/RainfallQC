@@ -100,7 +100,3 @@ def test_get_gauges_not_minima_column_target_or_neighbour(gauge_comparison_data)
         gauge_comparison_data, target_col="gauge1", other_col="gauge2", data_minima=2.0
     )
     assert result["gauges_not_minima"].value_counts().filter(pl.col("gauges_not_minima") == 1)["count"].item() == 1
-
-
-def test_affinity_test(affinity_test_data):
-    return
