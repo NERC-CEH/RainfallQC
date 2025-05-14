@@ -34,6 +34,9 @@ def test_simple_precip_intensity_index(hourly_gdsr_data):
 def test_affinity_index(test_binary_data):
     result = stats.affinity_index(test_binary_data, binary_col="col1")
     assert round(result, 2) == 0.53
+    res1, res2, res3 = stats.affinity_index(test_binary_data, binary_col="col1", return_match_and_diff=True)
+    assert res2 == 8
+    assert round(res3, 2) == 0.53
 
 
 def test_gauge_correlation(gauge_comparison_data):
