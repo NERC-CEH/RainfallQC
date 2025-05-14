@@ -153,7 +153,32 @@ def get_data_timesteps(data: pl.DataFrame) -> pl.Series:
     return unique_timesteps
 
 
-def normalise_data(data: pl.Series) -> pl.Series:
+def get_normalised_diff(data: pl.DataFrame, target_col: str, other_col: str, diff_col_name: str) -> pl.DataFrame:
+    """
+    Ger normalised difference between two columns in data.
+
+    Parameters
+    ----------
+    data :
+        Data with columns
+    target_col :
+        Target column
+    other_col :
+        Other column.
+    diff_col_name :
+        New column name for difference column
+
+    Returns
+    -------
+    data_w_norm_diff :
+
+    """
+    return data.with_columns(
+        (normalise_data(pl.col(target_col)) - normalise_data(pl.col(other_col))).alias(diff_col_name)
+    )
+
+
+def normalise_data(data: pl.Series | pl.expr.Expr) -> pl.Series:
     """
     Normalise data to [0, 1].
 

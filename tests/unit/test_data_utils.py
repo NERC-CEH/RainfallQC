@@ -53,5 +53,12 @@ def test_get_data_timestep_as_str(hourly_gdsr_data, inconsistent_timestep_data):
 
 
 def test_normalise_data(hourly_gdsr_data):
-    res = data_utils.normalise_data(hourly_gdsr_data[DEFAULT_RAIN_COL])
-    assert round((res.drop_nans().mean() * 100), 2) == 0.06
+    result = data_utils.normalise_data(hourly_gdsr_data[DEFAULT_RAIN_COL])
+    assert round((result.drop_nans().mean() * 100), 2) == 0.06
+
+
+def test_get_normalised_diff(gauge_comparison_data):
+    result = data_utils.get_normalised_diff(
+        gauge_comparison_data, target_col="gauge1", other_col="gauge2", diff_col_name="diff"
+    )
+    assert round(result["diff"].drop_nans().mean(), 2) == 0.03
