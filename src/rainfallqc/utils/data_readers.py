@@ -85,7 +85,7 @@ def read_gpcc_data_from_zip(data_path: str, gpcc_file_name: str, rain_col: str) 
     return gpcc_data
 
 
-def read_gdsr_data(data_path: str, raw_data_time_res: str, gdsr_header_rows: int = 20) -> pl.DataFrame:
+def read_gdsr_data_from_file(data_path: str, raw_data_time_res: str, gdsr_header_rows: int = 20) -> pl.DataFrame:
     """
     Read GDSR data from file.
 

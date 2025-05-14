@@ -30,7 +30,7 @@ def get_gpcc_data(time_res: str) -> pl.DataFrame:
 @pytest.fixture
 def hourly_gdsr_data() -> pl.DataFrame:
     data_path = "./tests/data/GDSR/DE_02483.txt"  # TODO: maybe randomise this with every call? Or use parameterise
-    return data_readers.read_gdsr_data(data_path, raw_data_time_res="hourly")
+    return data_readers.read_gdsr_data_from_file(data_path, raw_data_time_res="hourly")
 
 
 @pytest.fixture()
@@ -44,7 +44,7 @@ def gdsr_metadata() -> dict:
 @pytest.fixture
 def daily_gdsr_data() -> pl.DataFrame:
     data_path = "./tests/data/GDSR/DE_02483.txt"
-    gdsr_data = data_readers.read_gdsr_data(data_path, raw_data_time_res="hourly")
+    gdsr_data = data_readers.read_gdsr_data_from_file(data_path, raw_data_time_res="hourly")
     # convert to daily
     gdsr_data_daily = data_readers.convert_gdsr_hourly_to_daily(
         gdsr_data, rain_col=DEFAULT_RAIN_COL, offset=DEFAULT_GDSR_OFFSET
