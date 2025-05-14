@@ -12,6 +12,55 @@ import polars as pl
 RAINFALL_WORLD_RECORDS = {"hourly": 401.0, "daily": 1825.0}  # mm
 
 
+def affinity_index(data: pl.DataFrame, binary_col: str, return_match_and_diff: bool = False) -> tuple | float:
+    """
+    Calculate affinity index from binary column.
+
+    Parameters
+    ----------
+    data :
+        Rainfall data
+    binary_col :
+        Column with binary data
+    return_match_and_diff :
+        Whether to return count of matching and difference columns as well as affinity index.
+
+    Returns
+    -------
+    affinity :
+        Affinity index.
+
+    """
+    match = data[binary_col].value_counts().filter(pl.col(binary_col) == 1)["count"].item()
+    diff = data[binary_col].value_counts().filter(pl.col(binary_col) == 0)["count"].item()
+    affinity = match / (match + diff)
+    if return_match_and_diff:
+        return match, diff, affinity
+    return affinity
+
+
+def gauge_correlation(data: pl.DataFrame, target_col: str, other_col: str) -> float:
+    """
+    Calculate correlation between rain gauge data columns.
+
+    Parameters
+    ----------
+    data :
+        Rainfall data
+    target_col :
+        Target rainfall column
+    other_col :
+        Other rainfall column
+
+    Returns
+    -------
+    corr_coef :
+        Correlation coefficient.
+
+    """
+    return np.ma.corrcoef(np.ma.masked_invalid(data[target_col]), np.ma.masked_invalid(data[other_col]))[0, 1]
+
+
 def filter_out_rain_world_records(data: pl.DataFrame, rain_col: str, time_res: str) -> pl.DataFrame:
     """
     Filter out rain world records based on time resolution.
