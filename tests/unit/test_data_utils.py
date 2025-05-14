@@ -50,3 +50,8 @@ def test_get_data_timestep_as_str(hourly_gdsr_data, inconsistent_timestep_data):
     assert result == "1h"
     with pytest.raises(ValueError):
         data_utils.get_data_timestep_as_str(inconsistent_timestep_data)
+
+
+def test_normalise_data(hourly_gdsr_data):
+    res = data_utils.normalise_data(hourly_gdsr_data[DEFAULT_RAIN_COL])
+    assert round((res.drop_nans().mean() * 100), 2) == 0.06

@@ -153,6 +153,24 @@ def get_data_timesteps(data: pl.DataFrame) -> pl.Series:
     return unique_timesteps
 
 
+def normalise_data(data: pl.Series) -> pl.Series:
+    """
+    Normalise data to [0, 1].
+
+    Parameters
+    ----------
+    data :
+        Data with time column.
+
+    Returns
+    -------
+    norm_data :
+        Normalised data.
+
+    """
+    return (data - data.min()) / (data.max() - data.min())
+
+
 def replace_missing_vals_with_nan(
     data: pl.DataFrame,
     rain_col: str,
