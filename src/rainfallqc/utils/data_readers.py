@@ -453,7 +453,8 @@ class GDSRNetworkReader(GaugeNetworkReader):
             Metadata of GDSR gauges.
 
         """
-        return load_gdsr_gauge_network_metadata(self.path_to_gdsr_dir, self.file_format)
+        metadata = load_gdsr_gauge_network_metadata(self.path_to_gdsr_dir, self.file_format)
+        return metadata
 
 
 class GPCCNetworkReader(GaugeNetworkReader):
@@ -475,4 +476,5 @@ class GPCCNetworkReader(GaugeNetworkReader):
             Metadata of GPCC gauges.
 
         """
-        return load_gpcc_gauge_network_metadata(self.path_to_gpcc_dir)
+        metadata = load_gpcc_gauge_network_metadata(self.path_to_gpcc_dir)
+        return metadata
