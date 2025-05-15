@@ -56,4 +56,4 @@ def test_dry_spell_fraction(hourly_gdsr_data):
     assert round(result[-1], 2) == 0.87
     assert result.max() == 1.0
     with pytest.raises(AssertionError):
-        result = stats.dry_spell_fraction(hourly_gdsr_data, rain_col=DEFAULT_RAIN_COL, dry_period_days=15)
+        stats.dry_spell_fraction(hourly_gdsr_data, rain_col=DEFAULT_RAIN_COL, dry_period_days=15)
