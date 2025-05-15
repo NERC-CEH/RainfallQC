@@ -443,7 +443,7 @@ class GDSRNetworkReader(GaugeNetworkReader):
         super().__init__(target_gauge_id, path_to_gdsr_dir)
         self.metadata = self.load_metadata()
 
-    def load_metadata(self) -> dict:
+    def load_metadata(self) -> pl.DataFrame:
         """
         Load metadata from GDSR gauge metadata path.
 
@@ -465,7 +465,7 @@ class GPCCNetworkReader(GaugeNetworkReader):
         super().__init__(target_gauge_id, path_to_gpcc_dir)
         self.metadata = self.load_metadata()
 
-    def load_metadata(self) -> dict:
+    def load_metadata(self) -> pl.DataFrame:
         """
         Load metadata from GPCC gauge metadata path.
 
