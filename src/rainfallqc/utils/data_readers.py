@@ -421,9 +421,8 @@ def get_paths_using_gauge_ids(gauge_ids: Iterable, dir_path: str, file_format: s
 class GaugeNetworkReader(ABC):
     """Base class for reading rain gauge networks."""
 
-    def __init__(self, target_gauge_id: str, path_to_gauge_network: str):
+    def __init__(self, path_to_gauge_network: str):
         """Load network reader."""
-        self.target_gauge_id = target_gauge_id
         self.path_to_gauge_network = path_to_gauge_network
         self.metadata = self.load_metadata()
 
@@ -436,11 +435,11 @@ class GaugeNetworkReader(ABC):
 class GDSRNetworkReader(GaugeNetworkReader):
     """GDSR rain gauge network reader."""
 
-    def __init__(self, target_gauge_id: str, path_to_gdsr_dir: str, file_format: str = "txt"):
+    def __init__(self, path_to_gdsr_dir: str, file_format: str = "txt"):
         """Load network reader."""
         self.path_to_gdsr_dir = path_to_gdsr_dir
         self.file_format = file_format
-        super().__init__(target_gauge_id, path_to_gdsr_dir)
+        super().__init__(path_to_gdsr_dir)
         self.metadata = self.load_metadata()
 
     def load_metadata(self) -> pl.DataFrame:
@@ -460,10 +459,10 @@ class GDSRNetworkReader(GaugeNetworkReader):
 class GPCCNetworkReader(GaugeNetworkReader):
     """GPCC rain gauge network reader."""
 
-    def __init__(self, target_gauge_id: str, path_to_gpcc_dir: str):
+    def __init__(self, path_to_gpcc_dir: str):
         """Load network reader."""
         self.path_to_gpcc_dir = path_to_gpcc_dir
-        super().__init__(target_gauge_id, path_to_gpcc_dir)
+        super().__init__(path_to_gpcc_dir)
         self.metadata = self.load_metadata()
 
     def load_metadata(self) -> pl.DataFrame:
