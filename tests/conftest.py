@@ -12,6 +12,7 @@ from rainfallqc.utils import data_readers
 
 DEFAULT_RAIN_COL = "rain_mm"
 DEFAULT_GDSR_OFFSET = "7h"  # 7 hours
+GPCC_TIME_RES_CONVERSION = {"tw": "daily", "mw": "monthly"}
 
 
 @pytest.fixture
@@ -23,7 +24,9 @@ def get_gpcc_data(time_res: str) -> pl.DataFrame:
     # TODO: maybe randomise this with every call? Or use parameterise
     gpcc_zip_path = f"./tests/data/GPCC/{time_res}_2483.zip"
     gpcc_file_name = f"{time_res}_2483.dat"
-    gpcc_data = data_readers.read_gpcc_data_from_zip(gpcc_zip_path, gpcc_file_name, rain_col=DEFAULT_RAIN_COL)
+    gpcc_data = data_readers.read_gpcc_data_from_zip(
+        gpcc_zip_path, gpcc_file_name, rain_col=DEFAULT_RAIN_COL, time_res=GPCC_TIME_RES_CONVERSION[time_res]
+    )
     return gpcc_data
 
 

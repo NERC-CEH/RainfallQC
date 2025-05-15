@@ -51,3 +51,27 @@ def test_get_paths_using_gauge_ids():
         gauge_ids={"DE_00310", "DE_00390"}, dir_path="./tests/data/GDSR/", file_format=".txt"
     )
     assert len(result) == 2
+
+
+def test_read_gpcc_data_from_zip():
+    result = data_readers.read_gpcc_data_from_zip(
+        data_path="./tests/data/GPCC/tw_310.zip", gpcc_file_name="tw_310.dat", rain_col="rain_mm", time_res="daily"
+    )
+    assert result["rain_mm"][0] == 5.2
+    result = data_readers.read_gpcc_data_from_zip(
+        data_path="./tests/data/GPCC/mw_310.zip", gpcc_file_name="mw_310.dat", rain_col="rain_mm", time_res="monthly"
+    )
+    assert result["rain_mm"][0] == 69.0
+    with pytest.raises(AssertionError):
+        data_readers.read_gpcc_data_from_zip(
+            data_path="./tests/data/GPCC/mw_310", gpcc_file_name="mw_310.dat", rain_col="rain_mm", time_res="monthly"
+        )
+
+
+def test_load_gpcc_gauge_network_metadata():
+    result = data_readers.load_gpcc_gauge_network_metadata(
+        path_to_gpcc_dir="./tests/data/GPCC/", gpcc_file_format=".dat"
+    )
+    assert len(result) == 20
+    assert result["gauge_id"][2] == 6303
+    assert result["location"][5] == "Battenberg-Hof Karlsburg"
