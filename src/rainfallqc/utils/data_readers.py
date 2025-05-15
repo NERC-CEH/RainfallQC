@@ -2,12 +2,19 @@
 """Data loading tools."""
 
 import datetime
+import glob
+import os.path
 import zipfile
 from importlib import resources
+from typing import Iterable
 
 import pandas as pd
 import polars as pl
 import xarray as xr
+
+from rainfallqc.utils import data_utils
+
+MULTIPLYING_FACTORS = {"hourly": 24, "daily": 1}  # compared to daily reference
 
 
 def read_gdsr_metadata(data_path: str) -> dict:
@@ -40,7 +47,7 @@ def read_gdsr_metadata(data_path: str) -> dict:
     return metadata
 
 
-def read_gpcc_data_from_zip(data_path: str, gpcc_file_name: str, rain_col: str) -> dict:
+def read_gpcc_data_from_zip(data_path: str, gpcc_file_name: str, rain_col: str) -> pl.DataFrame:
     """
     Read the specific format and header of Global Precipitation Climatology Centre (GPCC) files.
 
@@ -76,6 +83,48 @@ def read_gpcc_data_from_zip(data_path: str, gpcc_file_name: str, rain_col: str) 
     gpcc_data = gpcc_data.select(["time", rain_col])  # Reorder (to look nice)
 
     return gpcc_data
+
+
+def read_gdsr_data_from_file(data_path: str, raw_data_time_res: str, gdsr_header_rows: int = 20) -> pl.DataFrame:
+    """
+    Read GDSR data from file.
+
+    Note: this was developed on the GDSR data available from IntenseQC. So please number of header rows in data.
+
+    Parameters
+    ----------
+    data_path :
+        Path to GDSR data file
+    raw_data_time_res :
+        Time resolution of data record i.e. 'hourly' or 'daily'
+    gdsr_header_rows :
+        Number of rows to skip in the header of the GSDR data (default=20)
+
+    Returns
+    -------
+    gdsr_data :
+        GDSR data as Pandas DataFrame
+
+    """
+    # read in metadata of gauge
+    gdsr_metadata = read_gdsr_metadata(data_path)
+    rain_col = f"rain_{gdsr_metadata['original_units']}"
+
+    # read in gauge data
+    gdsr_data = pl.read_csv(
+        data_path,
+        skip_rows=gdsr_header_rows,
+        schema_overrides={rain_col: pl.Float64},
+    )
+
+    # add datetime column to data
+    gdsr_data = add_datetime_to_gdsr_data(
+        gdsr_data, gdsr_metadata, multiplying_factor=MULTIPLYING_FACTORS[raw_data_time_res]
+    )
+    gdsr_data = data_utils.replace_missing_vals_with_nan(
+        gdsr_data, rain_col=rain_col, missing_val=int(gdsr_metadata["no_data_value"])
+    )
+    return gdsr_data
 
 
 def convert_gdsr_metadata_dates_to_datetime(gdsr_metadata: dict) -> dict:
@@ -128,7 +177,7 @@ def add_datetime_to_gdsr_data(
     )
 
     date_interval = []
-    delta_days = (end_date + datetime.timedelta(days=1) - start_date).days
+    delta_days = ((end_date + datetime.timedelta(days=1)) - start_date).days
     for i in range(delta_days * multiplying_factor):
         date_interval.append(start_date + datetime.timedelta(hours=i))
 
@@ -187,10 +236,74 @@ def load_etccdi_data(etccdi_var: str, path_to_etccdi: str = None) -> xr.Dataset:
     if not path_to_etccdi:
         netcdf_file = f"RawData_HADEX2_{etccdi_var}_1951-2010_ANN_from-90to90_from-180to180.nc"
         path_to_etccdi_data = resources.files("rainfallqc.data.ETCCDI").joinpath(netcdf_file)
-        return xr.open_dataset(path_to_etccdi_data, decode_timedelta=True)
+        return xr.open_dataset(str(path_to_etccdi_data), decode_timedelta=True)
     else:
         print(f"User defined path to ETCCDI being used: {path_to_etccdi}")
         return xr.open_dataset(
             f"{path_to_etccdi}RawData_HADEX2_{etccdi_var}_1951-2010_ANN_from-90to90_from-180to180.nc",
             decode_timedelta=True,
         )
+
+
+def load_gdsr_gauge_network_metadata(path_to_gdsr_dir: str, file_format: str = ".txt") -> pl.DataFrame:
+    """
+    Load metadata from GDSR gauges from a directory.
+
+    Parameters
+    ----------
+    path_to_gdsr_dir :
+        Path to directory with GDSR gauges
+    file_format :
+        Format of file (default is .txt)
+
+    Returns
+    -------
+    all_station_metadata :
+        All GDSR gauges metadata as one dataframe.
+
+    """
+    # 1. Glob all metadata paths
+    if not os.path.isdir(path_to_gdsr_dir):
+        raise ValueError(f"Invalid GDSR metadata directory at {path_to_gdsr_dir}")
+    all_metadata_data_paths = glob.glob(f"{path_to_gdsr_dir}*{file_format}")
+
+    # 2. Load all GDSR metadata from data
+    all_station_metadata_list = []
+    for file in all_metadata_data_paths:
+        one_station_metadata = read_gdsr_metadata(data_path=file)
+        all_station_metadata_list.append(one_station_metadata)
+
+    # 3. Convert to pl.DataFrame
+    all_station_metadata = pl.from_dicts(all_station_metadata_list)
+
+    all_station_metadata = all_station_metadata.with_columns(
+        pl.col("latitude").cast(pl.Float64), pl.col("longitude").cast(pl.Float64)
+    )
+
+    return all_station_metadata
+
+
+def get_paths_using_gauge_ids(gauge_ids: Iterable, dir_path: str, file_format: str) -> dict:
+    """
+    Get data path of Gauge IDs.
+
+    Parameters
+    ----------
+    gauge_ids :
+        Array of gauge IDs
+    dir_path :
+        Path to data directory
+    file_format :
+        Format of files in directory.
+
+    Returns
+    -------
+    gauge_paths :
+        Dictionary of gauge ID and path
+
+    """
+    all_data_paths = {}
+    for g_id in gauge_ids:
+        g_id_path = glob.glob(f"{dir_path}{g_id}{file_format}")
+        all_data_paths[g_id] = g_id_path[0]
+    return all_data_paths

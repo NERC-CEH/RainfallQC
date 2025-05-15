@@ -25,6 +25,11 @@ def test_check_data_is_specific_time_res(hourly_gdsr_data):
         data_utils.check_data_is_specific_time_res(hourly_gdsr_data, time_res="1d")
 
 
+def test_get_dry_spells(hourly_gdsr_data):
+    result = data_utils.get_dry_spells(hourly_gdsr_data, rain_col=DEFAULT_RAIN_COL)
+    assert "is_dry" in result
+
+
 def test_get_data_timesteps(hourly_gdsr_data, inconsistent_timestep_data):
     result = data_utils.get_data_timesteps(hourly_gdsr_data)
     assert len(result) == 1
@@ -50,3 +55,15 @@ def test_get_data_timestep_as_str(hourly_gdsr_data, inconsistent_timestep_data):
     assert result == "1h"
     with pytest.raises(ValueError):
         data_utils.get_data_timestep_as_str(inconsistent_timestep_data)
+
+
+def test_normalise_data(hourly_gdsr_data):
+    result = data_utils.normalise_data(hourly_gdsr_data[DEFAULT_RAIN_COL])
+    assert round((result.drop_nans().mean() * 100), 2) == 0.06
+
+
+def test_get_normalised_diff(gauge_comparison_data):
+    result = data_utils.get_normalised_diff(
+        gauge_comparison_data, target_col="gauge1", other_col="gauge2", diff_col_name="diff"
+    )
+    assert round(result["diff"].drop_nans().mean(), 2) == 0.03

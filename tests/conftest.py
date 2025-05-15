@@ -8,9 +8,8 @@ import numpy as np
 import polars as pl
 import pytest
 
-from rainfallqc.utils import data_readers, data_utils
+from rainfallqc.utils import data_readers
 
-MULTIPLYING_FACTORS = {"hourly": 24, "daily": 1}  # compared to daily reference
 DEFAULT_RAIN_COL = "rain_mm"
 DEFAULT_GDSR_OFFSET = "7h"  # 7 hours
 
@@ -18,30 +17,6 @@ DEFAULT_GDSR_OFFSET = "7h"  # 7 hours
 @pytest.fixture
 def random() -> np.random.Generator:
     return np.random.default_rng(seed=list(map(ord, "𝕽𝔞𝖓𝔡𝖔𝔪")))
-
-
-def get_gdsr_data() -> pl.DataFrame:
-    # TODO: maybe randomise this with every call? Or use parameterise
-    data_path = "./tests/data/GDSR/DE_02483.txt"
-    # read in metadata of gauge
-    gdsr_metadata = data_readers.read_gdsr_metadata(data_path)
-    rain_col = f"rain_{gdsr_metadata['original_units']}"
-
-    # read in gauge data
-    gdsr_data = pl.read_csv(
-        data_path,
-        skip_rows=20,
-        schema_overrides={rain_col: pl.Float64},
-    )
-
-    # add datetime column to data
-    gdsr_data = data_readers.add_datetime_to_gdsr_data(
-        gdsr_data, gdsr_metadata, multiplying_factor=MULTIPLYING_FACTORS["hourly"]
-    )
-    gdsr_data = data_utils.replace_missing_vals_with_nan(
-        gdsr_data, rain_col=DEFAULT_RAIN_COL, missing_val=int(gdsr_metadata["no_data_value"])
-    )
-    return gdsr_data
 
 
 def get_gpcc_data(time_res: str) -> pl.DataFrame:
@@ -54,7 +29,8 @@ def get_gpcc_data(time_res: str) -> pl.DataFrame:
 
 @pytest.fixture
 def hourly_gdsr_data() -> pl.DataFrame:
-    return get_gdsr_data()
+    data_path = "./tests/data/GDSR/DE_02483.txt"  # TODO: maybe randomise this with every call? Or use parameterise
+    return data_readers.read_gdsr_data_from_file(data_path, raw_data_time_res="hourly")
 
 
 @pytest.fixture()
@@ -62,18 +38,23 @@ def gdsr_metadata() -> dict:
     # TODO: maybe randomise this with every call? Or use parameterise
     data_path = "./tests/data/GDSR/DE_02483.txt"
     # read in metadata of gauge
-    gdsr_metadata = data_readers.read_gdsr_metadata(data_path)
-    return gdsr_metadata
+    return data_readers.read_gdsr_metadata(data_path)
 
 
 @pytest.fixture
 def daily_gdsr_data() -> pl.DataFrame:
-    gdsr_data = get_gdsr_data()
+    data_path = "./tests/data/GDSR/DE_02483.txt"
+    gdsr_data = data_readers.read_gdsr_data_from_file(data_path, raw_data_time_res="hourly")
     # convert to daily
     gdsr_data_daily = data_readers.convert_gdsr_hourly_to_daily(
         gdsr_data, rain_col=DEFAULT_RAIN_COL, offset=DEFAULT_GDSR_OFFSET
     )
     return gdsr_data_daily
+
+
+@pytest.fixture
+def gdsr_gauge_network() -> pl.DataFrame:
+    return data_readers.load_gdsr_gauge_network_metadata(path_to_gdsr_dir="./tests/data/GDSR/")
 
 
 @pytest.fixture()
@@ -113,6 +94,85 @@ def gappy_daily_data() -> pl.DataFrame:
                 12,
                 None,
                 None,
+            ],
+        }
+    )
+
+
+@pytest.fixture()
+def gauge_comparison_data():
+    return pl.DataFrame(
+        {
+            "time": pl.date_range(
+                datetime.date(year=2006, month=1, day=1), datetime.date(year=2006, month=1, day=17), eager=True
+            ),
+            "gauge1": [
+                np.nan,
+                np.nan,
+                0.1,
+                None,
+                None,
+                4.0,
+                np.nan,
+                None,
+                None,
+                0.8,
+                None,
+                1.9,
+                0.4,
+                None,
+                1.2,
+                None,
+                2.1,
+            ],
+            "gauge2": [
+                np.nan,
+                np.nan,
+                0.4,
+                None,
+                None,
+                2.1,
+                None,
+                0.0,
+                None,
+                0.2,
+                None,
+                0.7,
+                np.nan,
+                None,
+                1.2,
+                None,
+                0.1,
+            ],
+        }
+    )
+
+
+@pytest.fixture()
+def test_binary_data():
+    return pl.DataFrame(
+        {
+            "time": pl.date_range(
+                datetime.date(year=2006, month=1, day=1), datetime.date(year=2006, month=1, day=17), eager=True
+            ),
+            "col1": [
+                1,
+                1,
+                1,
+                0,
+                1,
+                1,
+                0,
+                1,
+                0,
+                0,
+                1,
+                0,
+                0,
+                1,
+                1,
+                0,
+                0,
             ],
         }
     )

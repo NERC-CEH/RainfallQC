@@ -2,6 +2,11 @@
 History
 =======
 
+0.1.0 (2025-05-09)
+------------------
+* Add QC16-QC25
+* Add neighbourhood utility functions
+
 0.0.6 (2025-05-09)
 ------------------
 * Add QC12-QC15

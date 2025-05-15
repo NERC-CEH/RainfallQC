@@ -319,7 +319,7 @@ def flag_streaks_of_zero_bounded_by_days(data: pl.DataFrame, rain_col: str) -> p
     )
 
     # 2. get dry spells
-    streak_w_dry_spells = get_dry_spells(data_streak_groups, rain_col="rain_amount")
+    streak_w_dry_spells = data_utils.get_dry_spells(data_streak_groups, rain_col="rain_amount")
 
     # 3. Flag streaks of multiples of 1 day
     streaks_w_flag5 = streak_w_dry_spells.with_columns(
@@ -895,7 +895,7 @@ def get_dry_spell_duration(data: pl.DataFrame, rain_col: str) -> pl.DataFrame:
 
     """
     # 1. Get dry spells
-    gauge_dry_spells = get_dry_spells(data, rain_col)
+    gauge_dry_spells = data_utils.get_dry_spells(data, rain_col)
 
     # 2. Get consecutive groups of dry spells
     gauge_dry_spell_groups = get_consecutive_dry_days(gauge_dry_spells)
@@ -932,7 +932,7 @@ def get_first_wet_after_dry_spell(data: pl.DataFrame, rain_col: str) -> pl.DataF
 
     """
     # 1. Get dry spells
-    gauge_dry_spells = get_dry_spells(data, rain_col)
+    gauge_dry_spells = data_utils.get_dry_spells(data, rain_col)
 
     # 2. Get consecutive groups of dry spells
     gauge_dry_spell_groups = get_consecutive_dry_days(gauge_dry_spells)
@@ -991,28 +991,6 @@ def get_consecutive_dry_days(gauge_dry_spells: pl.DataFrame) -> pl.DataFrame:
 
     """
     return gauge_dry_spells.with_columns(((pl.col("is_dry").diff().fill_null(0) == 1).cum_sum()).alias("dry_group_id"))
-
-
-def get_dry_spells(data: pl.DataFrame, rain_col: str) -> pl.DataFrame:
-    """
-    Get dry spell column.
-
-    Parameters
-    ----------
-    data :
-        Rainfall data
-    rain_col :
-        Column with rainfall data
-
-    Returns
-    -------
-    data_w_dry_spells :
-        Data with is_dry binary column
-
-    """
-    return data.with_columns(
-        (pl.col(rain_col) == 0).cast(pl.Int8()).alias("is_dry"),
-    )
 
 
 def compute_dry_spell_days(dry_spell_data: xr.Dataset) -> xr.Dataset:
