@@ -153,6 +153,71 @@ def get_data_timesteps(data: pl.DataFrame) -> pl.Series:
     return unique_timesteps
 
 
+def get_dry_spells(data: pl.DataFrame, rain_col: str) -> pl.DataFrame:
+    """
+    Get dry spell column.
+
+    Parameters
+    ----------
+    data :
+        Rainfall data
+    rain_col :
+        Column with rainfall data
+
+    Returns
+    -------
+    data_w_dry_spells :
+        Data with is_dry binary column
+
+    """
+    return data.with_columns(
+        (pl.col(rain_col) == 0).cast(pl.Int8()).alias("is_dry"),
+    )
+
+
+def get_normalised_diff(data: pl.DataFrame, target_col: str, other_col: str, diff_col_name: str) -> pl.DataFrame:
+    """
+    Ger normalised difference between two columns in data.
+
+    Parameters
+    ----------
+    data :
+        Data with columns
+    target_col :
+        Target column
+    other_col :
+        Other column.
+    diff_col_name :
+        New column name for difference column
+
+    Returns
+    -------
+    data_w_norm_diff :
+
+    """
+    return data.with_columns(
+        (normalise_data(pl.col(target_col)) - normalise_data(pl.col(other_col))).alias(diff_col_name)
+    )
+
+
+def normalise_data(data: pl.Series | pl.expr.Expr) -> pl.Series:
+    """
+    Normalise data to [0, 1].
+
+    Parameters
+    ----------
+    data :
+        Data with time column.
+
+    Returns
+    -------
+    norm_data :
+        Normalised data.
+
+    """
+    return (data - data.min()) / (data.max() - data.min())
+
+
 def replace_missing_vals_with_nan(
     data: pl.DataFrame,
     rain_col: str,
