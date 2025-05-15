@@ -13,6 +13,7 @@ import polars as pl
 import xarray as xr
 
 SECONDS_IN_DAY = 86400.0
+TEMPORAL_CONVERSIONS = {"hourly": "1h", "daily": "1d", "monthly": "1mo"}
 
 
 def check_data_has_consistent_time_step(data: pl.DataFrame) -> None:
@@ -61,9 +62,13 @@ def check_data_is_specific_time_res(data: pl.DataFrame, time_res: str | list) ->
     else:
         raise TypeError("time_res must be a string or list of strings")
 
+    # add terms like 'hourly', 'daily' or 'monthly'
+    for time_conv in TEMPORAL_CONVERSIONS:
+        if time_res == time_conv:
+            allowed_res.append(TEMPORAL_CONVERSIONS[time_res])
+
     # Get actual time step as a string like "1h"
     time_step = get_data_timestep_as_str(data)
-
     if time_step not in allowed_res:
         raise ValueError(f"Invalid time step. Expected one of {allowed_res}, but got: {time_step}")
 
