@@ -413,7 +413,7 @@ def get_paths_using_gauge_ids(gauge_ids: Iterable, dir_path: str, file_format: s
     """
     all_data_paths = {}
     for g_id in gauge_ids:
-        g_id_path = glob.glob(f"{dir_path}{g_id}{file_format}")
+        g_id_path = glob.glob(f"{dir_path}*{g_id}*{file_format}")
         try:
             all_data_paths[g_id] = g_id_path[0]
         except IndexError:
@@ -481,7 +481,7 @@ class GDSRNetworkReader(GaugeNetworkReader):
 class GPCCNetworkReader(GaugeNetworkReader):
     """GPCC rain gauge network reader."""
 
-    def __init__(self, path_to_gpcc_dir: str, file_format: str = ".dat"):
+    def __init__(self, path_to_gpcc_dir: str, file_format: str = ".zip"):
         """Load network reader."""
         self.path_to_gpcc_dir = path_to_gpcc_dir
         self.file_format = file_format
