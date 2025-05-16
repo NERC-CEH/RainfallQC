@@ -11,7 +11,7 @@ import os.path
 import zipfile
 from abc import ABC, abstractmethod
 from importlib import resources
-from typing import Iterable
+from typing import Iterable, List
 
 import pandas as pd
 import polars as pl
@@ -307,7 +307,7 @@ def add_datetime_to_gdsr_data(
 
 
 def convert_gdsr_hourly_to_daily(
-    hourly_data: pl.DataFrame, rain_col: str, hour_offset: int = GDSR_HOUR_OFFSET
+    hourly_data: pl.DataFrame, rain_cols: List[str], hour_offset: int = GDSR_HOUR_OFFSET
 ) -> pl.DataFrame:
     """
     Group hourly data into daily and check for at least 24 daily time steps per day.
@@ -316,8 +316,8 @@ def convert_gdsr_hourly_to_daily(
     ----------
     hourly_data :
         Hourly rainfall data
-    rain_col :
-        Column with rainfall data
+    rain_cols :
+        List of column with rainfall data
     hour_offset :
         Time offset in hours (default is 7)
 
@@ -327,10 +327,12 @@ def convert_gdsr_hourly_to_daily(
         Daily rainfall data
 
     """
+    agg_exprs = [pl.len().alias("n_hours")]
+    agg_exprs += [pl.col(col).mean().round(1).alias(col) for col in rain_cols]
     # resample into daily (also round to 1 decimal place)
     return (
-        hourly_data.group_by_dynamic("time", every="1d", offset=str(hour_offset) + "h", closed="right")
-        .agg([pl.len().alias("n_hours"), pl.col(rain_col).mean().round(1).alias(rain_col)])
+        hourly_data.group_by_dynamic("time", every="1d", offset=f"{hour_offset}h", closed="right")
+        .agg(agg_exprs)
         .filter(pl.col("n_hours") == 24)
         .drop("n_hours")
     )

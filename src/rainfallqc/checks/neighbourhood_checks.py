@@ -9,7 +9,7 @@ Classes and functions ordered by appearance in IntenseQC framework.
 
 import polars as pl
 
-from rainfallqc.utils import data_utils
+from rainfallqc.utils import data_readers, data_utils
 
 
 def wet_neighbour_check(all_neighbour_data: pl.DataFrame, target_gauge_col: str, time_res: str) -> pl.DataFrame:
@@ -19,7 +19,7 @@ def wet_neighbour_check(all_neighbour_data: pl.DataFrame, target_gauge_col: str,
     Parameters
     ----------
     all_neighbour_data :
-        Data of all neighbouring gauges
+        Rainfall data of all neighbouring gauges with time col
     target_gauge_col :
         Target gauge column
     time_res :
@@ -32,4 +32,10 @@ def wet_neighbour_check(all_neighbour_data: pl.DataFrame, target_gauge_col: str,
 
     """
     data_utils.check_data_is_specific_time_res(all_neighbour_data, time_res)
+
+    # 1. Resample to daily
+    if time_res == "hourly":
+        rain_cols = all_neighbour_data.columns[1:]  # get rain columns
+        all_neighbour_data = data_readers.convert_gdsr_hourly_to_daily(all_neighbour_data, rain_cols=rain_cols)
+
     return all_neighbour_data[target_gauge_col]
