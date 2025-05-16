@@ -11,7 +11,7 @@ import pytest
 from rainfallqc.utils import data_readers
 
 DEFAULT_RAIN_COL = "rain_mm"
-DEFAULT_GDSR_OFFSET = "7h"  # 7 hours
+DEFAULT_GDSR_OFFSET = 7  # 7 hours
 GPCC_TIME_RES_CONVERSION = {"tw": "daily", "mw": "monthly"}
 
 
@@ -50,7 +50,7 @@ def daily_gdsr_data() -> pl.DataFrame:
     gdsr_data = data_readers.read_gdsr_data_from_file(data_path, raw_data_time_res="hourly")
     # convert to daily
     gdsr_data_daily = data_readers.convert_gdsr_hourly_to_daily(
-        gdsr_data, rain_col=DEFAULT_RAIN_COL, offset=DEFAULT_GDSR_OFFSET
+        gdsr_data, rain_col=DEFAULT_RAIN_COL, hour_offset=DEFAULT_GDSR_OFFSET
     )
     return gdsr_data_daily
 
