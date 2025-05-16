@@ -431,7 +431,7 @@ class GaugeNetworkReader(ABC):
         self.metadata = self.load_metadata()
 
     @abstractmethod
-    def load_metadata(self) -> dict:
+    def _load_metadata(self) -> dict:
         """Must be implemented by subclasses to load gauge network metadata."""
         pass
 
@@ -449,10 +449,10 @@ class GDSRNetworkReader(GaugeNetworkReader):
         self.path_to_gdsr_dir = path_to_gdsr_dir
         self.file_format = file_format
         super().__init__(path_to_gdsr_dir)
-        self.metadata = self.load_metadata()
-        self.data_paths = self.get_data_paths()
+        self.metadata = self._load_metadata()
+        self.data_paths = self._get_data_paths()
 
-    def load_metadata(self) -> pl.DataFrame:
+    def _load_metadata(self) -> pl.DataFrame:
         """
         Load metadata from GDSR gauge metadata path.
 
@@ -465,7 +465,7 @@ class GDSRNetworkReader(GaugeNetworkReader):
         metadata = load_gdsr_gauge_network_metadata(self.path_to_gdsr_dir, self.file_format)
         return metadata
 
-    def get_data_paths(self) -> dict:
+    def _get_data_paths(self) -> dict:
         """
         Get paths to gauge network of GDSR gauges.
 
@@ -487,10 +487,10 @@ class GPCCNetworkReader(GaugeNetworkReader):
         self.path_to_gpcc_dir = path_to_gpcc_dir
         self.file_format = file_format
         super().__init__(path_to_gpcc_dir)
-        self.metadata = self.load_metadata()
-        self.data_paths = self.get_data_paths()
+        self.metadata = self._load_metadata()
+        self.data_paths = self._get_data_paths()
 
-    def load_metadata(self) -> pl.DataFrame:
+    def _load_metadata(self) -> pl.DataFrame:
         """
         Load metadata from GPCC gauge metadata path.
 
@@ -503,7 +503,7 @@ class GPCCNetworkReader(GaugeNetworkReader):
         metadata = load_gpcc_gauge_network_metadata(self.path_to_gpcc_dir)
         return metadata
 
-    def get_data_paths(self) -> dict:
+    def _get_data_paths(self) -> dict:
         """
         Get paths to gauge network of GPCC gauges.
 
