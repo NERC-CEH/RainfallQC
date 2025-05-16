@@ -124,7 +124,15 @@ def test_gpcc_network_nearest_neighbours():
 
 def test_gpcc_network_load_network_data():
     gpcc_obj = data_readers.GPCCNetworkReader(path_to_gpcc_dir="./tests/data/GPCC/", time_res="tw")
-    gpcc_obj.load_network_data(data_paths=["./tests/data/GPCC/tw_310.zip"], rain_col=DEFAULT_RAIN_COL)
+    result = gpcc_obj.load_network_data(
+        data_paths=["./tests/data/GPCC/tw_310.zip", "./tests/data/GPCC/tw_480.zip", "./tests/data/GPCC/tw_6303.zip"],
+        rain_col=DEFAULT_RAIN_COL,
+    )
+    print(result)
+    assert len(result.columns) == 4
+    assert result[-2]["rain_mm_tw_310"].item() == 0.9
+    assert result[-2]["rain_mm_tw_480"].item() == 0.3
+    assert result[-2]["rain_mm_tw_6303"].item() == 4.7
 
     gpcc_obj = data_readers.GPCCNetworkReader(path_to_gpcc_dir="./tests/data/GPCC/", time_res="mw")
     gpcc_obj.load_network_data(data_paths=["./tests/data/GPCC/mw_310.zip"], rain_col=DEFAULT_RAIN_COL)

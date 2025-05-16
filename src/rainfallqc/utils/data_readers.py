@@ -22,6 +22,8 @@ from rainfallqc.utils import data_utils, neighbourhood_utils
 MULTIPLYING_FACTORS = {"hourly": 24, "daily": 1}  # compared to daily reference
 GDSR_TIME_RES_CONVERSION = {"1hr": "hourly", "1d": "daily", "1mo": "monthly"}
 GPCC_TIME_RES_CONVERSION = {"tw": "daily", "mw": "monthly"}
+GDSR_HOUR_OFFSET = 7  # Apparently the data runs from 7am to 7am
+GPCC_HOUR_OFFSET = 7  # Apparently the GDSR data runs from 7am to 7am, so this converts it for comparison
 
 
 def read_gdsr_metadata(data_path: str) -> dict:
@@ -86,14 +88,18 @@ def read_gpcc_metadata_from_zip(data_path: str, time_res: str, gpcc_file_format:
     # get start and end date (assumes the data is in time order)
     if time_res == "daily":
         start_datetime = datetime.datetime(
-            year=int(first_data_row[2]), month=int(first_data_row[1]), day=int(first_data_row[0]), hour=7
+            year=int(first_data_row[2]), month=int(first_data_row[1]), day=int(first_data_row[0]), hour=GPCC_HOUR_OFFSET
         )
         end_datetime = datetime.datetime(
-            year=int(last_data_row[2]), month=int(last_data_row[1]), day=int(last_data_row[0]), hour=7
+            year=int(last_data_row[2]), month=int(last_data_row[1]), day=int(last_data_row[0]), hour=GPCC_HOUR_OFFSET
         )
     elif time_res == "monthly":
-        start_datetime = datetime.datetime(year=int(first_data_row[1]), month=int(first_data_row[0]), day=1)
-        end_datetime = datetime.datetime(year=int(last_data_row[1]), month=int(last_data_row[0]), day=1)
+        start_datetime = datetime.datetime(
+            year=int(first_data_row[1]), month=int(first_data_row[0]), day=1, hour=GPCC_HOUR_OFFSET
+        )
+        end_datetime = datetime.datetime(
+            year=int(last_data_row[1]), month=int(last_data_row[0]), day=1, hour=GPCC_HOUR_OFFSET
+        )
     else:
         raise ValueError(f"Time resolution={time_res} not recognized. Please use 'daily' or 'monthly'")
 
@@ -109,76 +115,6 @@ def read_gpcc_metadata_from_zip(data_path: str, time_res: str, gpcc_file_format:
         "location": " ".join(gpcc_headers[4:]),  # Join remaining parts as location name
     }
     return gpcc_metadata
-
-
-def read_gpcc_data_from_zip(
-    data_path: str, gpcc_file_name: str, rain_col: str, time_res: str, missing_val: int | float = -999
-) -> pl.DataFrame:
-    """
-    Read the specific format and header of Global Precipitation Climatology Centre (GPCC) files.
-
-    Parameters
-    ----------
-    data_path :
-        path to GPCC zip file
-    gpcc_file_name :
-        Name of GPCC file within zip
-    rain_col :
-        Name of rainfall column
-    time_res :
-        'daily' or 'monthly'
-    missing_val :
-        Missing value (default: -999)
-
-    Returns
-    -------
-    gpcc_data : dict
-        Data from GPCC file
-
-    """
-    assert ".zip" in data_path, "Data needs to be a zip file"
-    # 0. Load GPCC data
-    f = zipfile.ZipFile(data_path).open(gpcc_file_name)
-    gpcc_data = pl.from_pandas(pd.read_csv(f, skiprows=1, header=None, sep=r"\s+"))
-
-    if time_res == "daily":
-        # 1. drop unnecessary columns
-        gpcc_data = gpcc_data.drop([str(i) for i in range(4, len(gpcc_data.columns))])
-        # 2. make daily datetime column (apparently it's 7am-7pm)
-        gpcc_data = gpcc_data.with_columns(pl.datetime(pl.col("2"), pl.col("1"), pl.col("0"), 7).alias("time")).drop(
-            ["0", "1", "2"]
-        )
-        # 3. rename and reorder
-        gpcc_data = gpcc_data.rename({"3": rain_col})
-    elif time_res == "monthly":
-        # 1. drop unnecessary columns
-        gpcc_data = gpcc_data.drop([str(i) for i in range(3, len(gpcc_data.columns))])
-        # 2. make monthly datetime column
-        gpcc_data = gpcc_data.with_columns(pl.datetime(year=pl.col("1"), month=pl.col("0"), day=1).alias("time")).drop(
-            ["0", "1"]
-        )
-        # 3. rename and reorder
-        gpcc_data = gpcc_data.rename({"2": rain_col})
-    else:
-        raise ValueError(f"Time resolution={time_res} not recognized. Please use 'daily' or 'monthly'")
-
-    # 4. Check data is specific format
-    try:
-        data_utils.check_data_is_specific_time_res(gpcc_data, time_res)
-    except ValueError as ve:
-        print(ve)
-        print(f"Attempting to resample into {time_res}")
-        gpcc_data = gpcc_data.group_by_dynamic("time", every=data_utils.TEMPORAL_CONVERSIONS[time_res]).agg(
-            pl.col(rain_col).first()
-        )
-
-    # 5. Select time and rain col
-    gpcc_data = gpcc_data.select(["time", rain_col])  # Reorder (to look nice)
-
-    # 6. Replace missing value
-    gpcc_data = data_utils.replace_missing_vals_with_nan(gpcc_data, rain_col=rain_col, missing_val=missing_val)
-
-    return gpcc_data
 
 
 def read_gdsr_data_from_file(data_path: str, raw_data_time_res: str, gdsr_header_rows: int = 20) -> pl.DataFrame:
@@ -221,6 +157,83 @@ def read_gdsr_data_from_file(data_path: str, raw_data_time_res: str, gdsr_header
         gdsr_data, rain_col=rain_col, missing_val=int(gdsr_metadata["no_data_value"])
     )
     return gdsr_data
+
+
+def read_gpcc_data_from_zip(
+    data_path: str,
+    gpcc_file_name: str,
+    rain_col: str,
+    time_res: str,
+    hour_offset: int = GPCC_HOUR_OFFSET,
+    missing_val: int | float = -999,
+) -> pl.DataFrame:
+    """
+    Read the specific format and header of Global Precipitation Climatology Centre (GPCC) files.
+
+    Parameters
+    ----------
+    data_path :
+        path to GPCC zip file
+    gpcc_file_name :
+        Name of GPCC file within zip
+    rain_col :
+        Name of rainfall column
+    time_res :
+        'daily' or 'monthly'
+    hour_offset :
+        Hours to offset grouped data by (default is 7)
+    missing_val :
+        Missing value (default: -999)
+
+    Returns
+    -------
+    gpcc_data : dict
+        Data from GPCC file
+
+    """
+    assert ".zip" in data_path, "Data needs to be a zip file"
+    # 0. Load GPCC data
+    f = zipfile.ZipFile(data_path).open(gpcc_file_name)
+    gpcc_data = pl.from_pandas(pd.read_csv(f, skiprows=1, header=None, sep=r"\s+"))
+
+    if time_res == "daily":
+        # 1. drop unnecessary columns
+        gpcc_data = gpcc_data.drop([str(i) for i in range(4, len(gpcc_data.columns))])
+        # 2. make daily datetime column (apparently it's 7am-7pm)
+        gpcc_data = gpcc_data.with_columns(
+            pl.datetime(pl.col("2"), pl.col("1"), pl.col("0"), hour_offset).alias("time")
+        ).drop(["0", "1", "2"])
+        # 3. rename and reorder
+        gpcc_data = gpcc_data.rename({"3": rain_col})
+    elif time_res == "monthly":
+        # 1. drop unnecessary columns
+        gpcc_data = gpcc_data.drop([str(i) for i in range(3, len(gpcc_data.columns))])
+        # 2. make monthly datetime column
+        gpcc_data = gpcc_data.with_columns(pl.datetime(year=pl.col("1"), month=pl.col("0"), day=1).alias("time")).drop(
+            ["0", "1"]
+        )
+        # 3. rename and reorder
+        gpcc_data = gpcc_data.rename({"2": rain_col})
+    else:
+        raise ValueError(f"Time resolution={time_res} not recognized. Please use 'daily' or 'monthly'")
+
+    # 4. Check data is specific format
+    try:
+        data_utils.check_data_is_specific_time_res(gpcc_data, time_res)
+    except ValueError as ve:
+        print(ve)
+        print(f"Attempting to resample into {time_res}")
+        gpcc_data = gpcc_data.group_by_dynamic(
+            "time", every=data_utils.TEMPORAL_CONVERSIONS[time_res], offset=str(hour_offset) + "h"
+        ).agg(pl.col(rain_col).first())
+
+    # 5. Select time and rain col
+    gpcc_data = gpcc_data.select(["time", rain_col])  # Reorder (to look nice)
+
+    # 6. Replace missing value
+    gpcc_data = data_utils.replace_missing_vals_with_nan(gpcc_data, rain_col=rain_col, missing_val=missing_val)
+
+    return gpcc_data
 
 
 def convert_gdsr_metadata_dates_to_datetime(gdsr_metadata: dict) -> dict:
@@ -284,7 +297,9 @@ def add_datetime_to_gdsr_data(
     return gdsr_data
 
 
-def convert_gdsr_hourly_to_daily(hourly_data: pl.DataFrame, rain_col: str, offset: str) -> pl.DataFrame:
+def convert_gdsr_hourly_to_daily(
+    hourly_data: pl.DataFrame, rain_col: str, hour_offset: int = GDSR_HOUR_OFFSET
+) -> pl.DataFrame:
     """
     Group hourly data into daily and check for at least 24 daily time steps per day.
 
@@ -294,8 +309,8 @@ def convert_gdsr_hourly_to_daily(hourly_data: pl.DataFrame, rain_col: str, offse
         Hourly rainfall data
     rain_col :
         Column with rainfall data
-    offset :
-        Time offset in hours
+    hour_offset :
+        Time offset in hours (default is 7)
 
     Returns
     -------
@@ -305,7 +320,7 @@ def convert_gdsr_hourly_to_daily(hourly_data: pl.DataFrame, rain_col: str, offse
     """
     # resample into daily (also round to 1 decimal place)
     return (
-        hourly_data.group_by_dynamic("time", every="1d", offset=offset, closed="right")
+        hourly_data.group_by_dynamic("time", every="1d", offset=str(hour_offset) + "h", closed="right")
         .agg([pl.len().alias("n_hours"), pl.col(rain_col).mean().round(1).alias(rain_col)])
         .filter(pl.col("n_hours") == 24)
         .drop("n_hours")
@@ -633,17 +648,28 @@ class GPCCNetworkReader(GaugeNetworkReader):
             Dataframe of GPCC gauges.
 
         """
-        for zip_path in data_paths:
-            gpcc_file_name = zip_path.split("/")[-1]
-            assert self.time_res in gpcc_file_name, (
-                f"Wrong time resolution for metadata: {self.time_res} & {gpcc_file_name}"
+        for ind, zip_path in enumerate(data_paths):
+            # 1. Split file name and check time res is correct
+            gpcc_zip_file_name = zip_path.split("/")[-1]
+            assert self.time_res in gpcc_zip_file_name, (
+                f"Wrong time resolution for metadata: {self.time_res} & {gpcc_zip_file_name}"
             )
-            gpcc_file_name = gpcc_file_name.split(".zip")[0] + self.unzipped_file_format
+            gpcc_file_name = gpcc_zip_file_name.split(".zip")[0]
+            gpcc_unzipped_file_name = gpcc_file_name + self.unzipped_file_format
+
+            # 2. Read in one gauge
             one_gauge = read_gpcc_data_from_zip(
                 data_path=zip_path,
-                rain_col=rain_col,
-                gpcc_file_name=gpcc_file_name,
+                rain_col=f"{rain_col}_{gpcc_file_name}",
+                gpcc_file_name=gpcc_unzipped_file_name,
                 time_res=GPCC_TIME_RES_CONVERSION[self.time_res],
                 missing_val=missing_val,
             )
-        return one_gauge
+
+            # 2. Join data together
+            if ind == 0:
+                all_data = one_gauge
+            else:
+                all_data = all_data.join(one_gauge, on="time", how="full", coalesce=True)
+                all_data = all_data.sort("time")
+        return all_data
