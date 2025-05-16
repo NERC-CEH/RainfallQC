@@ -435,10 +435,10 @@ class GaugeNetworkReader(ABC):
         """Must be implemented by subclasses to load gauge network metadata."""
         pass
 
-    @abstractmethod
-    def load_network_data(self) -> pl.DataFrame:
-        """Must be implemented by subclasses to load gauge network data."""
-        pass
+    # @abstractmethod
+    # def load_network_data(self) -> pl.DataFrame:
+    #     """Must be implemented by subclasses to load gauge network data."""
+    #     pass
 
 
 class GDSRNetworkReader(GaugeNetworkReader):
@@ -464,9 +464,9 @@ class GDSRNetworkReader(GaugeNetworkReader):
         metadata = load_gdsr_gauge_network_metadata(self.path_to_gdsr_dir, self.file_format)
         return metadata
 
-    def load_network_data(self) -> pl.DataFrame:
+    def get_data_paths(self) -> dict:
         """
-        Load gauge network of GDSR gauges.
+        Get paths to gauge network of GDSR gauges.
 
         Returns
         -------
@@ -501,9 +501,9 @@ class GPCCNetworkReader(GaugeNetworkReader):
         metadata = load_gpcc_gauge_network_metadata(self.path_to_gpcc_dir)
         return metadata
 
-    def load_network_data(self) -> pl.DataFrame:
+    def get_data_paths(self) -> dict:
         """
-        Load gauge network of GDSR gauges.
+        Get paths to gauge network of GPCC gauges.
 
         Returns
         -------
