@@ -9,31 +9,31 @@ from rainfallqc.utils import data_readers
 # test when start_datetime not found
 
 
-def test_load_CDD_ETCCDI_data():
+def test_load_cdd_etccdi_data():
     data_readers.load_etccdi_data(etccdi_var="CDD")
 
 
-def test_load_CWD_ETCCDI_data():
+def test_load_cwd_etccdi_data():
     data_readers.load_etccdi_data(etccdi_var="CWD")
 
 
-def test_load_PRCPTOT_ETCCDI_data():
+def test_load_prcptot_etccdi_data():
     data_readers.load_etccdi_data(etccdi_var="PRCPTOT")
 
 
-def test_load_R99p_ETCCDI_data():
+def test_load_r99p_etccdi_data():
     data_readers.load_etccdi_data(etccdi_var="R99p")
 
 
-def test_load_Rx1day_ETCCDI_data():
+def test_load_rx1day_etccdi_data():
     data_readers.load_etccdi_data(etccdi_var="Rx1day")
 
 
-def test_load_SDII_ETCCDI_data():
+def test_load_sdii_etccdi_data():
     data_readers.load_etccdi_data(etccdi_var="SDII")
 
 
-def test_load_userpath_ETCCDI_data():
+def test_load_userpath_etccdi_data():
     data_readers.load_etccdi_data(etccdi_var="PRCPTOT", path_to_etccdi="./src/rainfallqc/data/ETCCDI/")
 
 
@@ -74,11 +74,17 @@ def test_read_gpcc_data_from_zip():
 
 def test_load_gpcc_gauge_network_metadata():
     result = data_readers.load_gpcc_gauge_network_metadata(
-        path_to_gpcc_dir="./tests/data/GPCC/", gpcc_file_format=".dat"
+        path_to_gpcc_dir="./tests/data/GPCC/", time_res="mw", gpcc_file_format=".dat"
     )
-    assert len(result) == 20
-    assert result["station_id"][2] == 6303
-    assert result["location"][5] == "Battenberg-Hof Karlsburg"
+    assert len(result) == 10
+    assert result["station_id"][2] == 310
+    assert result["location"][5] == "Kahler Asten"
+    result = data_readers.load_gpcc_gauge_network_metadata(
+        path_to_gpcc_dir="./tests/data/GPCC/", time_res="tw", gpcc_file_format=".dat"
+    )
+    assert len(result) == 10
+    assert result["station_id"][2] == 5360
+    assert result["location"][5] == "Erndtebruck-Birkelbach"
 
 
 def test_gdsr_network_reader():
@@ -88,6 +94,6 @@ def test_gdsr_network_reader():
 
 
 def test_gpcc_network_reader():
-    gpcc_obj = data_readers.GPCCNetworkReader(path_to_gpcc_dir="./tests/data/GPCC/")
+    gpcc_obj = data_readers.GPCCNetworkReader(path_to_gpcc_dir="./tests/data/GPCC/", time_res="tw")
     assert hasattr(gpcc_obj, "metadata")
     assert hasattr(gpcc_obj, "data_paths")

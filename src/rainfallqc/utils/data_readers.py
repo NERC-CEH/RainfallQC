@@ -355,7 +355,9 @@ def load_gdsr_gauge_network_metadata(path_to_gdsr_dir: str, file_format: str = "
     return all_station_metadata
 
 
-def load_gpcc_gauge_network_metadata(path_to_gpcc_dir: str, gpcc_file_format: str = ".dat") -> pl.DataFrame:
+def load_gpcc_gauge_network_metadata(
+    path_to_gpcc_dir: str, time_res: str, gpcc_file_format: str = ".dat"
+) -> pl.DataFrame:
     """
     Load metadata from GPCC gauges from a directory.
 
@@ -363,6 +365,8 @@ def load_gpcc_gauge_network_metadata(path_to_gpcc_dir: str, gpcc_file_format: st
     ----------
     path_to_gpcc_dir :
         Path to directory with GPCC gauges
+    time_res :
+        Time resolution (e.g. 'mw' or 'tw')
     gpcc_file_format :
         Format of file (default is .dat)
 
@@ -375,7 +379,7 @@ def load_gpcc_gauge_network_metadata(path_to_gpcc_dir: str, gpcc_file_format: st
     # 1. Glob all metadata paths
     if not os.path.isdir(path_to_gpcc_dir):
         raise ValueError(f"Invalid GPCC metadata directory at {path_to_gpcc_dir}")
-    all_metadata_data_paths = glob.glob(f"{path_to_gpcc_dir}*.zip")
+    all_metadata_data_paths = glob.glob(f"{path_to_gpcc_dir}*{time_res}*.zip")
 
     # 2. Load all GPCC metadata from data
     all_station_metadata_list = []
@@ -481,10 +485,11 @@ class GDSRNetworkReader(GaugeNetworkReader):
 class GPCCNetworkReader(GaugeNetworkReader):
     """GPCC rain gauge network reader."""
 
-    def __init__(self, path_to_gpcc_dir: str, file_format: str = ".zip"):
+    def __init__(self, path_to_gpcc_dir: str, time_res: str, file_format: str = ".zip"):
         """Load network reader."""
         self.path_to_gpcc_dir = path_to_gpcc_dir
         self.file_format = file_format
+        self.time_res = time_res
         super().__init__(path_to_gpcc_dir)
         self.data_paths = self._get_data_paths()
 
@@ -498,7 +503,7 @@ class GPCCNetworkReader(GaugeNetworkReader):
             Metadata of GPCC gauges.
 
         """
-        metadata = load_gpcc_gauge_network_metadata(self.path_to_gpcc_dir)
+        metadata = load_gpcc_gauge_network_metadata(self.path_to_gpcc_dir, self.time_res)
         return metadata
 
     def _get_data_paths(self) -> dict:
