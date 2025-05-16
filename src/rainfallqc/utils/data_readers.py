@@ -142,26 +142,29 @@ def read_gdsr_data_from_file(
         GDSR data as Pandas DataFrame
 
     """
-    # read in metadata of gauge
+    # 1. read in metadata of gauge
     gdsr_metadata = read_gdsr_metadata(data_path)
     rain_col_name = f"rain_{gdsr_metadata['original_units']}"
     if rain_col_suffix:
         rain_col_name += f"_{rain_col_suffix}"
 
-    # read in gauge data
+    # 2. read in gauge data
     gdsr_data = pl.read_csv(
         data_path,
         skip_rows=gdsr_header_rows,
         schema_overrides={rain_col_name: pl.Float64},
     )
 
-    # add datetime column to data
+    # 3. add datetime column to data
     gdsr_data = add_datetime_to_gdsr_data(
         gdsr_data, gdsr_metadata, multiplying_factor=MULTIPLYING_FACTORS[raw_data_time_res]
     )
     gdsr_data = data_utils.replace_missing_vals_with_nan(
         gdsr_data, rain_col=rain_col_name, missing_val=int(gdsr_metadata["no_data_value"])
     )
+
+    # 4. Select time and rain col
+    gdsr_data = gdsr_data.select(["time", rain_col_name])  # Reorder (to look nice)
     return gdsr_data
 
 

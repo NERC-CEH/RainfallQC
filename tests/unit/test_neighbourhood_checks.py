@@ -9,10 +9,10 @@ DISTANCE_THRESHOLD = 50  # 50 km
 OVERLAP_THRESHOLD = 365 * 3  # three years
 
 
-def test_wet_neighbour_check(daily_gpcc_network):
+def test_wet_neighbour_check_daily(daily_gpcc_network):
     assert len(daily_gpcc_network) == 32142
     neighbourhood_checks.wet_neighbour_check(
-        daily_gpcc_network, rain_col=DEFAULT_RAIN_COL, target_gauge_id="DE_00310", time_res="hourly"
+        daily_gpcc_network, target_gauge_col=f"{DEFAULT_RAIN_COL}_tw_{310}", time_res="daily"
     )
 
 

@@ -12,9 +12,7 @@ import polars as pl
 from rainfallqc.utils import data_utils
 
 
-def wet_neighbour_check(
-    all_neighbour_data: pl.DataFrame, rain_col: str, target_gauge_id: str, time_res: str
-) -> pl.DataFrame:
+def wet_neighbour_check(all_neighbour_data: pl.DataFrame, target_gauge_col: str, time_res: str) -> pl.DataFrame:
     """
     Run neighbour check (wet) for hourly or daily data.
 
@@ -22,10 +20,8 @@ def wet_neighbour_check(
     ----------
     all_neighbour_data :
         Data of all neighbouring gauges
-    rain_col :
-        Column with rainfall data
-    target_gauge_id :
-        Target gauge id
+    target_gauge_col :
+        Target gauge column
     time_res :
         Time resolution of data
 
@@ -36,4 +32,4 @@ def wet_neighbour_check(
 
     """
     data_utils.check_data_is_specific_time_res(all_neighbour_data, time_res)
-    return all_neighbour_data[rain_col]
+    return all_neighbour_data[target_gauge_col]
