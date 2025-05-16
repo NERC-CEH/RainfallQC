@@ -6,7 +6,9 @@ import pytest
 
 from rainfallqc.utils import data_readers
 
-# test when start_datetime not found
+DEFAULT_RAIN_COL = "rain_mm"
+
+# TODO: test when start_datetime not found
 
 
 def test_load_cdd_etccdi_data():
@@ -101,6 +103,11 @@ def test_gdsr_network_nearest_neighbours():
     assert sorted(list(result)) == ["DE_02483", "DE_02718", "DE_06303"]
 
 
+def test_gdsr_network_load_network_data():
+    gdsr_obj = data_readers.GDSRNetworkReader(path_to_gdsr_dir="./tests/data/GDSR/")
+    gdsr_obj.load_network_data(data_paths=["./tests/data/GDSR/DE_06303.txt"])
+
+
 def test_gpcc_network_reader():
     gpcc_obj = data_readers.GPCCNetworkReader(path_to_gpcc_dir="./tests/data/GPCC/", time_res="tw")
     assert hasattr(gpcc_obj, "metadata")
@@ -113,3 +120,15 @@ def test_gpcc_network_nearest_neighbours():
         target_id="310", distance_threshold=30, n_closest=3, min_overlap_days=1000
     )
     assert sorted(list(result)) == ["2483", "480", "5610"]
+
+
+def test_gpcc_network_load_network_data():
+    gpcc_obj = data_readers.GPCCNetworkReader(path_to_gpcc_dir="./tests/data/GPCC/", time_res="tw")
+    gpcc_obj.load_network_data(data_paths=["./tests/data/GPCC/tw_310.zip"], rain_col=DEFAULT_RAIN_COL)
+
+    gpcc_obj = data_readers.GPCCNetworkReader(path_to_gpcc_dir="./tests/data/GPCC/", time_res="mw")
+    gpcc_obj.load_network_data(data_paths=["./tests/data/GPCC/mw_310.zip"], rain_col=DEFAULT_RAIN_COL)
+
+    with pytest.raises(AssertionError):
+        gpcc_obj = data_readers.GPCCNetworkReader(path_to_gpcc_dir="./tests/data/GPCC/", time_res="tw")
+        gpcc_obj.load_network_data(data_paths=["./tests/data/GPCC/mw_310.zip"], rain_col=DEFAULT_RAIN_COL)

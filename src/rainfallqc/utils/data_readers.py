@@ -20,6 +20,7 @@ import xarray as xr
 from rainfallqc.utils import data_utils, neighbourhood_utils
 
 MULTIPLYING_FACTORS = {"hourly": 24, "daily": 1}  # compared to daily reference
+GDSR_TIME_RES_CONVERSION = {"1hr": "hourly", "1d": "daily", "1mo": "monthly"}
 GPCC_TIME_RES_CONVERSION = {"tw": "daily", "mw": "monthly"}
 
 
@@ -508,6 +509,7 @@ class GDSRNetworkReader(GaugeNetworkReader):
         super().__init__(path_to_gdsr_dir)
         self.data_paths = self._get_data_paths()
         self.metadata = self._add_paths_to_metadata()
+        self.time_res = self.metadata["new_timestep"][0]
 
     def _load_metadata(self) -> pl.DataFrame:
         """
@@ -540,14 +542,42 @@ class GDSRNetworkReader(GaugeNetworkReader):
             pl.col("station_id").map_elements(self.data_paths.get, return_dtype=pl.Utf8).alias("path")
         )
 
+    def load_network_data(self, data_paths: Iterable, gdsr_header_rows: int = 20) -> pl.DataFrame:
+        """
+        Load GDSR network data based on file paths.
+
+        Parameters
+        ----------
+        data_paths :
+            Paths to load network data from.
+        gdsr_header_rows :
+            Number of rows to skip in the header of the GSDR data (default=20)
+
+        Returns
+        -------
+        network_data :
+            Dataframe of GDSR gauges.
+
+        """
+        for path in data_paths:
+            one_gauge = read_gdsr_data_from_file(
+                data_path=path,
+                raw_data_time_res=GDSR_TIME_RES_CONVERSION[self.time_res],
+                gdsr_header_rows=gdsr_header_rows,
+            )
+        return one_gauge
+
 
 class GPCCNetworkReader(GaugeNetworkReader):
     """GPCC rain gauge network reader."""
 
-    def __init__(self, path_to_gpcc_dir: str, time_res: str, file_format: str = ".zip"):
+    def __init__(
+        self, path_to_gpcc_dir: str, time_res: str, file_format: str = ".zip", unzipped_file_format: str = ".dat"
+    ):
         """Load network reader."""
         self.path_to_gpcc_dir = path_to_gpcc_dir
         self.file_format = file_format
+        self.unzipped_file_format = unzipped_file_format
         self.time_res = time_res
         super().__init__(path_to_gpcc_dir)
         self.data_paths = self._get_data_paths()
@@ -583,3 +613,37 @@ class GPCCNetworkReader(GaugeNetworkReader):
         return self.metadata.with_columns(
             pl.col("station_id").map_elements(self.data_paths.get, return_dtype=pl.Utf8).alias("path")
         )
+
+    def load_network_data(self, data_paths: Iterable, rain_col: str, missing_val: int | float = -999) -> pl.DataFrame:
+        """
+        Load GPCC network data based on file paths.
+
+        Parameters
+        ----------
+        data_paths :
+            Paths to load network data from.
+        rain_col :
+            Rainfall data column
+        missing_val :
+            Missing value (default: -999)
+
+        Returns
+        -------
+        network_data :
+            Dataframe of GPCC gauges.
+
+        """
+        for zip_path in data_paths:
+            gpcc_file_name = zip_path.split("/")[-1]
+            assert self.time_res in gpcc_file_name, (
+                f"Wrong time resolution for metadata: {self.time_res} & {gpcc_file_name}"
+            )
+            gpcc_file_name = gpcc_file_name.split(".zip")[0] + self.unzipped_file_format
+            one_gauge = read_gpcc_data_from_zip(
+                data_path=zip_path,
+                rain_col=rain_col,
+                gpcc_file_name=gpcc_file_name,
+                time_res=GPCC_TIME_RES_CONVERSION[self.time_res],
+                missing_val=missing_val,
+            )
+        return one_gauge
