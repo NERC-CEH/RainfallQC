@@ -38,4 +38,13 @@ def wet_neighbour_check(all_neighbour_data: pl.DataFrame, target_gauge_col: str,
         rain_cols = all_neighbour_data.columns[1:]  # get rain columns
         all_neighbour_data = data_readers.convert_gdsr_hourly_to_daily(all_neighbour_data, rain_cols=rain_cols)
 
+    # 2. Get normalised difference between target and neighbour
+    # TODO: get all all_neighbour_data.columns that are not target and not time
+    # all_neighbour_data_norm_diff = all_neighbour_data.with_columns(
+    #     data_utils.normalise_data(pl.col(target_gauge_col))
+    #     - data_utils.normalise_data(pl.col(f"{rain_col}_GPCC_{gpcc_id_name}"))
+    # )
+    #
+    # all_neighbour_data_norm_diff
+
     return all_neighbour_data[target_gauge_col]
