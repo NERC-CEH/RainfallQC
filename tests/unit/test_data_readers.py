@@ -77,13 +77,13 @@ def test_load_gpcc_gauge_network_metadata():
         path_to_gpcc_dir="./tests/data/GPCC/", time_res="mw", gpcc_file_format=".dat"
     )
     assert len(result) == 10
-    assert result["station_id"][2] == 310
+    assert result["station_id"][2] == "310"
     assert result["location"][5] == "Kahler Asten"
     result = data_readers.load_gpcc_gauge_network_metadata(
         path_to_gpcc_dir="./tests/data/GPCC/", time_res="tw", gpcc_file_format=".dat"
     )
     assert len(result) == 10
-    assert result["station_id"][2] == 5360
+    assert result["station_id"][2] == "5360"
     assert result["location"][5] == "Erndtebruck-Birkelbach"
 
 
@@ -93,7 +93,23 @@ def test_gdsr_network_reader():
     assert hasattr(gdsr_obj, "data_paths")
 
 
+def test_gdsr_network_nearest_neighbours():
+    gdsr_obj = data_readers.GDSRNetworkReader(path_to_gdsr_dir="./tests/data/GDSR/")
+    result = gdsr_obj.get_nearest_overlapping_neighbours_to_target(
+        target_id="DE_03215", distance_threshold=30, n_closest=3, min_overlap_days=1000
+    )
+    assert sorted(list(result)) == ["DE_02483", "DE_02718", "DE_06303"]
+
+
 def test_gpcc_network_reader():
     gpcc_obj = data_readers.GPCCNetworkReader(path_to_gpcc_dir="./tests/data/GPCC/", time_res="tw")
     assert hasattr(gpcc_obj, "metadata")
     assert hasattr(gpcc_obj, "data_paths")
+
+
+def test_gpcc_network_nearest_neighbours():
+    gpcc_obj = data_readers.GPCCNetworkReader(path_to_gpcc_dir="./tests/data/GPCC/", time_res="tw")
+    result = gpcc_obj.get_nearest_overlapping_neighbours_to_target(
+        target_id="310", distance_threshold=30, n_closest=3, min_overlap_days=1000
+    )
+    assert sorted(list(result)) == ["2483", "480", "5610"]

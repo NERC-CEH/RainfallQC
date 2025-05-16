@@ -17,9 +17,10 @@ import pandas as pd
 import polars as pl
 import xarray as xr
 
-from rainfallqc.utils import data_utils
+from rainfallqc.utils import data_utils, neighbourhood_utils
 
 MULTIPLYING_FACTORS = {"hourly": 24, "daily": 1}  # compared to daily reference
+GPCC_TIME_RES_CONVERSION = {"tw": "daily", "mw": "monthly"}
 
 
 def read_gdsr_metadata(data_path: str) -> dict:
@@ -52,7 +53,7 @@ def read_gdsr_metadata(data_path: str) -> dict:
     return metadata
 
 
-def read_gpcc_metadata_from_zip(data_path: str, gpcc_file_format: str = ".dat") -> dict:
+def read_gpcc_metadata_from_zip(data_path: str, time_res: str, gpcc_file_format: str = ".dat") -> dict:
     """
     Read GPCC metadata from zip file.
 
@@ -60,6 +61,8 @@ def read_gpcc_metadata_from_zip(data_path: str, gpcc_file_format: str = ".dat") 
     ----------
     data_path :
         path to GPCC zip file.
+    time_res :
+        Time resolution of data (e.g. daily or monthly)
     gpcc_file_format :
         Default GPCC file format (default: .dat)
 
@@ -74,14 +77,34 @@ def read_gpcc_metadata_from_zip(data_path: str, gpcc_file_format: str = ".dat") 
     gpcc_unzip = zipfile.ZipFile(data_path).open(f"{gpcc_file_name}{gpcc_file_format}", "r")
     with gpcc_unzip:
         gpcc_header = gpcc_unzip.readline().decode("utf-8")
+        data_lines = gpcc_unzip.readlines()
+        first_data_row = data_lines[1].split()
+        last_data_row = data_lines[-1].split()
     gpcc_headers = gpcc_header.split()
+
+    # get start and end date (assumes the data is in time order)
+    if time_res == "daily":
+        start_datetime = datetime.datetime(
+            year=int(first_data_row[2]), month=int(first_data_row[1]), day=int(first_data_row[0]), hour=7
+        )
+        end_datetime = datetime.datetime(
+            year=int(last_data_row[2]), month=int(last_data_row[1]), day=int(last_data_row[0]), hour=7
+        )
+    elif time_res == "monthly":
+        start_datetime = datetime.datetime(year=int(first_data_row[1]), month=int(first_data_row[0]), day=1)
+        end_datetime = datetime.datetime(year=int(last_data_row[1]), month=int(last_data_row[0]), day=1)
+    else:
+        raise ValueError(f"Time resolution={time_res} not recognized. Please use 'daily' or 'monthly'")
 
     # Extract values
     gpcc_metadata = {
-        "station_id": int(gpcc_headers[0]),
+        "station_id": str(gpcc_headers[0]),
         "latitude": float(gpcc_headers[1]),
         "longitude": float(gpcc_headers[2]),
-        "country": gpcc_headers[3],
+        "start_datetime": start_datetime,
+        "end_datetime": end_datetime,
+        "time_step": time_res,
+        "country": str(gpcc_headers[3]),
         "location": " ".join(gpcc_headers[4:]),  # Join remaining parts as location name
     }
     return gpcc_metadata
@@ -384,7 +407,9 @@ def load_gpcc_gauge_network_metadata(
     # 2. Load all GPCC metadata from data
     all_station_metadata_list = []
     for zip_file in all_metadata_data_paths:
-        one_station_metadata = read_gpcc_metadata_from_zip(data_path=zip_file, gpcc_file_format=gpcc_file_format)
+        one_station_metadata = read_gpcc_metadata_from_zip(
+            data_path=zip_file, gpcc_file_format=gpcc_file_format, time_res=GPCC_TIME_RES_CONVERSION[time_res]
+        )
         all_station_metadata_list.append(one_station_metadata)
 
     # 3. Convert to pl.DataFrame
@@ -444,6 +469,34 @@ class GaugeNetworkReader(ABC):
     #     """Must be implemented by subclasses to load gauge network data."""
     #     pass
 
+    def get_nearest_overlapping_neighbours_to_target(
+        self, target_id: str, distance_threshold: int | float, n_closest: int, min_overlap_days: int
+    ) -> set:
+        """
+        Get IDs of the nearest neighbours to a target whilst checking that there is at least a minimum time overlap.
+
+        Parameters
+        ----------
+        target_id :
+            Target gauge to get neighbour IDs of
+        distance_threshold :
+            Distance threshold to check for neighbours
+        n_closest :
+            Number of nearest neighbours to return
+        min_overlap_days :
+            Minimum time overlap between neighbours to return
+
+        Returns
+        -------
+        neighbouring_gauge_id :
+            IDs of neighbouring gauges within a given distance to target and min overlapping days
+
+        """
+        all_neighbour_ids = neighbourhood_utils.get_ids_of_n_nearest_overlapping_neighbouring_gauges(
+            self.metadata, target_id, distance_threshold, n_closest, min_overlap_days
+        )
+        return all_neighbour_ids
+
 
 class GDSRNetworkReader(GaugeNetworkReader):
     """GDSR rain gauge network reader."""
@@ -484,7 +537,7 @@ class GDSRNetworkReader(GaugeNetworkReader):
 
     def _add_paths_to_metadata(self) -> pl.DataFrame:
         return self.metadata.with_columns(
-            pl.col("station_id").map_elements(self.data_paths.get, return_dtype=str).alias("path")
+            pl.col("station_id").map_elements(self.data_paths.get, return_dtype=pl.Utf8).alias("path")
         )
 
 
@@ -528,5 +581,5 @@ class GPCCNetworkReader(GaugeNetworkReader):
 
     def _add_paths_to_metadata(self) -> pl.DataFrame:
         return self.metadata.with_columns(
-            pl.col("station_id").map_elements(self.data_paths.get, return_dtype=str).alias("path")
+            pl.col("station_id").map_elements(self.data_paths.get, return_dtype=pl.Utf8).alias("path")
         )
