@@ -72,6 +72,22 @@ def monthly_gpcc_data() -> pl.DataFrame:
     return gpcc_data_monthly
 
 
+@pytest.fixture()
+def daily_gpcc_network() -> pl.DataFrame:
+    gpcc_obj = data_readers.GPCCNetworkReader(path_to_gpcc_dir="./tests/data/GPCC/", time_res="tw")
+    target_id = "310"
+    nearby_ids = list(
+        gpcc_obj.get_nearest_overlapping_neighbours_to_target(
+            target_id=target_id, distance_threshold=50, n_closest=10, min_overlap_days=500
+        )
+    )
+    nearby_ids.append(target_id)
+    nearby_data_paths = gpcc_obj.metadata.filter(pl.col("station_id").is_in(nearby_ids))["path"]
+    print(gpcc_obj.metadata)
+    gpcc_network = gpcc_obj.load_network_data(data_paths=nearby_data_paths, rain_col=DEFAULT_RAIN_COL)
+    return gpcc_network
+
+
 @pytest.fixture
 def gappy_daily_data() -> pl.DataFrame:
     return pl.DataFrame(

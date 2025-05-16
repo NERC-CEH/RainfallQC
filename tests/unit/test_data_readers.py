@@ -58,6 +58,12 @@ def test_get_paths_using_gauge_ids():
             gauge_ids={"DE_00310", "DE_00390"}, dir_path="./tests/data/GDSR/", file_format=".dat"
         )
 
+    result = data_readers.get_paths_using_gauge_ids(
+        gauge_ids={"310", "6303"}, dir_path="./tests/data/GPCC/", file_format=".zip", time_res="mw"
+    )
+    assert len(result) == 2
+    assert "mw" in result["6303"]
+
 
 def test_read_gpcc_data_from_zip():
     result = data_readers.read_gpcc_data_from_zip(

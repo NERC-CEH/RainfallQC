@@ -437,7 +437,7 @@ def load_gpcc_gauge_network_metadata(
     return all_station_metadata
 
 
-def get_paths_using_gauge_ids(gauge_ids: Iterable, dir_path: str, file_format: str) -> dict:
+def get_paths_using_gauge_ids(gauge_ids: Iterable, dir_path: str, file_format: str, time_res: str = None) -> dict:
     """
     Get data path of Gauge IDs.
 
@@ -449,6 +449,8 @@ def get_paths_using_gauge_ids(gauge_ids: Iterable, dir_path: str, file_format: s
         Path to data directory
     file_format :
         Format of files in directory.
+    time_res :
+        Time resolution (e.g. 'mw' or 'tw')
 
     Returns
     -------
@@ -458,11 +460,15 @@ def get_paths_using_gauge_ids(gauge_ids: Iterable, dir_path: str, file_format: s
     """
     all_data_paths = {}
     for g_id in gauge_ids:
-        g_id_path = glob.glob(f"{dir_path}*{g_id}*{file_format}")
+        if time_res:
+            g_id_path = glob.glob(f"{dir_path}*{time_res}*{g_id}*{file_format}")
+        else:
+            time_res = ""
+            g_id_path = glob.glob(f"{dir_path}*{g_id}*{file_format}")
         try:
             all_data_paths[g_id] = g_id_path[0]
         except IndexError:
-            print(f"Cannot find data for {g_id} in directory {dir_path} with file format {file_format}.")
+            print(f"Cannot find data for {time_res} {g_id} in directory {dir_path} with file format {file_format}.")
         all_data_paths[g_id] = g_id_path[0]
     return all_data_paths
 
@@ -549,7 +555,9 @@ class GDSRNetworkReader(GaugeNetworkReader):
             Dataframe of all GDSR gauges rain record.
 
         """
-        gauge_paths = get_paths_using_gauge_ids(self.metadata["station_id"], self.path_to_gdsr_dir, self.file_format)
+        gauge_paths = get_paths_using_gauge_ids(
+            self.metadata["station_id"], self.path_to_gdsr_dir, file_format=self.file_format
+        )
         return gauge_paths
 
     def _add_paths_to_metadata(self) -> pl.DataFrame:
@@ -621,7 +629,9 @@ class GPCCNetworkReader(GaugeNetworkReader):
             Dataframe of all GDSR gauges rain record.
 
         """
-        gauge_paths = get_paths_using_gauge_ids(self.metadata["station_id"], self.path_to_gpcc_dir, self.file_format)
+        gauge_paths = get_paths_using_gauge_ids(
+            self.metadata["station_id"], self.path_to_gpcc_dir, file_format=self.file_format, time_res=self.time_res
+        )
         return gauge_paths
 
     def _add_paths_to_metadata(self) -> pl.DataFrame:

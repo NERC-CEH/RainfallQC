@@ -3,19 +3,16 @@
 """Tests for neighbourhood quality control checks."""
 
 from rainfallqc.checks import neighbourhood_checks
-from rainfallqc.utils import data_readers
 
 DEFAULT_RAIN_COL = "rain_mm"
 DISTANCE_THRESHOLD = 50  # 50 km
 OVERLAP_THRESHOLD = 365 * 3  # three years
 
 
-def test_wet_neighbour_check(hourly_gdsr_data):
-    # Load network TODO: make a pytest.fixture
-    gdsr_network = data_readers.GDSRNetworkReader(path_to_gdsr_dir="./tests/data/GDSR/")
-    assert len(gdsr_network.metadata) == 11
+def test_wet_neighbour_check(daily_gpcc_network):
+    assert len(daily_gpcc_network) == 11
     neighbourhood_checks.wet_neighbour_check(
-        hourly_gdsr_data, rain_col=DEFAULT_RAIN_COL, target_gauge_id="DE_00310", time_res="hourly"
+        daily_gpcc_network, rain_col=DEFAULT_RAIN_COL, target_gauge_id="DE_00310", time_res="hourly"
     )
 
 
