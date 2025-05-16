@@ -428,7 +428,7 @@ class GaugeNetworkReader(ABC):
     def __init__(self, path_to_gauge_network: str):
         """Load network reader."""
         self.path_to_gauge_network = path_to_gauge_network
-        self.metadata = self.load_metadata()
+        self.metadata = self._load_metadata()
 
     @abstractmethod
     def _load_metadata(self) -> dict:
@@ -449,7 +449,6 @@ class GDSRNetworkReader(GaugeNetworkReader):
         self.path_to_gdsr_dir = path_to_gdsr_dir
         self.file_format = file_format
         super().__init__(path_to_gdsr_dir)
-        self.metadata = self._load_metadata()
         self.data_paths = self._get_data_paths()
 
     def _load_metadata(self) -> pl.DataFrame:
@@ -487,7 +486,6 @@ class GPCCNetworkReader(GaugeNetworkReader):
         self.path_to_gpcc_dir = path_to_gpcc_dir
         self.file_format = file_format
         super().__init__(path_to_gpcc_dir)
-        self.metadata = self._load_metadata()
         self.data_paths = self._get_data_paths()
 
     def _load_metadata(self) -> pl.DataFrame:
