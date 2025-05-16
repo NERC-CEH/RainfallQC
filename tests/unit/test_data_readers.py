@@ -51,6 +51,10 @@ def test_get_paths_using_gauge_ids():
         gauge_ids={"DE_00310", "DE_00390"}, dir_path="./tests/data/GDSR/", file_format=".txt"
     )
     assert len(result) == 2
+    with pytest.raises(IndexError):
+        data_readers.get_paths_using_gauge_ids(
+            gauge_ids={"DE_00310", "DE_00390"}, dir_path="./tests/data/GDSR/", file_format=".dat"
+        )
 
 
 def test_read_gpcc_data_from_zip():
@@ -73,5 +77,5 @@ def test_load_gpcc_gauge_network_metadata():
         path_to_gpcc_dir="./tests/data/GPCC/", gpcc_file_format=".dat"
     )
     assert len(result) == 20
-    assert result["gauge_id"][2] == 6303
+    assert result["station_id"][2] == 6303
     assert result["location"][5] == "Battenberg-Hof Karlsburg"

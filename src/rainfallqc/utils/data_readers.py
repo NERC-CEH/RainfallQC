@@ -78,7 +78,7 @@ def read_gpcc_metadata_from_zip(data_path: str, gpcc_file_format: str = ".dat") 
 
     # Extract values
     gpcc_metadata = {
-        "gauge_id": int(gpcc_headers[0]),
+        "station_id": int(gpcc_headers[0]),
         "latitude": float(gpcc_headers[1]),
         "longitude": float(gpcc_headers[2]),
         "country": gpcc_headers[3],
@@ -414,6 +414,10 @@ def get_paths_using_gauge_ids(gauge_ids: Iterable, dir_path: str, file_format: s
     all_data_paths = {}
     for g_id in gauge_ids:
         g_id_path = glob.glob(f"{dir_path}{g_id}{file_format}")
+        try:
+            all_data_paths[g_id] = g_id_path[0]
+        except IndexError:
+            print(f"Cannot find data for {g_id} in directory {dir_path} with file format {file_format}.")
         all_data_paths[g_id] = g_id_path[0]
     return all_data_paths
 
@@ -440,7 +444,7 @@ class GaugeNetworkReader(ABC):
 class GDSRNetworkReader(GaugeNetworkReader):
     """GDSR rain gauge network reader."""
 
-    def __init__(self, path_to_gdsr_dir: str, file_format: str = "txt"):
+    def __init__(self, path_to_gdsr_dir: str, file_format: str = ".txt"):
         """Load network reader."""
         self.path_to_gdsr_dir = path_to_gdsr_dir
         self.file_format = file_format
@@ -470,16 +474,17 @@ class GDSRNetworkReader(GaugeNetworkReader):
             Dataframe of all GDSR gauges rain record.
 
         """
-        gauge_paths = get_paths_using_gauge_ids(self.metadata["gauge_id"], self.path_to_gdsr_dir)
+        gauge_paths = get_paths_using_gauge_ids(self.metadata["station_id"], self.path_to_gdsr_dir, self.file_format)
         return gauge_paths
 
 
 class GPCCNetworkReader(GaugeNetworkReader):
     """GPCC rain gauge network reader."""
 
-    def __init__(self, path_to_gpcc_dir: str):
+    def __init__(self, path_to_gpcc_dir: str, file_format: str = ".dat"):
         """Load network reader."""
         self.path_to_gpcc_dir = path_to_gpcc_dir
+        self.file_format = file_format
         super().__init__(path_to_gpcc_dir)
         self.metadata = self.load_metadata()
 
@@ -506,5 +511,5 @@ class GPCCNetworkReader(GaugeNetworkReader):
             Dataframe of all GDSR gauges rain record.
 
         """
-        gauge_paths = get_paths_using_gauge_ids(self.metadata["gauge_id"], self.path_to_gpcc_dir)
+        gauge_paths = get_paths_using_gauge_ids(self.metadata["station_id"], self.path_to_gpcc_dir, self.file_format)
         return gauge_paths
