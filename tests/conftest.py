@@ -87,6 +87,21 @@ def daily_gpcc_network() -> pl.DataFrame:
     return gpcc_network
 
 
+@pytest.fixture()
+def hourly_gdsr_network() -> pl.DataFrame:
+    gdsr_obj = data_readers.GDSRNetworkReader(path_to_gdsr_dir="./tests/data/GDSR/")
+    target_id = "DE_00310"
+    nearby_ids = list(
+        gdsr_obj.get_nearest_overlapping_neighbours_to_target(
+            target_id=target_id, distance_threshold=50, n_closest=10, min_overlap_days=500
+        )
+    )
+    nearby_ids.append(target_id)
+    nearby_data_paths = gdsr_obj.metadata.filter(pl.col("station_id").is_in(nearby_ids))["path"]
+    gdsr_network = gdsr_obj.load_network_data(data_paths=nearby_data_paths)
+    return gdsr_network
+
+
 @pytest.fixture
 def gappy_daily_data() -> pl.DataFrame:
     return pl.DataFrame(
