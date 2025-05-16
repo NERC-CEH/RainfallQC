@@ -117,7 +117,9 @@ def read_gpcc_metadata_from_zip(data_path: str, time_res: str, gpcc_file_format:
     return gpcc_metadata
 
 
-def read_gdsr_data_from_file(data_path: str, raw_data_time_res: str, gdsr_header_rows: int = 20) -> pl.DataFrame:
+def read_gdsr_data_from_file(
+    data_path: str, raw_data_time_res: str, rain_col_suffix: str = None, gdsr_header_rows: int = 20
+) -> pl.DataFrame:
     """
     Read GDSR data from file.
 
@@ -129,6 +131,8 @@ def read_gdsr_data_from_file(data_path: str, raw_data_time_res: str, gdsr_header
         Path to GDSR data file
     raw_data_time_res :
         Time resolution of data record i.e. 'hourly' or 'daily'
+    rain_col_suffix :
+        Suffix for column name for rain_col (set by default)
     gdsr_header_rows :
         Number of rows to skip in the header of the GSDR data (default=20)
 
@@ -140,13 +144,15 @@ def read_gdsr_data_from_file(data_path: str, raw_data_time_res: str, gdsr_header
     """
     # read in metadata of gauge
     gdsr_metadata = read_gdsr_metadata(data_path)
-    rain_col = f"rain_{gdsr_metadata['original_units']}"
+    rain_col_name = f"rain_{gdsr_metadata['original_units']}"
+    if rain_col_suffix:
+        rain_col_name += f"_{rain_col_suffix}"
 
     # read in gauge data
     gdsr_data = pl.read_csv(
         data_path,
         skip_rows=gdsr_header_rows,
-        schema_overrides={rain_col: pl.Float64},
+        schema_overrides={rain_col_name: pl.Float64},
     )
 
     # add datetime column to data
@@ -154,7 +160,7 @@ def read_gdsr_data_from_file(data_path: str, raw_data_time_res: str, gdsr_header
         gdsr_data, gdsr_metadata, multiplying_factor=MULTIPLYING_FACTORS[raw_data_time_res]
     )
     gdsr_data = data_utils.replace_missing_vals_with_nan(
-        gdsr_data, rain_col=rain_col, missing_val=int(gdsr_metadata["no_data_value"])
+        gdsr_data, rain_col=rain_col_name, missing_val=int(gdsr_metadata["no_data_value"])
     )
     return gdsr_data
 
@@ -582,13 +588,26 @@ class GDSRNetworkReader(GaugeNetworkReader):
             Dataframe of GDSR gauges.
 
         """
-        for path in data_paths:
+        for ind, path in enumerate(data_paths):
+            # 1. get gauge_id name
+            gdsr_file_name = path.split("/")[-1]
+            gdsr_name = gdsr_file_name.split(".")[0]
+
+            # 2. Read in one gauge
             one_gauge = read_gdsr_data_from_file(
                 data_path=path,
                 raw_data_time_res=GDSR_TIME_RES_CONVERSION[self.time_res],
+                rain_col_suffix=gdsr_name,
                 gdsr_header_rows=gdsr_header_rows,
             )
-        return one_gauge
+
+            # 3. Join data together
+            if ind == 0:
+                all_data = one_gauge
+            else:
+                all_data = all_data.join(one_gauge, on="time", how="full", coalesce=True)
+                all_data = all_data.sort("time")
+        return all_data
 
 
 class GPCCNetworkReader(GaugeNetworkReader):

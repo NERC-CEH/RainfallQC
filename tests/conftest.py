@@ -83,7 +83,6 @@ def daily_gpcc_network() -> pl.DataFrame:
     )
     nearby_ids.append(target_id)
     nearby_data_paths = gpcc_obj.metadata.filter(pl.col("station_id").is_in(nearby_ids))["path"]
-    print(gpcc_obj.metadata)
     gpcc_network = gpcc_obj.load_network_data(data_paths=nearby_data_paths, rain_col=DEFAULT_RAIN_COL)
     return gpcc_network
 
