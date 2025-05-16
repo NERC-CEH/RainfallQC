@@ -450,6 +450,7 @@ class GDSRNetworkReader(GaugeNetworkReader):
         self.file_format = file_format
         super().__init__(path_to_gdsr_dir)
         self.metadata = self.load_metadata()
+        self.data_paths = self.get_data_paths()
 
     def load_metadata(self) -> pl.DataFrame:
         """
@@ -487,6 +488,7 @@ class GPCCNetworkReader(GaugeNetworkReader):
         self.file_format = file_format
         super().__init__(path_to_gpcc_dir)
         self.metadata = self.load_metadata()
+        self.data_paths = self.get_data_paths()
 
     def load_metadata(self) -> pl.DataFrame:
         """

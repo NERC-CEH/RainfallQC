@@ -79,3 +79,15 @@ def test_load_gpcc_gauge_network_metadata():
     assert len(result) == 20
     assert result["station_id"][2] == 6303
     assert result["location"][5] == "Battenberg-Hof Karlsburg"
+
+
+def test_gdsr_network_reader():
+    gdsr_obj = data_readers.GDSRNetworkReader(path_to_gdsr_dir="./tests/data/GDSR/")
+    assert hasattr(gdsr_obj, "metadata")
+    assert hasattr(gdsr_obj, "data_paths")
+
+
+def test_gpcc_network_reader():
+    gpcc_obj = data_readers.GPCCNetworkReader(path_to_gpcc_dir="./tests/data/GPCC/")
+    assert hasattr(gpcc_obj, "metadata")
+    assert hasattr(gpcc_obj, "data_paths")

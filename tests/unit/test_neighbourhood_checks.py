@@ -14,7 +14,6 @@ def test_wet_neighbour_check(hourly_gdsr_data):
     # Load network TODO: make a pytest.fixture
     gdsr_network = data_readers.GDSRNetworkReader(path_to_gdsr_dir="./tests/data/GDSR/")
     assert len(gdsr_network.metadata) == 11
-    gdsr_network.load_network_data()
     neighbourhood_checks.wet_neighbour_check(
         hourly_gdsr_data, rain_col=DEFAULT_RAIN_COL, target_gauge_id="DE_00310", time_res="hourly"
     )
