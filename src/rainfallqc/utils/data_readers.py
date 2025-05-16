@@ -454,6 +454,7 @@ class GDSRNetworkReader(GaugeNetworkReader):
         self.file_format = file_format
         super().__init__(path_to_gdsr_dir)
         self.data_paths = self._get_data_paths()
+        self.metadata = self._add_paths_to_metadata()
 
     def _load_metadata(self) -> pl.DataFrame:
         """
@@ -481,6 +482,11 @@ class GDSRNetworkReader(GaugeNetworkReader):
         gauge_paths = get_paths_using_gauge_ids(self.metadata["station_id"], self.path_to_gdsr_dir, self.file_format)
         return gauge_paths
 
+    def _add_paths_to_metadata(self) -> pl.DataFrame:
+        return self.metadata.with_columns(
+            pl.col("station_id").map_elements(self.data_paths.get, return_dtype=str).alias("path")
+        )
+
 
 class GPCCNetworkReader(GaugeNetworkReader):
     """GPCC rain gauge network reader."""
@@ -492,6 +498,7 @@ class GPCCNetworkReader(GaugeNetworkReader):
         self.time_res = time_res
         super().__init__(path_to_gpcc_dir)
         self.data_paths = self._get_data_paths()
+        self.metadata = self._add_paths_to_metadata()
 
     def _load_metadata(self) -> pl.DataFrame:
         """
@@ -518,3 +525,8 @@ class GPCCNetworkReader(GaugeNetworkReader):
         """
         gauge_paths = get_paths_using_gauge_ids(self.metadata["station_id"], self.path_to_gpcc_dir, self.file_format)
         return gauge_paths
+
+    def _add_paths_to_metadata(self) -> pl.DataFrame:
+        return self.metadata.with_columns(
+            pl.col("station_id").map_elements(self.data_paths.get, return_dtype=str).alias("path")
+        )
