@@ -22,8 +22,8 @@ def test_wet_neighbour_check_hourly(hourly_gdsr_network):
         min_n_neighbours=5,
     )
     assert len(result.columns) == 12
-    assert result["wet_flags"].max() == 2
-    assert result["wet_flags"][357] == 2
+    assert result["majority_wet_flag"].max() == 2
+    assert result["majority_wet_flag"][357] == 2
 
 
 def test_wet_neighbour_check_daily(daily_gpcc_network):
@@ -39,7 +39,7 @@ def test_wet_neighbour_check_daily(daily_gpcc_network):
         min_n_neighbours=5,
     )
     assert len(result.columns) == 12
-    assert result["wet_flags"].max() == 0  # TODO: this seems bad
+    assert result["majority_wet_flag"].max() == 0  # TODO: this seems bad
 
 
 def test_make_num_neighbours_online_col(hourly_gdsr_network):

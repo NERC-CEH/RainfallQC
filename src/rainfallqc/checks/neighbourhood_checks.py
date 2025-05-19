@@ -32,6 +32,8 @@ def wet_neighbour_check(
     1, ...if above 95th percentile
     0, if not in extreme exceedance of neighbours
 
+    This is QC16 from the IntenseQC framework.
+
     Parameters
     ----------
     neighbour_data :
@@ -79,15 +81,60 @@ def wet_neighbour_check(
     neighbour_data = make_num_neighbours_online_col(neighbour_data, neighbouring_gauge_cols)
 
     # 5. Neighbour majority voting where the flag is the highest flag in all neighbours
-    neighbour_data_w_wet_flags = neighbour_data.with_columns(
-        pl.when(pl.col("n_neighbours_online") < min_n_neighbours)
-        .then(np.nan)
-        .otherwise(pl.min_horizontal([pl.col(f"wet_flags_{c}") for c in neighbouring_gauge_cols]))
-        .alias("wet_flags")
-    )
+    neighbour_data_w_wet_flags = get_majority_max_flag(neighbour_data, neighbouring_gauge_cols, min_n_neighbours)
 
     # 6. Clean up data for return
     return neighbour_data_w_wet_flags.select(["time", target_gauge_col] + neighbouring_gauge_cols + ["wet_flags"])
+
+
+def get_majority_max_flag(
+    neighbour_data: pl.DataFrame, neighbouring_gauge_cols: list[str], min_n_neighbours: int, n_zeros_allowed: int
+) -> pl.DataFrame:
+    """
+    Get the highest flag that is in all neighbours.
+
+    For this function, we introduce the 'n_zeros_allowed' parameter to allow for some leeway for problematic neighbours
+    This stops a problematic neighbour that is similar to problematic target from stopping flagging.
+
+
+    Parameters
+    ----------
+    neighbour_data :
+        Rainfall data of neighbouring gauges with time col
+    neighbouring_gauge_cols:
+        List of columns with neighbouring gauges
+    min_n_neighbours :
+        Minimum number of neighbours online that will be considered
+    n_zeros_allowed :
+        Number of zero flags allowed (default: 0)
+
+    Returns
+    -------
+    neighbour_data_w_majority_wet_flag :
+        Data with majority wet flag
+
+    """
+    return neighbour_data.with_columns(
+        pl.when(pl.col("n_neighbours_online") < min_n_neighbours)
+        .then(np.nan)
+        .otherwise(
+            # Check if there is less than or equal to the number of allowed zeros.
+            pl.when(
+                pl.sum_horizontal([(pl.col(f"wet_flags_{c}") == 0).cast(pl.Int8) for c in neighbouring_gauge_cols])
+                <= n_zeros_allowed
+            )
+            .then(
+                pl.min_horizontal(
+                    [
+                        pl.when(pl.col(c) == 0).then(None).otherwise(pl.col(f"wet_flags_{c}"))
+                        for c in neighbouring_gauge_cols
+                    ]
+                )
+            )
+            .otherwise(np.nan)
+        )
+        .alias("majority_wet_flag")
+    )
 
 
 def make_num_neighbours_online_col(neighbour_data: pl.DataFrame, neighbouring_gauge_cols: list[str]) -> pl.DataFrame:
