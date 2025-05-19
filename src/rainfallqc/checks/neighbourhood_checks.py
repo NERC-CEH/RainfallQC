@@ -60,7 +60,8 @@ def wet_neighbour_check(
     """
     # 0. Initial checks
     data_utils.check_data_is_specific_time_res(neighbour_data, time_res)
-    neighbouring_gauge_cols.remove(target_gauge_col)  # so target col is not included as a neighbour of itself.
+    if target_gauge_col in neighbouring_gauge_cols:
+        neighbouring_gauge_cols.remove(target_gauge_col)  # so target col is not included as a neighbour of itself.
 
     # 1. Resample to daily
     if time_res == "hourly":
@@ -121,13 +122,6 @@ def get_majority_max_flag(
         Data with majority wet flag
 
     """
-    # return neighbour_data.with_columns(
-    #     pl.when(pl.col("n_neighbours_online") < min_n_neighbours)
-    #     .then(np.nan)
-    #     .otherwise(pl.min_horizontal([pl.col(f"wet_flags_{c}") for c in neighbouring_gauge_cols]))
-    #     .alias("majority_wet_flag")
-    # )
-
     return neighbour_data.with_columns(
         pl.when(pl.col("n_neighbours_online") < min_n_neighbours)
         .then(np.nan)
