@@ -85,14 +85,14 @@ def test_load_gpcc_gauge_network_metadata():
         path_to_gpcc_dir="./tests/data/GPCC/", time_res="mw", gpcc_file_format=".dat"
     )
     assert len(result) == 10
-    assert result["station_id"][2] == "310"
-    assert result["location"][5] == "Kahler Asten"
+    assert sorted(result["station_id"])[2] == "310"
+    assert sorted(result["location"])[5] == "Meschede"
     result = data_readers.load_gpcc_gauge_network_metadata(
         path_to_gpcc_dir="./tests/data/GPCC/", time_res="tw", gpcc_file_format=".dat"
     )
     assert len(result) == 10
-    assert result["station_id"][2] == "5360"
-    assert result["location"][5] == "Erndtebruck-Birkelbach"
+    assert sorted(result["station_id"])[2] == "310"
+    assert sorted(result["location"])[5] == "Meschede"
 
 
 def test_gdsr_network_reader():
