@@ -11,7 +11,7 @@ from typing import List
 
 import polars as pl
 
-from rainfallqc.utils import data_readers, data_utils
+from rainfallqc.utils import data_readers, data_utils, stats
 
 
 def wet_neighbour_check(
@@ -50,35 +50,22 @@ def wet_neighbour_check(
         rain_cols = all_neighbour_data.columns[1:]  # get rain columns
         all_neighbour_data = data_readers.convert_gdsr_hourly_to_daily(all_neighbour_data, rain_cols=rain_cols)
 
-    # 2. Get normalised difference between target and neighbour
     for neighbouring_gauge_col in neighbouring_gauge_cols:
-        all_neighbour_data = all_neighbour_data.with_columns(
-            (
-                data_utils.normalise_data(pl.col(target_gauge_col))
-                - data_utils.normalise_data(pl.col(neighbouring_gauge_col))
-            ).alias(f"diff_{neighbouring_gauge_col}")
+        # 2. Get normalised difference between target and neighbour
+        all_neighbour_data = normalised_diff_between_target_neighbours(
+            all_neighbour_data, target_gauge_col, neighbouring_gauge_col
         )
 
-    # TODO: add wet_threshold to func description
-    # 3. filter wet values values
-    for neighbouring_gauge_col in neighbouring_gauge_cols:
+        # 3. filter wet values values
         all_neighbour_data = all_neighbour_data.filter(
             (pl.col(target_gauge_col) >= wet_threshold)
             & (pl.col(target_gauge_col).is_finite())
             & (pl.col(neighbouring_gauge_col).is_finite())
-            & (pl.col(f"diff_{neighbouring_gauge_col}"))
-            > 0.0
+            & (pl.col(f"diff_{neighbouring_gauge_col}") > 0.0)
         )
 
-    # TODO: move to stats
-    # 4. Fit exponential function of normalised diff and get q95, q99 and q999
-    # expon_params = scipy.stats.expon.fit(
-    #     all_neighbour_data_norm_diff_filtered[f"{target_gauge_col}_normalised_diff"]
-    # )
-    # # 8. Calculate thresholds at key percentiles of fitted distribution
-    # q95 = scipy.stats.expon.ppf(0.95, expon_params[0], expon_params[1])
-    # q99 = scipy.stats.expon.ppf(0.99, expon_params[0], expon_params[1])
-    # q999 = scipy.stats.expon.ppf(0.999, expon_params[0], expon_params[1])
+        # 4. Fit exponential function of normalised diff and get q95, q99 and q999
+        stats.fit_expon_and_get_percentile(all_neighbour_data[f"diff_{neighbouring_gauge_col}"])
 
     # 5. Assign flags
     # all_neighbour_data_wet_flags = (
@@ -120,4 +107,33 @@ def wet_neighbour_check(
     # 7. Compute online neighbours
     # 8. majority voting
 
-    return all_neighbour_data[target_gauge_col]
+    return all_neighbour_data
+
+
+def normalised_diff_between_target_neighbours(
+    all_neighbour_data: pl.DataFrame, target_gauge_col: str, neighbouring_gauge_col: str
+) -> pl.DataFrame:
+    """
+    Normalised difference between target rain col and neighbouring rain col.
+
+    Parameters
+    ----------
+    all_neighbour_data :
+        Rainfall data of all neighbouring gauges with time col
+    target_gauge_col :
+        Target gauge column
+    neighbouring_gauge_col :
+        Neighbouring gauge column
+
+    Returns
+    -------
+    neighbour_data_w_diff :
+        Data with normalised diff to each neighbour
+
+    """
+    return all_neighbour_data.with_columns(
+        (
+            data_utils.normalise_data(pl.col(target_gauge_col))
+            - data_utils.normalise_data(pl.col(neighbouring_gauge_col))
+        ).alias(f"diff_{neighbouring_gauge_col}")
+    )

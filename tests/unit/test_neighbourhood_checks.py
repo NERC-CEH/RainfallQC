@@ -16,6 +16,7 @@ def test_wet_neighbour_check_hourly(hourly_gdsr_network):
         target_gauge_col=f"{DEFAULT_RAIN_COL}_DE_00310",
         neighbouring_gauge_cols=[f"{DEFAULT_RAIN_COL}_DE_00390", f"{DEFAULT_RAIN_COL}_DE_06303"],
         time_res="hourly",
+        wet_threshold=1.0,
     )
 
 
@@ -26,6 +27,7 @@ def test_wet_neighbour_check_daily(daily_gpcc_network):
         target_gauge_col=f"{DEFAULT_RAIN_COL}_tw_310",
         neighbouring_gauge_cols=[f"{DEFAULT_RAIN_COL}_tw_480", f"{DEFAULT_RAIN_COL}_tw_1283"],
         time_res="daily",
+        wet_threshold=1.0,
     )
 
 

@@ -8,6 +8,7 @@ Classes and functions ordered alphabetically.
 
 import numpy as np
 import polars as pl
+import scipy.stats
 
 from rainfallqc.utils import data_utils
 
@@ -100,28 +101,6 @@ def factor_diff(data: pl.DataFrame, target_col: str, other_col: str) -> pl.DataF
     )
 
 
-def gauge_correlation(data: pl.DataFrame, target_col: str, other_col: str) -> float:
-    """
-    Calculate correlation between rain gauge data columns.
-
-    Parameters
-    ----------
-    data :
-        Rainfall data
-    target_col :
-        Target rainfall column
-    other_col :
-        Other rainfall column
-
-    Returns
-    -------
-    corr_coef :
-        Correlation coefficient.
-
-    """
-    return np.ma.corrcoef(np.ma.masked_invalid(data[target_col]), np.ma.masked_invalid(data[other_col]))[0, 1]
-
-
 def filter_out_rain_world_records(data: pl.DataFrame, rain_col: str, time_res: str) -> pl.DataFrame:
     """
     Filter out rain world records based on time resolution.
@@ -152,6 +131,52 @@ def filter_out_rain_world_records(data: pl.DataFrame, rain_col: str, time_res: s
     )
 
     return data_not_wr
+
+
+def fit_expon_and_get_percentile(series: pl.Series) -> float | tuple:
+    """
+    Fit exponential to data series and then get percentile using PPF.
+
+    Parameters
+    ----------
+    series :
+        Data series to fit exponential function on.
+
+    Returns
+    -------
+    percentile(s) :
+        Percentage point function value fitted at given percentile
+
+    """
+    # 1. Fit exponential function of normalised diff and get q95, q99 and q999
+    expon_params = scipy.stats.expon.fit(series)
+    # 2. Calculate thresholds at key percentiles of fitted distribution
+    p95 = scipy.stats.expon.ppf(0.95, expon_params[0], expon_params[1])
+    # p99 = scipy.stats.expon.ppf(0.99, expon_params[0], expon_params[1])
+    # p999 = scipy.stats.expon.ppf(0.999, expon_params[0], expon_params[1])
+    return p95
+
+
+def gauge_correlation(data: pl.DataFrame, target_col: str, other_col: str) -> float:
+    """
+    Calculate correlation between rain gauge data columns.
+
+    Parameters
+    ----------
+    data :
+        Rainfall data
+    target_col :
+        Target rainfall column
+    other_col :
+        Other rainfall column
+
+    Returns
+    -------
+    corr_coef :
+        Correlation coefficient.
+
+    """
+    return np.ma.corrcoef(np.ma.masked_invalid(data[target_col]), np.ma.masked_invalid(data[other_col]))[0, 1]
 
 
 def get_rainfall_world_records() -> dict[str, float]:
