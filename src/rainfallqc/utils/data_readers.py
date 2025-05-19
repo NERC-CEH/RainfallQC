@@ -11,8 +11,9 @@ import os.path
 import zipfile
 from abc import ABC, abstractmethod
 from importlib import resources
-from typing import Iterable, List
+from typing import List
 
+import numpy as np
 import pandas as pd
 import polars as pl
 import xarray as xr
@@ -448,7 +449,9 @@ def load_gpcc_gauge_network_metadata(
     return all_station_metadata
 
 
-def get_paths_using_gauge_ids(gauge_ids: Iterable, dir_path: str, file_format: str, time_res: str = None) -> dict:
+def get_paths_using_gauge_ids(
+    gauge_ids: List[str] | np.ndarray[str], dir_path: str, file_format: str, time_res: str = None
+) -> dict:
     """
     Get data path of Gauge IDs.
 
@@ -576,7 +579,7 @@ class GDSRNetworkReader(GaugeNetworkReader):
             pl.col("station_id").map_elements(self.data_paths.get, return_dtype=pl.Utf8).alias("path")
         )
 
-    def load_network_data(self, data_paths: Iterable, gdsr_header_rows: int = 20) -> pl.DataFrame:
+    def load_network_data(self, data_paths: List[str] | np.ndarray[str], gdsr_header_rows: int = 20) -> pl.DataFrame:
         """
         Load GDSR network data based on file paths.
 
@@ -663,7 +666,9 @@ class GPCCNetworkReader(GaugeNetworkReader):
             pl.col("station_id").map_elements(self.data_paths.get, return_dtype=pl.Utf8).alias("path")
         )
 
-    def load_network_data(self, data_paths: Iterable, rain_col: str, missing_val: int | float = -999) -> pl.DataFrame:
+    def load_network_data(
+        self, data_paths: List[str] | np.ndarray[str], rain_col: str, missing_val: int | float = -999
+    ) -> pl.DataFrame:
         """
         Load GPCC network data based on file paths.
 

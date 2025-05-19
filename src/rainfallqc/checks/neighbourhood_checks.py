@@ -7,12 +7,16 @@ Neighbourhood checks are QC checks that: "detect abnormalities in a gauges given
 Classes and functions ordered by appearance in IntenseQC framework.
 """
 
+from typing import List
+
 import polars as pl
 
 from rainfallqc.utils import data_readers, data_utils
 
 
-def wet_neighbour_check(all_neighbour_data: pl.DataFrame, target_gauge_col: str, time_res: str) -> pl.DataFrame:
+def wet_neighbour_check(
+    all_neighbour_data: pl.DataFrame, target_gauge_col: str, neighbouring_gauge_cols: List[str], time_res: str
+) -> pl.DataFrame:
     """
     Run neighbour check (wet) for hourly or daily data.
 
@@ -22,6 +26,8 @@ def wet_neighbour_check(all_neighbour_data: pl.DataFrame, target_gauge_col: str,
         Rainfall data of all neighbouring gauges with time col
     target_gauge_col :
         Target gauge column
+    neighbouring_gauge_cols:
+        List of columns with neighbouring gauges
     time_res :
         Time resolution of data
 
@@ -42,10 +48,11 @@ def wet_neighbour_check(all_neighbour_data: pl.DataFrame, target_gauge_col: str,
     # TODO: loop through other_rain_cols
 
     # 2. Get normalised difference between target and neighbour
-    # all_neighbour_data_norm_diff = all_neighbour_data.with_columns(
-    #     data_utils.normalise_data(pl.col(target_gauge_col))
-    #     - data_utils.normalise_data(pl.col(f"{rain_col}_GPCC_{gpcc_id_name}"))
-    # )
+    for neighbouring_gauge in neighbouring_gauge_cols:
+        all_neighbour_data = all_neighbour_data.with_columns(
+            data_utils.normalise_data(pl.col(target_gauge_col))
+            - data_utils.normalise_data(pl.col(neighbouring_gauge)).alias(f"diff_{neighbouring_gauge}")
+        )
 
     # TODO: add wet_threshold to func description
     # 3. filter wet values values
