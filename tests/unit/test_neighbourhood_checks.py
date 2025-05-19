@@ -14,7 +14,14 @@ def test_wet_neighbour_check_hourly(hourly_gdsr_network):
     neighbourhood_checks.wet_neighbour_check(
         hourly_gdsr_network,
         target_gauge_col=f"{DEFAULT_RAIN_COL}_DE_02483",
-        neighbouring_gauge_cols=[f"{DEFAULT_RAIN_COL}_DE_00310", f"{DEFAULT_RAIN_COL}_DE_06303"],
+        neighbouring_gauge_cols=[
+            f"{DEFAULT_RAIN_COL}_DE_00310",
+            f"{DEFAULT_RAIN_COL}_DE_01300",
+            f"{DEFAULT_RAIN_COL}_DE_02718",
+            f"{DEFAULT_RAIN_COL}_DE_03215",
+            f"{DEFAULT_RAIN_COL}_DE_04313",
+            f"{DEFAULT_RAIN_COL}_DE_06303",
+        ],
         time_res="hourly",
         wet_threshold=1.0,
     )
