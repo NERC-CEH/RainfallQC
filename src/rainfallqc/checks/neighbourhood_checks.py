@@ -22,6 +22,7 @@ def wet_neighbour_check(
     time_res: str,
     wet_threshold: int | float,
     min_n_neighbours: int,
+    n_zeros_allowed: int = 0,
 ) -> pl.DataFrame:
     """
     Identify suspicious large values by comparison to neighbour for hourly or daily data.
@@ -48,6 +49,8 @@ def wet_neighbour_check(
         Threshold for rainfall intensity in given time period
     min_n_neighbours :
         Minimum number of neighbours needed to be checked for flag
+    n_zeros_allowed :
+        Number of zero flags allowed for majority voting (default: 0)
 
     Returns
     -------
@@ -81,10 +84,14 @@ def wet_neighbour_check(
     neighbour_data = make_num_neighbours_online_col(neighbour_data, neighbouring_gauge_cols)
 
     # 5. Neighbour majority voting where the flag is the highest flag in all neighbours
-    neighbour_data_w_wet_flags = get_majority_max_flag(neighbour_data, neighbouring_gauge_cols, min_n_neighbours)
+    neighbour_data_w_wet_flags = get_majority_max_flag(
+        neighbour_data, neighbouring_gauge_cols, min_n_neighbours, n_zeros_allowed=n_zeros_allowed
+    )
 
     # 6. Clean up data for return
-    return neighbour_data_w_wet_flags.select(["time", target_gauge_col] + neighbouring_gauge_cols + ["wet_flags"])
+    return neighbour_data_w_wet_flags.select(
+        ["time", target_gauge_col] + neighbouring_gauge_cols + ["majority_wet_flag"]
+    )
 
 
 def get_majority_max_flag(
@@ -114,6 +121,13 @@ def get_majority_max_flag(
         Data with majority wet flag
 
     """
+    # return neighbour_data.with_columns(
+    #     pl.when(pl.col("n_neighbours_online") < min_n_neighbours)
+    #     .then(np.nan)
+    #     .otherwise(pl.min_horizontal([pl.col(f"wet_flags_{c}") for c in neighbouring_gauge_cols]))
+    #     .alias("majority_wet_flag")
+    # )
+
     return neighbour_data.with_columns(
         pl.when(pl.col("n_neighbours_online") < min_n_neighbours)
         .then(np.nan)
@@ -127,12 +141,12 @@ def get_majority_max_flag(
                 # ignore zeros in calculation of min
                 pl.min_horizontal(
                     [
-                        pl.when(pl.col(c) == 0).then(None).otherwise(pl.col(f"wet_flags_{c}"))
+                        pl.when(pl.col(f"wet_flags_{c}") == 0).then(None).otherwise(pl.col(f"wet_flags_{c}"))
                         for c in neighbouring_gauge_cols
                     ]
                 )
             )
-            .otherwise(pl.min_horizontal([pl.col(f"wet_flags{c}") for c in neighbouring_gauge_cols]))
+            .otherwise(pl.min_horizontal([pl.col(f"wet_flags_{c}") for c in neighbouring_gauge_cols]))
         )
         .alias("majority_wet_flag")
     )
