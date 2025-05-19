@@ -46,10 +46,11 @@ def test_wet_neighbour_check_daily(daily_gpcc_network):
         target_gauge_col=f"{DEFAULT_RAIN_COL}_tw_2483",
         neighbouring_gauge_cols=all_neighbour_cols,
         time_res="daily",
-        wet_threshold=0.1,
+        wet_threshold=1.0,
         min_n_neighbours=5,
+        n_zeros_allowed=3,
     )
-    assert result["majority_wet_flag"].max() == 0
+    assert result["majority_wet_flag"].max() == 1
 
 
 def test_make_num_neighbours_online_col(hourly_gdsr_network):
