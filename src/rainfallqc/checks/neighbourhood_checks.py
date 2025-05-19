@@ -15,7 +15,7 @@ from rainfallqc.utils import data_readers, data_utils, stats
 
 
 def wet_neighbour_check(
-    all_neighbour_data: pl.DataFrame,
+    neighbour_data: pl.DataFrame,
     target_gauge_col: str,
     neighbouring_gauge_cols: List[str],
     time_res: str,
@@ -32,8 +32,8 @@ def wet_neighbour_check(
 
     Parameters
     ----------
-    all_neighbour_data :
-        Rainfall data of all neighbouring gauges with time col
+    neighbour_data :
+        Rainfall data of neighbouring gauges with time col
     target_gauge_col :
         Target gauge column
     neighbouring_gauge_cols:
@@ -49,32 +49,62 @@ def wet_neighbour_check(
         Target data with wet flags
 
     """
-    data_utils.check_data_is_specific_time_res(all_neighbour_data, time_res)
+    data_utils.check_data_is_specific_time_res(neighbour_data, time_res)
 
     # 1. Resample to daily
     if time_res == "hourly":
-        rain_cols = all_neighbour_data.columns[1:]  # get rain columns
-        all_neighbour_data = data_readers.convert_gdsr_hourly_to_daily(all_neighbour_data, rain_cols=rain_cols)
+        rain_cols = neighbour_data.columns[1:]  # get rain columns
+        neighbour_data = data_readers.convert_gdsr_hourly_to_daily(neighbour_data, rain_cols=rain_cols)
 
     # 2. Loop through each neighbour and get wet_flags
     for neighbouring_gauge_col in neighbouring_gauge_cols:
-        all_neighbour_data_wet_flags = flag_wet_day_errors_based_on_neighbours(
-            all_neighbour_data, target_gauge_col, neighbouring_gauge_col, wet_threshold
+        if neighbouring_gauge_col == target_gauge_col:
+            continue
+        neighbour_data_wet_flags = flag_wet_day_errors_based_on_neighbours(
+            neighbour_data, target_gauge_col, neighbouring_gauge_col, wet_threshold
         )
 
         # 3. Join to all data
-        all_neighbour_data = all_neighbour_data.join(
-            all_neighbour_data_wet_flags[["time", f"wet_flags_{neighbouring_gauge_col}"]],
+        neighbour_data = neighbour_data.join(
+            neighbour_data_wet_flags[["time", f"wet_flags_{neighbouring_gauge_col}"]],
             on="time",
             how="left",
         )
-        print(all_neighbour_data[f"wet_flags_{neighbouring_gauge_col}"].value_counts())
+        print(neighbour_data[f"wet_flags_{neighbouring_gauge_col}"].value_counts())
 
-    # 4. Compute online neighbours
+    # 4. Get number of neighbours 'online' for each time step
+    neighbour_data = make_num_neighbours_online_col(neighbour_data, neighbouring_gauge_cols)
 
     # 5. majority voting
 
-    return all_neighbour_data
+    return neighbour_data
+
+
+def make_num_neighbours_online_col(neighbour_data: pl.DataFrame, neighbouring_gauge_cols: list[str]) -> pl.DataFrame:
+    """
+    Get number of neighbours online column.
+
+    Parameters
+    ----------
+    neighbour_data :
+        Rainfall data of neighbouring gauges with time col
+    neighbouring_gauge_cols :
+        Columns to check if not null
+
+    Returns
+    -------
+    neighbour_data_online_neighbours :
+        Data with column for number of online neighbours
+
+    """
+    neighbour_data_num_neighbours = neighbour_data.with_columns(
+        (
+            len(neighbouring_gauge_cols)
+            - pl.sum_horizontal([pl.col(c).is_null().cast(pl.Int32) for c in neighbouring_gauge_cols])
+        ).alias("n_neighbours_online")
+    )
+    print(neighbour_data_num_neighbours)
+    return neighbour_data_num_neighbours
 
 
 def flag_wet_day_errors_based_on_neighbours(
