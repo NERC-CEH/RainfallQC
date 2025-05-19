@@ -15,7 +15,11 @@ from rainfallqc.utils import data_readers, data_utils
 
 
 def wet_neighbour_check(
-    all_neighbour_data: pl.DataFrame, target_gauge_col: str, neighbouring_gauge_cols: List[str], time_res: str
+    all_neighbour_data: pl.DataFrame,
+    target_gauge_col: str,
+    neighbouring_gauge_cols: List[str],
+    time_res: str,
+    wet_threshold: int | float,
 ) -> pl.DataFrame:
     """
     Run neighbour check (wet) for hourly or daily data.
@@ -30,6 +34,8 @@ def wet_neighbour_check(
         List of columns with neighbouring gauges
     time_res :
         Time resolution of data
+    wet_threshold :
+        Threshold for rainfall intensity in given time period
 
     Returns
     -------
@@ -44,25 +50,25 @@ def wet_neighbour_check(
         rain_cols = all_neighbour_data.columns[1:]  # get rain columns
         all_neighbour_data = data_readers.convert_gdsr_hourly_to_daily(all_neighbour_data, rain_cols=rain_cols)
 
-    # TODO: get all all_neighbour_data.columns that are not target and not time
-    # TODO: loop through other_rain_cols
-
     # 2. Get normalised difference between target and neighbour
-    for neighbouring_gauge in neighbouring_gauge_cols:
+    for neighbouring_gauge_col in neighbouring_gauge_cols:
         all_neighbour_data = all_neighbour_data.with_columns(
-            data_utils.normalise_data(pl.col(target_gauge_col))
-            - data_utils.normalise_data(pl.col(neighbouring_gauge)).alias(f"diff_{neighbouring_gauge}")
+            (
+                data_utils.normalise_data(pl.col(target_gauge_col))
+                - data_utils.normalise_data(pl.col(neighbouring_gauge_col))
+            ).alias(f"diff_{neighbouring_gauge_col}")
         )
 
     # TODO: add wet_threshold to func description
     # 3. filter wet values values
-    # all_neighbour_data_norm_diff_filtered = (
-    #     all_neighbour_data_norm_diff.filter(
-    #         (pl.col(target_gauge_col) >= wet_threshold)
-    #         & (pl.col(target_gauge_col).is_finite())
-    #         & (pl.col(other_rain_col).is_finite())
-    #         & (pl.col(f"{target_gauge_col}_normalised_diff") > 0.0)
-    #     )
+    for neighbouring_gauge_col in neighbouring_gauge_cols:
+        all_neighbour_data = all_neighbour_data.filter(
+            (pl.col(target_gauge_col) >= wet_threshold)
+            & (pl.col(target_gauge_col).is_finite())
+            & (pl.col(neighbouring_gauge_col).is_finite())
+            & (pl.col(f"diff_{neighbouring_gauge_col}"))
+            > 0.0
+        )
 
     # TODO: move to stats
     # 4. Fit exponential function of normalised diff and get q95, q99 and q999
