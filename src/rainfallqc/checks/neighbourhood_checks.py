@@ -22,7 +22,13 @@ def wet_neighbour_check(
     wet_threshold: int | float,
 ) -> pl.DataFrame:
     """
-    Run neighbour check (wet) for hourly or daily data.
+    Identify suspicious large values by comparison to neighbour for hourly or daily data.
+
+    Flags (majority voting):
+    3, if normalised difference between target gauge and neighbours is above the 99.9th percentile
+    2, ...if above 99th percentile
+    1, ...if above 95th percentile
+    0, if not in extreme exceedance of neighbours
 
     Parameters
     ----------
@@ -50,12 +56,13 @@ def wet_neighbour_check(
         rain_cols = all_neighbour_data.columns[1:]  # get rain columns
         all_neighbour_data = data_readers.convert_gdsr_hourly_to_daily(all_neighbour_data, rain_cols=rain_cols)
 
+    # 2. Loop through each neighbour and get wet_flags
     for neighbouring_gauge_col in neighbouring_gauge_cols:
         all_neighbour_data_wet_flags = flag_wet_day_errors_based_on_neighbours(
             all_neighbour_data, target_gauge_col, neighbouring_gauge_col, wet_threshold
         )
 
-        # 6. Join to all data
+        # 3. Join to all data
         all_neighbour_data = all_neighbour_data.join(
             all_neighbour_data_wet_flags[["time", f"wet_flags_{neighbouring_gauge_col}"]],
             on="time",
@@ -63,8 +70,9 @@ def wet_neighbour_check(
         )
         print(all_neighbour_data[f"wet_flags_{neighbouring_gauge_col}"].value_counts())
 
-    # 7. Compute online neighbours
-    # 8. majority voting
+    # 4. Compute online neighbours
+
+    # 5. majority voting
 
     return all_neighbour_data
 
@@ -92,17 +100,14 @@ def flag_wet_day_errors_based_on_neighbours(
         Data with wet flags
 
     """
-    # 1. get diff column
-    diff_neighbour_col = f"diff_{neighbouring_gauge_col}"
-
-    # 2. Remove nans from target and neighbour
+    # 1. Remove nans from target and neighbour
     all_neighbour_data_clean = all_neighbour_data.drop_nans(subset=[target_gauge_col, neighbouring_gauge_col])
 
-    # 3. Get normalised difference between target and neighbour
+    # 2. Get normalised difference between target and neighbour
     all_neighbour_data_diff = normalised_diff_between_target_neighbours(
         all_neighbour_data_clean, target_gauge_col=target_gauge_col, neighbouring_gauge_col=neighbouring_gauge_col
     )
-    # 4. filter wet values
+    # 3. filter wet values
     all_neighbour_data_filtered_diff = filter_data_based_on_unusual_wetness(
         all_neighbour_data_diff,
         target_gauge_col=target_gauge_col,
@@ -110,32 +115,73 @@ def flag_wet_day_errors_based_on_neighbours(
         wet_threshold=wet_threshold,
     )
 
-    # 5. Fit exponential function of normalised diff and get q95, q99 and q999
-    expon_perc = stats.fit_expon_and_get_percentile(
-        all_neighbour_data_filtered_diff[diff_neighbour_col], percentiles=[0.95, 0.99, 0.999]
+    # 4. Fit exponential function of normalised diff and get q95, q99 and q999
+    expon_percentiles = stats.fit_expon_and_get_percentile(
+        all_neighbour_data_filtered_diff[f"diff_{neighbouring_gauge_col}"], percentiles=[0.95, 0.99, 0.999]
     )
-    # 6. Assign flags
-    all_neighbour_data_wet_flags = all_neighbour_data_diff.with_columns(
-        pl.when((pl.col(target_gauge_col) >= wet_threshold) & (pl.col(diff_neighbour_col) <= expon_perc[0.95]))
+    # 5. Assign flags
+    all_neighbour_data_wet_flags = add_wet_flags_to_data(
+        all_neighbour_data_diff, target_gauge_col, neighbouring_gauge_col, expon_percentiles, wet_threshold
+    )
+    return all_neighbour_data_wet_flags
+
+
+def add_wet_flags_to_data(
+    neighbour_data_diff: pl.DataFrame,
+    target_gauge_col: str,
+    neighbouring_gauge_col: str,
+    expon_percentiles: dict,
+    wet_threshold: float,
+) -> pl.DataFrame:
+    """
+    Add flags to data based on when target gauge is wetter than neighbour above certain exponential thresholds.
+
+    Parameters
+    ----------
+    neighbour_data_diff :
+        Data with normalised diff to neighbour
+
+    target_gauge_col :
+        Target gauge column
+    neighbouring_gauge_col :
+        Neighbouring gauge column
+    expon_percentiles :
+        Thresholds at percentile of fitted distribution (needs 0.95, 0.99 & 0.999)
+    wet_threshold :
+        Threshold for rainfall intensity in given time period
+
+    Returns
+    -------
+    neighbour_data_wet_flags :
+        Data with wet flags applied
+
+    """
+    return neighbour_data_diff.with_columns(
+        pl.when(
+            (pl.col(target_gauge_col) >= wet_threshold)
+            & (pl.col(f"diff_{neighbouring_gauge_col}") <= expon_percentiles[0.95])
+        )
         .then(0)
         .when(
             (pl.col(target_gauge_col) >= wet_threshold)
-            & (pl.col(diff_neighbour_col) > expon_perc[0.95])
-            & (pl.col(diff_neighbour_col) <= expon_perc[0.99]),
+            & (pl.col(f"diff_{neighbouring_gauge_col}") > expon_percentiles[0.95])
+            & (pl.col(f"diff_{neighbouring_gauge_col}") <= expon_percentiles[0.99]),
         )
         .then(1)
         .when(
             (pl.col(target_gauge_col) >= wet_threshold)
-            & (pl.col(diff_neighbour_col) > expon_perc[0.99])
-            & (pl.col(diff_neighbour_col) <= expon_perc[0.999]),
+            & (pl.col(f"diff_{neighbouring_gauge_col}") > expon_percentiles[0.99])
+            & (pl.col(f"diff_{neighbouring_gauge_col}") <= expon_percentiles[0.999]),
         )
         .then(2)
-        .when((pl.col(target_gauge_col) >= wet_threshold) & (pl.col(diff_neighbour_col) > expon_perc[0.999]))
+        .when(
+            (pl.col(target_gauge_col) >= wet_threshold)
+            & (pl.col(f"diff_{neighbouring_gauge_col}") > expon_percentiles[0.999])
+        )
         .then(3)
         .otherwise(0)
         .alias(f"wet_flags_{neighbouring_gauge_col}")
     )
-    return all_neighbour_data_wet_flags
 
 
 def filter_data_based_on_unusual_wetness(

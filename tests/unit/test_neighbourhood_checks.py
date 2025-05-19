@@ -32,7 +32,14 @@ def test_wet_neighbour_check_daily(daily_gpcc_network):
     neighbourhood_checks.wet_neighbour_check(
         daily_gpcc_network,
         target_gauge_col=f"{DEFAULT_RAIN_COL}_tw_2483",
-        neighbouring_gauge_cols=[f"{DEFAULT_RAIN_COL}_tw_5610", f"{DEFAULT_RAIN_COL}_tw_6303"],
+        neighbouring_gauge_cols=[
+            f"{DEFAULT_RAIN_COL}_tw_310",
+            f"{DEFAULT_RAIN_COL}_tw_480",
+            f"{DEFAULT_RAIN_COL}_tw_1283",
+            f"{DEFAULT_RAIN_COL}_tw_3215",
+            f"{DEFAULT_RAIN_COL}_tw_5610",
+            f"{DEFAULT_RAIN_COL}_tw_6303",
+        ],
         time_res="daily",
         wet_threshold=1.0,
     )

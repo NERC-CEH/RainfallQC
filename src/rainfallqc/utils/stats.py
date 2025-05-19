@@ -146,8 +146,8 @@ def fit_expon_and_get_percentile(series: pl.Series, percentiles: list[float]) ->
 
     Returns
     -------
-    percentiles :
-        Percentage point function value fitted at given percentile
+    expon_percentiles :
+        Threshold at percentile of fitted distribution
 
     """
     # 1. Fit exponential distribution of normalised diff
