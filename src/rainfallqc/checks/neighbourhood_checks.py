@@ -51,58 +51,58 @@ def wet_neighbour_check(
         all_neighbour_data = data_readers.convert_gdsr_hourly_to_daily(all_neighbour_data, rain_cols=rain_cols)
 
     for neighbouring_gauge_col in neighbouring_gauge_cols:
-        # 2. Get normalised difference between target and neighbour
-        all_neighbour_data = normalised_diff_between_target_neighbours(
-            all_neighbour_data, target_gauge_col, neighbouring_gauge_col
+        diff_neighbour_col = f"diff_{neighbouring_gauge_col}"
+
+        # 2. Remove nans from target and neighbour
+        all_neighbour_data_clean = all_neighbour_data.drop_nans(subset=[target_gauge_col, neighbouring_gauge_col])
+
+        # 3. Get normalised difference between target and neighbour
+        all_neighbour_data_diff = normalised_diff_between_target_neighbours(
+            all_neighbour_data_clean, target_gauge_col, neighbouring_gauge_col
         )
 
-        # 3. filter wet values values
-        all_neighbour_data = all_neighbour_data.filter(
+        # 4. filter wet values values
+        all_neighbour_data_filtered_diff = all_neighbour_data_diff.filter(
             (pl.col(target_gauge_col) >= wet_threshold)
             & (pl.col(target_gauge_col).is_finite())
             & (pl.col(neighbouring_gauge_col).is_finite())
-            & (pl.col(f"diff_{neighbouring_gauge_col}") > 0.0)
+            & (pl.col(diff_neighbour_col) > 0.0)
         )
 
-        # 4. Fit exponential function of normalised diff and get q95, q99 and q999
-        stats.fit_expon_and_get_percentile(all_neighbour_data[f"diff_{neighbouring_gauge_col}"])
+        # 5. Fit exponential function of normalised diff and get q95, q99 and q999
+        expon_perc = stats.fit_expon_and_get_percentile(
+            all_neighbour_data_filtered_diff[diff_neighbour_col], percentiles=[0.95, 0.99, 0.999]
+        )
 
-    # 5. Assign flags
-    # all_neighbour_data_wet_flags = (
-    #     all_neighbour_data_norm_diff.with_columns(
-    #         pl.when(
-    #             (pl.col(target_gauge_col) >= 1.0)
-    #             & (pl.col(f"{target_gauge_col}_normalised_diff") <= q95)
-    #         )
-    #         .then(0)
-    #         .when(
-    #             (pl.col(target_gauge_col) >= 1.0)
-    #             & (pl.col(f"{target_gauge_col}_normalised_diff") > q95)
-    #             & (pl.col(f"{target_gauge_col}_normalised_diff") <= q99),
-    #         )
-    #         .then(1)
-    #         .when(
-    #             (pl.col(target_gauge_col) >= 1.0)
-    #             & (pl.col(f"{target_gauge_col}_normalised_diff") > q99)
-    #             & (pl.col(f"{target_gauge_col}_normalised_diff") <= q999),
-    #         )
-    #         .then(2)
-    #         .when(
-    #             (pl.col(target_gauge_col) >= 1.0)
-    #             & (pl.col(f"{target_gauge_col}_normalised_diff") > q95)
-    #         )
-    #         .then(3)
-    #         .otherwise(0)
-    #         .alias(f"wet_flags_{other_rain_col}")
-    #     )
-    # )
+        # 6. Assign flags
+        all_neighbour_data_wet_flags = all_neighbour_data_diff.with_columns(
+            pl.when((pl.col(target_gauge_col) >= wet_threshold) & (pl.col(diff_neighbour_col) <= expon_perc[0.95]))
+            .then(0)
+            .when(
+                (pl.col(target_gauge_col) >= wet_threshold)
+                & (pl.col(diff_neighbour_col) > expon_perc[0.95])
+                & (pl.col(diff_neighbour_col) <= expon_perc[0.99]),
+            )
+            .then(1)
+            .when(
+                (pl.col(target_gauge_col) >= wet_threshold)
+                & (pl.col(diff_neighbour_col) > expon_perc[0.99])
+                & (pl.col(diff_neighbour_col) <= expon_perc[0.999]),
+            )
+            .then(2)
+            .when((pl.col(target_gauge_col) >= wet_threshold) & (pl.col(diff_neighbour_col) > expon_perc[0.999]))
+            .then(3)
+            .otherwise(0)
+            .alias(f"wet_flags_{neighbouring_gauge_col}")
+        )
 
-    # 6. Join to all data
-    #     all_data = all_data.join(
-    #         all_neighbour_data_wet_flags[["time", f"wet_flags_{other_rain_col}"]],
-    #         on="time",
-    #         how="left",
-    #     )
+        # 6. Join to all data
+        all_neighbour_data = all_neighbour_data.join(
+            all_neighbour_data_wet_flags[["time", f"wet_flags_{neighbouring_gauge_col}"]],
+            on="time",
+            how="left",
+        )
+        print(all_neighbour_data[f"wet_flags_{neighbouring_gauge_col}"].value_counts())
 
     # 7. Compute online neighbours
     # 8. majority voting

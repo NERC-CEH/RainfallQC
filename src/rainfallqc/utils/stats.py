@@ -133,28 +133,27 @@ def filter_out_rain_world_records(data: pl.DataFrame, rain_col: str, time_res: s
     return data_not_wr
 
 
-def fit_expon_and_get_percentile(series: pl.Series) -> float | tuple:
+def fit_expon_and_get_percentile(series: pl.Series, percentiles: list[float]) -> dict[float, float]:
     """
     Fit exponential to data series and then get percentile using PPF.
 
     Parameters
     ----------
     series :
-        Data series to fit exponential function on.
+        Data series to fit exponential distribution.
+    percentiles :
+        Percentiles (between 0-1) to evaluate on the fitted exponential distribution
 
     Returns
     -------
-    percentile(s) :
+    percentiles :
         Percentage point function value fitted at given percentile
 
     """
-    # 1. Fit exponential function of normalised diff and get q95, q99 and q999
+    # 1. Fit exponential distribution of normalised diff
     expon_params = scipy.stats.expon.fit(series)
-    # 2. Calculate thresholds at key percentiles of fitted distribution
-    p95 = scipy.stats.expon.ppf(0.95, expon_params[0], expon_params[1])
-    # p99 = scipy.stats.expon.ppf(0.99, expon_params[0], expon_params[1])
-    # p999 = scipy.stats.expon.ppf(0.999, expon_params[0], expon_params[1])
-    return p95
+    # 2. Calculate thresholds at percentiles of fitted distribution
+    return {p: scipy.stats.expon.ppf(p, expon_params[0], expon_params[1]) for p in percentiles}
 
 
 def gauge_correlation(data: pl.DataFrame, target_col: str, other_col: str) -> float:
