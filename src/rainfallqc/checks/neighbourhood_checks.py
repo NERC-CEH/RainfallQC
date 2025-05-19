@@ -33,7 +33,7 @@ def wet_neighbour_check(
     1, ...if above 95th percentile
     0, if not in extreme exceedance of neighbours
 
-    This is QC16 from the IntenseQC framework.
+    This is QC16 & QC17 from the IntenseQC framework.
 
     Parameters
     ----------
