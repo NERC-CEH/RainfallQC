@@ -124,6 +124,7 @@ def get_majority_max_flag(
                 <= n_zeros_allowed
             )
             .then(
+                # ignore zeros in calculation of min
                 pl.min_horizontal(
                     [
                         pl.when(pl.col(c) == 0).then(None).otherwise(pl.col(f"wet_flags_{c}"))
@@ -131,7 +132,7 @@ def get_majority_max_flag(
                     ]
                 )
             )
-            .otherwise(np.nan)
+            .otherwise(pl.min_horizontal([pl.col(f"wet_flags{c}") for c in neighbouring_gauge_cols]))
         )
         .alias("majority_wet_flag")
     )
