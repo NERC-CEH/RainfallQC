@@ -9,6 +9,7 @@ Classes and functions ordered by appearance in IntenseQC framework.
 
 from typing import List
 
+import numpy as np
 import polars as pl
 
 from rainfallqc.utils import data_readers, data_utils, stats
@@ -20,11 +21,12 @@ def wet_neighbour_check(
     neighbouring_gauge_cols: List[str],
     time_res: str,
     wet_threshold: int | float,
+    min_n_neighbours: int,
 ) -> pl.DataFrame:
     """
     Identify suspicious large values by comparison to neighbour for hourly or daily data.
 
-    Flags (majority voting):
+    Flags (majority voting where flag is the highest value across all neighbours):
     3, if normalised difference between target gauge and neighbours is above the 99.9th percentile
     2, ...if above 99th percentile
     1, ...if above 95th percentile
@@ -42,6 +44,8 @@ def wet_neighbour_check(
         Time resolution of data
     wet_threshold :
         Threshold for rainfall intensity in given time period
+    min_n_neighbours :
+        Minimum number of neighbours needed to be checked for flag
 
     Returns
     -------
@@ -49,7 +53,9 @@ def wet_neighbour_check(
         Target data with wet flags
 
     """
+    # 0. Initial checks
     data_utils.check_data_is_specific_time_res(neighbour_data, time_res)
+    neighbouring_gauge_cols.remove(target_gauge_col)  # so target col is not included as a neighbour of itself.
 
     # 1. Resample to daily
     if time_res == "hourly":
@@ -58,26 +64,30 @@ def wet_neighbour_check(
 
     # 2. Loop through each neighbour and get wet_flags
     for neighbouring_gauge_col in neighbouring_gauge_cols:
-        if neighbouring_gauge_col == target_gauge_col:
-            continue
-        neighbour_data_wet_flags = flag_wet_day_errors_based_on_neighbours(
+        one_neighbour_data_wet_flags = flag_wet_day_errors_based_on_neighbours(
             neighbour_data, target_gauge_col, neighbouring_gauge_col, wet_threshold
         )
 
         # 3. Join to all data
         neighbour_data = neighbour_data.join(
-            neighbour_data_wet_flags[["time", f"wet_flags_{neighbouring_gauge_col}"]],
+            one_neighbour_data_wet_flags[["time", f"wet_flags_{neighbouring_gauge_col}"]],
             on="time",
             how="left",
         )
-        print(neighbour_data[f"wet_flags_{neighbouring_gauge_col}"].value_counts())
 
     # 4. Get number of neighbours 'online' for each time step
     neighbour_data = make_num_neighbours_online_col(neighbour_data, neighbouring_gauge_cols)
 
-    # 5. majority voting
+    # 5. Neighbour majority voting where the flag is the highest flag in all neighbours
+    neighbour_data_w_wet_flags = neighbour_data.with_columns(
+        pl.when(pl.col("n_neighbours_online") < min_n_neighbours)
+        .then(np.nan)
+        .otherwise(pl.min_horizontal([pl.col(f"wet_flags_{c}") for c in neighbouring_gauge_cols]))
+        .alias("wet_flags")
+    )
 
-    return neighbour_data
+    # 6. Clean up data for return
+    return neighbour_data_w_wet_flags.select(["time", target_gauge_col] + neighbouring_gauge_cols + ["wet_flags"])
 
 
 def make_num_neighbours_online_col(neighbour_data: pl.DataFrame, neighbouring_gauge_cols: list[str]) -> pl.DataFrame:
@@ -97,14 +107,12 @@ def make_num_neighbours_online_col(neighbour_data: pl.DataFrame, neighbouring_ga
         Data with column for number of online neighbours
 
     """
-    neighbour_data_num_neighbours = neighbour_data.with_columns(
+    return neighbour_data.with_columns(
         (
             len(neighbouring_gauge_cols)
             - pl.sum_horizontal([pl.col(c).is_null().cast(pl.Int32) for c in neighbouring_gauge_cols])
         ).alias("n_neighbours_online")
     )
-    print(neighbour_data_num_neighbours)
-    return neighbour_data_num_neighbours
 
 
 def flag_wet_day_errors_based_on_neighbours(

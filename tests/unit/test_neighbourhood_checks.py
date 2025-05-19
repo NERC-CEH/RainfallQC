@@ -12,31 +12,36 @@ OVERLAP_THRESHOLD = 365 * 3  # three years
 def test_wet_neighbour_check_hourly(hourly_gdsr_network):
     assert len(hourly_gdsr_network) == 43824
     all_neighbour_cols = hourly_gdsr_network.columns[1:]  # exclude time
-    neighbourhood_checks.wet_neighbour_check(
+    assert len(all_neighbour_cols) == 10
+    result = neighbourhood_checks.wet_neighbour_check(
         hourly_gdsr_network,
         target_gauge_col=f"{DEFAULT_RAIN_COL}_DE_02483",
         neighbouring_gauge_cols=all_neighbour_cols,
         time_res="hourly",
         wet_threshold=1.0,
+        min_n_neighbours=5,
     )
+    assert len(result.columns) == 12
+    assert result["wet_flags"].max() == 2
+    assert result["wet_flags"][357] == 2
 
 
 def test_wet_neighbour_check_daily(daily_gpcc_network):
     assert len(daily_gpcc_network) == 32142
-    neighbourhood_checks.wet_neighbour_check(
+    all_neighbour_cols = daily_gpcc_network.columns[1:]  # exclude time
+
+    result = neighbourhood_checks.wet_neighbour_check(
         daily_gpcc_network,
         target_gauge_col=f"{DEFAULT_RAIN_COL}_tw_2483",
-        neighbouring_gauge_cols=[
-            f"{DEFAULT_RAIN_COL}_tw_310",
-            f"{DEFAULT_RAIN_COL}_tw_480",
-            f"{DEFAULT_RAIN_COL}_tw_1283",
-            f"{DEFAULT_RAIN_COL}_tw_3215",
-            f"{DEFAULT_RAIN_COL}_tw_5610",
-            f"{DEFAULT_RAIN_COL}_tw_6303",
-        ],
+        neighbouring_gauge_cols=all_neighbour_cols,
         time_res="daily",
         wet_threshold=1.0,
+        min_n_neighbours=2,
     )
+    print(result["wet_flags"].drop_nans())
+    assert len(result.columns) == 12
+    assert result["wet_flags"].max() == 2
+    assert result["wet_flags"][357] == 2
 
 
 def test_make_num_neighbours_online_col(hourly_gdsr_network):
