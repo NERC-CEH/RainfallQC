@@ -65,6 +65,13 @@ def test_get_paths_using_gauge_ids():
     assert "mw" in result["6303"]
 
 
+def test_read_gpcc_metadata_from_zip():
+    with pytest.raises(ValueError):
+        data_readers.read_gpcc_metadata_from_zip(
+            data_path="./tests/data/GPCC/mw_310.zip", time_res="decadal", gpcc_file_format=".dat"
+        )
+
+
 def test_read_gpcc_data_from_zip():
     result = data_readers.read_gpcc_data_from_zip(
         data_path="./tests/data/GPCC/tw_310.zip", gpcc_file_name="tw_310.dat", rain_col="rain_mm", time_res="daily"
@@ -79,8 +86,18 @@ def test_read_gpcc_data_from_zip():
             data_path="./tests/data/GPCC/mw_310", gpcc_file_name="mw_310.dat", rain_col="rain_mm", time_res="monthly"
         )
 
+    with pytest.raises(ValueError):
+        data_readers.read_gpcc_data_from_zip(
+            data_path="./tests/data/GPCC/mw_310.zip",
+            gpcc_file_name="mw_310.dat",
+            rain_col="rain_mm",
+            time_res="decadal",
+        )
+
 
 def test_load_gpcc_gauge_network_metadata():
+    with pytest.raises(ValueError):
+        data_readers.load_gpcc_gauge_network_metadata(path_to_gpcc_dir="GPCC/", time_res="mw", gpcc_file_format=".dat")
     result = data_readers.load_gpcc_gauge_network_metadata(
         path_to_gpcc_dir="./tests/data/GPCC/", time_res="mw", gpcc_file_format=".dat"
     )

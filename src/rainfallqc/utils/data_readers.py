@@ -498,7 +498,6 @@ class GaugeNetworkReader(ABC):
     @abstractmethod
     def _load_metadata(self) -> dict:
         """Must be implemented by subclasses to load gauge network metadata."""
-        pass
 
     # @abstractmethod
     # def load_network_data(self) -> pl.DataFrame:
