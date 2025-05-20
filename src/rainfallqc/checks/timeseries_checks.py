@@ -126,8 +126,10 @@ def daily_accumulations(
             data, rain_col, gauge_lat, gauge_lon, wet_day_threshold, accumulation_multiplying_factor
         )
 
-    # 2. Flag daily accumulations in hourly data based on SDII threshold
-    da_flags = flag_accumulation_periods(data, rain_col, accumulation_threshold=accumulation_threshold, accumulation_period_in_hours=24)
+    # 2. Flag daily (24 hour) accumulations in hourly data based on SDII threshold
+    da_flags = flag_accumulation_periods(
+        data, rain_col, accumulation_threshold=accumulation_threshold, accumulation_period_in_hours=24
+    )
 
     # 3. Add daily_accumulation column
     data = data.with_columns(daily_accumulation=pl.Series(da_flags))
@@ -674,7 +676,9 @@ def get_local_etccdi_sdii_mean(gauge_lat: int | float, gauge_lon: int | float) -
     return nearby_etccdi_sdii_mean
 
 
-def flag_accumulation_periods(data: pl.DataFrame, rain_col: str, accumulation_threshold: float, accumulation_period_in_hours: int) -> np.ndarray:
+def flag_accumulation_periods(
+    data: pl.DataFrame, rain_col: str, accumulation_threshold: float, accumulation_period_in_hours: int
+) -> np.ndarray:
     """
     Flag accumulation in a given period of hourly data.
 
@@ -702,13 +706,17 @@ def flag_accumulation_periods(data: pl.DataFrame, rain_col: str, accumulation_th
     pa_flags = np.zeros_like(rain_vals)
     for i in range(len(rain_vals) - accumulation_period_in_hours):
         period_rain_vals = rain_vals[i : i + accumulation_period_in_hours]
-        pa_flag = flag_n_hours_accumulation_based_on_threshold(period_rain_vals, accumulation_threshold, n_hours=accumulation_period_in_hours)
+        pa_flag = flag_n_hours_accumulation_based_on_threshold(
+            period_rain_vals, accumulation_threshold, n_hours=accumulation_period_in_hours
+        )
         if pa_flag > max(pa_flags[i : i + accumulation_period_in_hours]):
             pa_flags[i : i + accumulation_period_in_hours] = np.full(accumulation_period_in_hours, pa_flag)
     return pa_flags
 
 
-def flag_n_hours_accumulation_based_on_threshold(period_rain_vals: pl.Series, accumulation_threshold: float, n_hours: int) -> int:
+def flag_n_hours_accumulation_based_on_threshold(
+    period_rain_vals: pl.Series, accumulation_threshold: float, n_hours: int
+) -> int:
     """
     Flag a period as accumulation if a value is preceded by n hourly recordings of 0.
 
@@ -728,13 +736,13 @@ def flag_n_hours_accumulation_based_on_threshold(period_rain_vals: pl.Series, ac
 
     """
     flag = 0
-    if period_rain_vals[n_hours-1] > 0:
+    if period_rain_vals[n_hours - 1] > 0:
         dry_hours = 0
-        for h in range(n_hours-1):
+        for h in range(n_hours - 1):
             if period_rain_vals[h] <= 0:
                 dry_hours += 1
-        if dry_hours == n_hours-1:
-            if period_rain_vals[n_hours-1] > accumulation_threshold:
+        if dry_hours == n_hours - 1:
+            if period_rain_vals[n_hours - 1] > accumulation_threshold:
                 flag = 1
     return flag
 
