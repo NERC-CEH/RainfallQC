@@ -320,7 +320,7 @@ def get_n_closest_neighbours(
         # 3.1 return all if not enough rows
         return sorted_close_neighbours
     else:
-        nth_distance = sorted_close_neighbours[n_closest, "distance"]
+        nth_distance = sorted_close_neighbours[n_closest - 1, "distance"]
         # 3.2 Filter all neighbours by distance less or equal to nth_closest
         return sorted_close_neighbours.filter(pl.col("distance") <= nth_distance)
 
