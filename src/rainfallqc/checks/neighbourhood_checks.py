@@ -62,6 +62,9 @@ def wet_neighbour_check(
     data_utils.check_data_is_specific_time_res(neighbour_data, time_res)
     if target_gauge_col in neighbouring_gauge_cols:
         neighbouring_gauge_cols.remove(target_gauge_col)  # so target col is not included as a neighbour of itself.
+    assert target_gauge_col in neighbour_data.columns, (
+        f"Target column: '{target_gauge_col}' needs to column be in data."
+    )
 
     # 1. Resample to daily
     if time_res == "hourly":
