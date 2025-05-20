@@ -2,10 +2,11 @@
 History
 =======
 
-0.1.0 (2025-05-09)
+0.0.7 (2025-05-20)
 ------------------
-* Add QC16-QC25
+* Add QC16-QC17
 * Add neighbourhood utility functions
+* Add data readers for GPCC and GDSR data from intense
 
 0.0.6 (2025-05-09)
 ------------------

@@ -8,6 +8,7 @@ Classes and functions ordered alphabetically.
 
 import numpy as np
 import polars as pl
+import scipy.stats
 
 from rainfallqc.utils import data_utils
 
@@ -100,28 +101,6 @@ def factor_diff(data: pl.DataFrame, target_col: str, other_col: str) -> pl.DataF
     )
 
 
-def gauge_correlation(data: pl.DataFrame, target_col: str, other_col: str) -> float:
-    """
-    Calculate correlation between rain gauge data columns.
-
-    Parameters
-    ----------
-    data :
-        Rainfall data
-    target_col :
-        Target rainfall column
-    other_col :
-        Other rainfall column
-
-    Returns
-    -------
-    corr_coef :
-        Correlation coefficient.
-
-    """
-    return np.ma.corrcoef(np.ma.masked_invalid(data[target_col]), np.ma.masked_invalid(data[other_col]))[0, 1]
-
-
 def filter_out_rain_world_records(data: pl.DataFrame, rain_col: str, time_res: str) -> pl.DataFrame:
     """
     Filter out rain world records based on time resolution.
@@ -152,6 +131,51 @@ def filter_out_rain_world_records(data: pl.DataFrame, rain_col: str, time_res: s
     )
 
     return data_not_wr
+
+
+def fit_expon_and_get_percentile(series: pl.Series, percentiles: list[float]) -> dict[float, float]:
+    """
+    Fit exponential to data series and then get percentile using PPF.
+
+    Parameters
+    ----------
+    series :
+        Data series to fit exponential distribution.
+    percentiles :
+        Percentiles (between 0-1) to evaluate on the fitted exponential distribution
+
+    Returns
+    -------
+    expon_percentiles :
+        Threshold at percentile of fitted distribution
+
+    """
+    # 1. Fit exponential distribution of normalised diff
+    expon_params = scipy.stats.expon.fit(series)
+    # 2. Calculate thresholds at percentiles of fitted distribution
+    return {p: scipy.stats.expon.ppf(p, expon_params[0], expon_params[1]) for p in percentiles}
+
+
+def gauge_correlation(data: pl.DataFrame, target_col: str, other_col: str) -> float:
+    """
+    Calculate correlation between rain gauge data columns.
+
+    Parameters
+    ----------
+    data :
+        Rainfall data
+    target_col :
+        Target rainfall column
+    other_col :
+        Other rainfall column
+
+    Returns
+    -------
+    corr_coef :
+        Correlation coefficient.
+
+    """
+    return np.ma.corrcoef(np.ma.masked_invalid(data[target_col]), np.ma.masked_invalid(data[other_col]))[0, 1]
 
 
 def get_rainfall_world_records() -> dict[str, float]:
@@ -212,7 +236,7 @@ def pettitt_test(arr: pl.Series | np.ndarray) -> (int | float, int | float):
     return tau, p
 
 
-def simple_precip_intensity_index(data: pl.DataFrame, rain_col: str, wet_day_threshold: int | float) -> float:
+def simple_precip_intensity_index(data: pl.DataFrame, rain_col: str, wet_threshold: int | float) -> float:
     """
     Calculate simple precipitation intensity index.
 
@@ -222,7 +246,7 @@ def simple_precip_intensity_index(data: pl.DataFrame, rain_col: str, wet_day_thr
         Rainfall data
     rain_col :
         Column with rainfall data
-    wet_day_threshold :
+    wet_threshold :
         Threshold for rainfall intensity in given time period
 
     Returns
@@ -231,6 +255,6 @@ def simple_precip_intensity_index(data: pl.DataFrame, rain_col: str, wet_day_thr
         Simple precipitation intensity index
 
     """
-    data_rain_sum = data.filter(pl.col(rain_col) >= wet_day_threshold).fill_nan(0.0).sum()[rain_col][0]
-    data_wet_day_count = data.filter(pl.col(rain_col) >= wet_day_threshold).drop_nans().count()[rain_col][0]
+    data_rain_sum = data.filter(pl.col(rain_col) >= wet_threshold).fill_nan(0.0).sum()[rain_col][0]
+    data_wet_day_count = data.filter(pl.col(rain_col) >= wet_threshold).drop_nans().count()[rain_col][0]
     return data_rain_sum / float(data_wet_day_count)
