@@ -2,6 +2,11 @@
 History
 =======
 
+0.0.8 (2025-05-20)
+------------------
+* *Hotfix* so nans are ignored when flagging
+* also rename accumulation functions & rename n_neighbours_ignored
+
 0.0.7 (2025-05-20)
 ------------------
 * Add QC16-QC17
