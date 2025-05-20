@@ -126,8 +126,10 @@ def daily_accumulations(
             data, rain_col, gauge_lat, gauge_lon, wet_day_threshold, accumulation_multiplying_factor
         )
 
-    # 2. Flag monthly accumulations in hourly data based on SDII threshold
-    da_flags = flag_daily_accumulations(data, rain_col, accumulation_threshold)
+    # 2. Flag daily (24 hour) accumulations in hourly data based on SDII threshold
+    da_flags = flag_accumulation_periods(
+        data, rain_col, accumulation_threshold=accumulation_threshold, accumulation_period_in_hours=24
+    )
 
     # 3. Add daily_accumulation column
     data = data.with_columns(daily_accumulation=pl.Series(da_flags))
@@ -674,9 +676,11 @@ def get_local_etccdi_sdii_mean(gauge_lat: int | float, gauge_lon: int | float) -
     return nearby_etccdi_sdii_mean
 
 
-def flag_daily_accumulations(data: pl.DataFrame, rain_col: str, accumulation_threshold: float) -> np.ndarray:
+def flag_accumulation_periods(
+    data: pl.DataFrame, rain_col: str, accumulation_threshold: float, accumulation_period_in_hours: int
+) -> np.ndarray:
     """
-    Flag daily accumulation of hourly data.
+    Flag accumulation in a given period of hourly data.
 
     TODO: make work for daily using: DAILY_DIVIDING_FACTOR
 
@@ -687,50 +691,58 @@ def flag_daily_accumulations(data: pl.DataFrame, rain_col: str, accumulation_thr
     rain_col :
         Column with rainfall data
     accumulation_threshold :
-        Rain accumulation for detecting possible daily accumulations
+        Rain accumulation for detecting possible period accumulations
+    accumulation_period_in_hours :
+        Accumulation period in hours
 
     Returns
     -------
-    da_flags :
-        Daily accumulation flags
+    pa_flags :
+        Accumulation flags
 
     """
-    # Note uses 24-hour moving window
+    # Note uses n-hour moving window
     rain_vals = data[rain_col]
-    da_flags = np.zeros_like(rain_vals)
-    for i in range(len(rain_vals) - 24):
-        day_rain_vals = rain_vals[i : i + 24]
-        da_flag = flag_one_daily_accumulation_based_on_threshold(day_rain_vals, accumulation_threshold)
-        if da_flag > max(da_flags[i : i + 24]):
-            da_flags[i : i + 24] = np.full(24, da_flag)
-    return da_flags
+    pa_flags = np.zeros_like(rain_vals)
+    for i in range(len(rain_vals) - accumulation_period_in_hours):
+        period_rain_vals = rain_vals[i : i + accumulation_period_in_hours]
+        pa_flag = flag_n_hours_accumulation_based_on_threshold(
+            period_rain_vals, accumulation_threshold, n_hours=accumulation_period_in_hours
+        )
+        if pa_flag > max(pa_flags[i : i + accumulation_period_in_hours]):
+            pa_flags[i : i + accumulation_period_in_hours] = np.full(accumulation_period_in_hours, pa_flag)
+    return pa_flags
 
 
-def flag_one_daily_accumulation_based_on_threshold(day_rain_vals: pl.Series, accumulation_threshold: float) -> int:
+def flag_n_hours_accumulation_based_on_threshold(
+    period_rain_vals: pl.Series, accumulation_threshold: float, n_hours: int
+) -> int:
     """
-    Flag one day as accumulation if a value is preceded by 23 hourly recordings of 0.
+    Flag a period as accumulation if a value is preceded by n hourly recordings of 0.
 
     Parameters
     ----------
-    day_rain_vals :
-        One day of rain values
+    period_rain_vals :
+        One period of rain values
     accumulation_threshold :
         Reference SDII threshold
+    n_hours :
+        Number of hours in reference period
 
     Returns
     -------
     flag :
-        1 if daily accumulation, otherwise 0
+        1 if period accumulation, otherwise 0
 
     """
     flag = 0
-    if day_rain_vals[23] > 0:
+    if period_rain_vals[n_hours - 1] > 0:
         dry_hours = 0
-        for h in range(23):
-            if day_rain_vals[h] <= 0:
+        for h in range(n_hours - 1):
+            if period_rain_vals[h] <= 0:
                 dry_hours += 1
-        if dry_hours == 23:
-            if day_rain_vals[23] > accumulation_threshold:
+        if dry_hours == n_hours - 1:
+            if period_rain_vals[n_hours - 1] > accumulation_threshold:
                 flag = 1
     return flag
 

@@ -22,7 +22,7 @@ def wet_neighbour_check(
     time_res: str,
     wet_threshold: int | float,
     min_n_neighbours: int,
-    n_zeros_allowed: int = 0,
+    n_neighbours_ignored: int = 0,
 ) -> pl.DataFrame:
     """
     Identify suspicious large values by comparison to neighbour for hourly or daily data.
@@ -49,7 +49,7 @@ def wet_neighbour_check(
         Threshold for rainfall intensity in given time period
     min_n_neighbours :
         Minimum number of neighbours needed to be checked for flag
-    n_zeros_allowed :
+    n_neighbours_ignored :
         Number of zero flags allowed for majority voting (default: 0)
 
     Returns
@@ -62,6 +62,9 @@ def wet_neighbour_check(
     data_utils.check_data_is_specific_time_res(neighbour_data, time_res)
     if target_gauge_col in neighbouring_gauge_cols:
         neighbouring_gauge_cols.remove(target_gauge_col)  # so target col is not included as a neighbour of itself.
+    assert target_gauge_col in neighbour_data.columns, (
+        f"Target column: '{target_gauge_col}' needs to column be in data."
+    )
 
     # 1. Resample to daily
     if time_res == "hourly":
@@ -86,7 +89,7 @@ def wet_neighbour_check(
 
     # 5. Neighbour majority voting where the flag is the highest flag in all neighbours
     neighbour_data_w_wet_flags = get_majority_max_flag(
-        neighbour_data, neighbouring_gauge_cols, min_n_neighbours, n_zeros_allowed=n_zeros_allowed
+        neighbour_data, neighbouring_gauge_cols, min_n_neighbours, n_zeros_allowed=n_neighbours_ignored
     )
 
     # 6. Clean up data for return

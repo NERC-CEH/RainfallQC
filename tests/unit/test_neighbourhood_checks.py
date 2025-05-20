@@ -2,6 +2,8 @@
 
 """Tests for neighbourhood quality control checks."""
 
+import pytest
+
 from rainfallqc.checks import neighbourhood_checks
 
 DEFAULT_RAIN_COL = "rain_mm"
@@ -48,9 +50,19 @@ def test_wet_neighbour_check_daily(daily_gpcc_network):
         time_res="daily",
         wet_threshold=1.0,
         min_n_neighbours=5,
-        n_zeros_allowed=3,
+        n_neighbours_ignored=3,
     )
     assert result["majority_wet_flag"].max() == 1
+
+    with pytest.raises(AssertionError):
+        neighbourhood_checks.wet_neighbour_check(
+            daily_gpcc_network,
+            target_gauge_col="wrong",
+            neighbouring_gauge_cols=all_neighbour_cols,
+            time_res="daily",
+            wet_threshold=1.0,
+            min_n_neighbours=5,
+        )
 
 
 def test_make_num_neighbours_online_col(hourly_gdsr_network):

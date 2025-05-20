@@ -22,6 +22,7 @@ Project ToDos:
 - check https://github.com/nclwater/intense-qc/tree/affinity_indx
 - add meaning of flags
 - Use timestep str maker to the checks
+- Should checking function include the prefix: "check_"?
 
 Proof of concept
 ----------------

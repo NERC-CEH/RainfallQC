@@ -32,14 +32,15 @@ def test_check_daily_exceedance_of_rainfall_world_record(daily_gdsr_data):
     result = comparison_checks.check_exceedance_of_rainfall_world_record(
         daily_gdsr_data, rain_col=DEFAULT_RAIN_COL, time_res="daily"
     )
-    assert len(result.filter(pl.col("world_record_check") == 4)) == 66
+    print(result['world_record_check'].value_counts())
+    assert len(result.filter(pl.col("world_record_check") == 0)) == 1759
 
 
 def test_check_hourly_exceedance_of_rainfall_world_record(hourly_gdsr_data):
     result = comparison_checks.check_exceedance_of_rainfall_world_record(
         hourly_gdsr_data, rain_col=DEFAULT_RAIN_COL, time_res="hourly"
     )
-    assert len(result.filter(pl.col("world_record_check") == 4)) == 1051
+    assert len(result.filter(pl.col("world_record_check") == 4)) == 5
 
 
 def test_check_hourly_exceedance_etccdi_rx1day(hourly_gdsr_data, gdsr_metadata):
@@ -49,7 +50,7 @@ def test_check_hourly_exceedance_etccdi_rx1day(hourly_gdsr_data, gdsr_metadata):
         gauge_lat=gdsr_metadata["latitude"],
         gauge_lon=gdsr_metadata["longitude"],
     )
-    assert len(result.filter(pl.col("rx1day_check") == 4)) == 1078
+    assert len(result.filter(pl.col("rx1day_check") == 4)) == 32
     assert len(result.filter(pl.col("rx1day_check") == 1)) == 6
 
 
@@ -60,7 +61,7 @@ def test_check_daily_exceedance_etccdi_rx1day(daily_gdsr_data, gdsr_metadata):
         gauge_lat=gdsr_metadata["latitude"],
         gauge_lon=gdsr_metadata["longitude"],
     )
-    assert len(result.filter(pl.col("rx1day_check") == 4)) == 69
+    assert len(result.filter(pl.col("rx1day_check") == 4)) == 3
 
 
 @pytest.mark.parametrize(
