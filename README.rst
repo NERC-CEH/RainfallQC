@@ -11,7 +11,10 @@ RainfallQC
 
 
 
-Quality control procedure for rainfall data
+Quality control procedure for rainfall data.
+
+**NOTEBOOK DEMO AVAILABLE** `HERE <https://github.com/Thomasjkeel/RainfallQC-notebooks/blob/main/notebooks/demo/rainfallQC_demo.ipynb>`_
+
 
 **WORK IN PROGRESS**
 
