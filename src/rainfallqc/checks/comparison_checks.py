@@ -287,7 +287,9 @@ def flag_exceedance_of_ref_val(val: int | float, ref_val: int | float) -> int:
         Exceedance flag
 
     """
-    if val >= ref_val * 1.5:
+    if val is None or np.isnan(val):
+        return np.nan
+    elif val >= ref_val * 1.5:
         return 4
     elif val >= ref_val * 1.33:
         return 3
@@ -325,7 +327,9 @@ def flag_exceedance_of_ref_val_as_col(
 
     """
     return data.with_columns(
-        pl.when(pl.col(rain_col) >= ref_val * 1.5)
+        pl.when(pl.col(rain_col).is_null() | pl.col(rain_col).is_nan())
+        .then(np.nan)
+        .when(pl.col(rain_col) >= ref_val * 1.5)
         .then(4)
         .when(pl.col(rain_col) >= ref_val * 1.33)
         .then(3)
