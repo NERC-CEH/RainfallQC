@@ -48,7 +48,7 @@ def test_wet_neighbour_check_daily(daily_gpcc_network):
         time_res="daily",
         wet_threshold=1.0,
         min_n_neighbours=5,
-        n_zeros_allowed=3,
+        n_wrong_neighbours_allowed=3,
     )
     assert result["majority_wet_flag"].max() == 1
 
