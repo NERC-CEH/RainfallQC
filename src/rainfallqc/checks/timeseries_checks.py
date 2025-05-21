@@ -741,7 +741,7 @@ def flag_n_hours_accumulation_based_on_threshold(
     elif period_rain_vals[n_hours - 1] > 0:
         dry_hours = 0
         for h in range(n_hours - 1):
-            if not period_rain_vals[h]:
+            if period_rain_vals[h] is None:
                 continue
             elif period_rain_vals[h] <= 0:
                 dry_hours += 1
