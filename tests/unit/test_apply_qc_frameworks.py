@@ -2,6 +2,9 @@
 
 """Tests for applying QC frameworks."""
 
+import polars as pl
+import pytest
+
 from rainfallqc.qc_frameworks import apply_qc_framework
 
 
@@ -31,5 +34,10 @@ def test_apply_qc_frameworks(daily_gpcc_network, gpcc_metadata):
     result = apply_qc_framework.run_qc_framework(
         daily_gpcc_network, qc_framework="IntenseQC", qc_methods_to_run=qc_methods_to_run, qc_kwargs=qc_kwargs
     )
-
     assert len(result.keys()) == 10
+    assert len(result["QC15"].filter(pl.col("streak_flag1") > 0)) == 6
+
+    with pytest.raises(KeyError):
+        apply_qc_framework.run_qc_framework(
+            daily_gpcc_network, qc_framework="WrongQC", qc_methods_to_run=qc_methods_to_run, qc_kwargs=qc_kwargs
+        )
