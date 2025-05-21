@@ -5,6 +5,8 @@ import inspect
 
 import polars as pl
 
+from rainfallqc.qc_frameworks import inbuilt_qc_frameworks
+
 
 def run_qc_framework(
     data: pl.DataFrame, qc_framework: dict | str, qc_methods_to_run: list, kwargs_map: dict
@@ -31,6 +33,16 @@ def run_qc_framework(
     """
     qc_results = {}
     shared_kwargs = kwargs_map.get("shared", {})
+
+    if type(qc_framework) is str:
+        if qc_framework in inbuilt_qc_frameworks.keys():
+            # select in-built qc framework by name
+            qc_framework = inbuilt_qc_frameworks[qc_framework]
+        else:
+            raise KeyError(
+                f"QC framework '{qc_framework}' is not known."
+                f"In-built QC frameworks include: {inbuilt_qc_frameworks.keys()}."
+            )
 
     for qc_method in qc_methods_to_run:
         qc_func = qc_framework[qc_method]["function"]
