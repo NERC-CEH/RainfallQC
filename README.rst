@@ -31,11 +31,7 @@ Example 1. - Individual quality checks on single rain gauge
 
 .. code-block:: python
 
-<<<<<<< HEAD
         # Load two types of QC'ing modules from RainfallQC
-=======
-        # Load three types of QC'ing modules from RainfallQC
->>>>>>> @{-1}
         from rainfallqc import gauge_checks, comparison_checks
 
         # 1. Simple 1 gauge QC
