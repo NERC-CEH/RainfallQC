@@ -15,7 +15,7 @@ import polars as pl
 from rainfallqc.utils import data_readers, data_utils, stats
 
 
-def wet_neighbour_check(
+def check_wet_neighbours(
     neighbour_data: pl.DataFrame,
     target_gauge_col: str,
     neighbouring_gauge_cols: List[str],

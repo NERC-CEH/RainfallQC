@@ -16,7 +16,7 @@ from rainfallqc.utils import data_readers, data_utils, neighbourhood_utils, spat
 DAILY_DIVIDING_FACTOR = {"hourly": 24, "daily": 1}
 
 
-def dry_period_cdd_check(
+def check_dry_period_cdd(
     data: pl.DataFrame, rain_col: str, time_res: str, gauge_lat: int | float, gauge_lon: int | float
 ) -> pl.DataFrame:
     """
@@ -74,7 +74,7 @@ def dry_period_cdd_check(
     return data_w_dry_spell_flags.select(["time", rain_col, "dry_spell_flag"])
 
 
-def daily_accumulations(
+def check_daily_accumulations(
     data: pl.DataFrame,
     rain_col: str,
     gauge_lat: int | float,
@@ -138,7 +138,7 @@ def daily_accumulations(
     return data.select(["time", rain_col, "daily_accumulation"])
 
 
-def monthly_accumulations(
+def check_monthly_accumulations(
     data: pl.DataFrame,
     rain_col: str,
     gauge_lat: int | float,
@@ -221,7 +221,7 @@ def monthly_accumulations(
     return gauge_data_monthly_accumulations
 
 
-def streaks_check(
+def check_streaks(
     data: pl.DataFrame,
     rain_col: str,
     gauge_lat: int | float,

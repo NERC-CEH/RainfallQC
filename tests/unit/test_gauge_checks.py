@@ -11,10 +11,10 @@ DEFAULT_RAIN_COL = "rain_mm"
 
 
 def test_get_years_where_nth_percentile_is_zero(daily_gdsr_data):
-    years_95th = gauge_checks.get_years_where_nth_percentile_is_zero(
+    years_95th = gauge_checks.check_years_where_nth_percentile_is_zero(
         daily_gdsr_data, rain_col=DEFAULT_RAIN_COL, quantile=0.95
     )
-    years_50th = gauge_checks.get_years_where_nth_percentile_is_zero(
+    years_50th = gauge_checks.check_years_where_nth_percentile_is_zero(
         daily_gdsr_data, rain_col=DEFAULT_RAIN_COL, quantile=0.5
     )
 
@@ -23,10 +23,10 @@ def test_get_years_where_nth_percentile_is_zero(daily_gdsr_data):
 
 
 def test_get_years_where_annual_mean_k_top_rows_are_zero(hourly_gdsr_data):
-    years_k_top_5 = gauge_checks.get_years_where_annual_mean_k_top_rows_are_zero(
+    years_k_top_5 = gauge_checks.check_years_where_annual_mean_k_top_rows_are_zero(
         hourly_gdsr_data, rain_col=DEFAULT_RAIN_COL, k=5
     )
-    years_k_top_2000 = gauge_checks.get_years_where_annual_mean_k_top_rows_are_zero(
+    years_k_top_2000 = gauge_checks.check_years_where_annual_mean_k_top_rows_are_zero(
         hourly_gdsr_data, rain_col=DEFAULT_RAIN_COL, k=2000
     )
     assert len(years_k_top_5) == 0
@@ -54,21 +54,21 @@ def test_check_wrong_time_gran(daily_gdsr_data):
 
 
 def test_intermittency_check(daily_gdsr_data, gappy_daily_data):
-    yr_list = gauge_checks.intermittency_check(daily_gdsr_data, rain_col=DEFAULT_RAIN_COL)
+    yr_list = gauge_checks.check_intermittency(daily_gdsr_data, rain_col=DEFAULT_RAIN_COL)
     numpy.testing.assert_array_equal(sorted(yr_list), [2006, 2010])
 
-    yr_list = gauge_checks.intermittency_check(gappy_daily_data, rain_col=DEFAULT_RAIN_COL, no_data_threshold=2)
+    yr_list = gauge_checks.check_intermittency(gappy_daily_data, rain_col=DEFAULT_RAIN_COL, no_data_threshold=2)
     numpy.testing.assert_array_equal(yr_list, 2006)
 
 
 def test_breakpoints(daily_gdsr_data, daily_gdsr_data_w_breakpoint):
-    flag = gauge_checks.breakpoints_check(daily_gdsr_data[:1000], rain_col=DEFAULT_RAIN_COL)
+    flag = gauge_checks.check_breakpoints(daily_gdsr_data[:1000], rain_col=DEFAULT_RAIN_COL)
     assert flag == 0
 
-    flag = gauge_checks.breakpoints_check(daily_gdsr_data_w_breakpoint[:400], rain_col=DEFAULT_RAIN_COL)
+    flag = gauge_checks.check_breakpoints(daily_gdsr_data_w_breakpoint[:400], rain_col=DEFAULT_RAIN_COL)
     assert flag == 1
 
 
 def test_min_val_change(hourly_gdsr_data):
-    yr_list = gauge_checks.min_val_change(hourly_gdsr_data, rain_col=DEFAULT_RAIN_COL, expected_min_val=0.1)
+    yr_list = gauge_checks.check_min_val_change(hourly_gdsr_data, rain_col=DEFAULT_RAIN_COL, expected_min_val=0.1)
     numpy.testing.assert_array_equal(yr_list, [2006, 2010])

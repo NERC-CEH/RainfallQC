@@ -13,7 +13,7 @@ import scipy.stats
 from rainfallqc.utils import data_utils, stats
 
 
-def get_years_where_nth_percentile_is_zero(data: pl.DataFrame, rain_col: str, quantile: float) -> list:
+def check_years_where_nth_percentile_is_zero(data: pl.DataFrame, rain_col: str, quantile: float) -> list:
     """
     Return years where the n-th percentiles is zero.
 
@@ -38,7 +38,7 @@ def get_years_where_nth_percentile_is_zero(data: pl.DataFrame, rain_col: str, qu
     return nth_perc.filter(pl.col(rain_col) == 0)["time"].dt.year().to_list()
 
 
-def get_years_where_annual_mean_k_top_rows_are_zero(data: pl.DataFrame, rain_col: str, k: int) -> list:
+def check_years_where_annual_mean_k_top_rows_are_zero(data: pl.DataFrame, rain_col: str, k: int) -> list:
     """
     Return year list where the annual mean top-K rows are zero.
 
@@ -109,7 +109,7 @@ def check_temporal_bias(
     return int(p_val < p_threshold)
 
 
-def intermittency_check(
+def check_intermittency(
     data: pl.DataFrame, rain_col: str, no_data_threshold: int = 2, annual_count_threshold: int = 5
 ) -> list:
     """
@@ -166,7 +166,7 @@ def intermittency_check(
     return years_w_intermittency
 
 
-def breakpoints_check(
+def check_breakpoints(
     data: pl.DataFrame,
     rain_col: str,
     p_threshold: float = 0.01,
@@ -202,7 +202,7 @@ def breakpoints_check(
         return 0
 
 
-def min_val_change(data: pl.DataFrame, rain_col: str, expected_min_val: float) -> list:
+def check_min_val_change(data: pl.DataFrame, rain_col: str, expected_min_val: float) -> list:
     """
     Return years when the minimum recorded value changes.
 
