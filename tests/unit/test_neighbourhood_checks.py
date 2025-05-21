@@ -15,7 +15,7 @@ def test_wet_neighbour_check_hourly(hourly_gdsr_network):
     assert len(hourly_gdsr_network) == 43824
     all_neighbour_cols = hourly_gdsr_network.columns[1:]  # exclude time
     assert len(all_neighbour_cols) == 10
-    result = neighbourhood_checks.wet_neighbour_check(
+    result = neighbourhood_checks.check_wet_neighbours(
         hourly_gdsr_network,
         target_gauge_col=f"{DEFAULT_RAIN_COL}_DE_02483",
         neighbouring_gauge_cols=all_neighbour_cols,
@@ -32,7 +32,7 @@ def test_wet_neighbour_check_daily(daily_gpcc_network):
     assert len(daily_gpcc_network) == 32142
     all_neighbour_cols = daily_gpcc_network.columns[1:]  # exclude time
 
-    result = neighbourhood_checks.wet_neighbour_check(
+    result = neighbourhood_checks.check_wet_neighbours(
         daily_gpcc_network,
         target_gauge_col=f"{DEFAULT_RAIN_COL}_tw_2483",
         neighbouring_gauge_cols=all_neighbour_cols,
@@ -43,7 +43,7 @@ def test_wet_neighbour_check_daily(daily_gpcc_network):
     assert len(result.columns) == 12
     assert result["majority_wet_flag"].max() == 0
 
-    result = neighbourhood_checks.wet_neighbour_check(
+    result = neighbourhood_checks.check_wet_neighbours(
         daily_gpcc_network,
         target_gauge_col=f"{DEFAULT_RAIN_COL}_tw_2483",
         neighbouring_gauge_cols=all_neighbour_cols,
@@ -55,7 +55,7 @@ def test_wet_neighbour_check_daily(daily_gpcc_network):
     assert result["majority_wet_flag"].max() == 1
 
     with pytest.raises(AssertionError):
-        neighbourhood_checks.wet_neighbour_check(
+        neighbourhood_checks.check_wet_neighbours(
             daily_gpcc_network,
             target_gauge_col="wrong",
             neighbouring_gauge_cols=all_neighbour_cols,
