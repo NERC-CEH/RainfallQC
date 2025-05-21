@@ -2,6 +2,10 @@
 History
 =======
 
+0.0.9 (2025-05-??)
+------------------
+* Add methods to run QC frameworks
+
 0.0.8 (2025-05-20)
 ------------------
 * *Hotfix* so nans are ignored when flagging

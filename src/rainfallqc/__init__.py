@@ -10,10 +10,10 @@ from rainfallqc.checks import (
     neighbourhood_checks,
     timeseries_checks,
 )
-from rainfallqc.rulebases import intense_qc_rulebase
+from rainfallqc.qc_frameworks import apply_framework
 
 __all__ = [
-    "intense_qc_rulebase",
+    "apply_framework",
     "comparison_checks",
     "gauge_checks",
     "neighbourhood_checks",
