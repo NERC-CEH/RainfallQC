@@ -1,17 +1,18 @@
-==========
-RainfallQC
-==========
+==============================================
+RainfallQC - Quality control for rainfall data
+==============================================
 
-.. image:: https://img.shields.io/pypi/v/rainfallqc.svg
+..
+    image:: https://img.shields.io/pypi/v/rainfallqc.svg
         :target: https://pypi.python.org/pypi/rainfallqc
 
-.. image:: https://readthedocs.org/projects/rainfallqc/badge/?version=latest
+..
+    image:: https://readthedocs.org/projects/rainfallqc/badge/?version=latest
         :target: https://rainfallqc.readthedocs.io/en/latest/?version=latest
         :alt: Documentation Status
 
 
-
-Quality control procedure for rainfall data
+Provides methods for running QC frameworks.
 
 **WORK IN PROGRESS**
 
@@ -22,7 +23,6 @@ Project ToDos:
 - check https://github.com/nclwater/intense-qc/tree/affinity_indx
 - add meaning of flags
 - Use timestep str maker to the checks
-- Should checking function include the prefix: "check_"?
 
 Proof of concept
 ----------------
