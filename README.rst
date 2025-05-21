@@ -31,8 +31,8 @@ Example 1. - Individual quality checks on single rain gauge
 
 .. code-block:: python
 
-        # Load three types of QC'ing modules from RainfallQC
-        from rainfallqc import gauge_checks, comparison_checks, neighbourhood_checks
+        # Load two types of QC'ing modules from RainfallQC
+        from rainfallqc import gauge_checks, comparison_checks
 
         # 1. Simple 1 gauge QC
         # 1.1. Run 1 qc method for 1 gauge
@@ -51,6 +51,7 @@ Example 2. - Individual quality checks on networks of rain gauges
 .. code-block:: python
 
         # 2. Run neighbour/network checks on a subset of a rain gauge network
+        from rainfallqc import neighbourhood_checks
         from rainfallqc.utils import data_readers
 
         # 2.1. Read in GDSR gauge network metadata
