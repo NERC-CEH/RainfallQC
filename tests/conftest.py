@@ -44,6 +44,13 @@ def gdsr_metadata() -> dict:
     return data_readers.read_gdsr_metadata(data_path)
 
 
+@pytest.fixture()
+def gpcc_metadata() -> dict:
+    data_path = "./tests/data/GPCC/tw_2483.zip"
+    # read in metadata of gauge
+    return data_readers.read_gpcc_metadata_from_zip(data_path, time_res="daily", gpcc_file_format=".dat")
+
+
 @pytest.fixture
 def daily_gdsr_data() -> pl.DataFrame:
     data_path = "./tests/data/GDSR/DE_02483.txt"

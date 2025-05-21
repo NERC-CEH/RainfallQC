@@ -5,7 +5,7 @@ import inspect
 
 import polars as pl
 
-from rainfallqc.qc_frameworks import inbuilt_qc_frameworks
+from rainfallqc.qc_frameworks.inbuilt_qc_frameworks import INBUILT_QC_FRAMEWORKS
 
 
 def run_qc_framework(
@@ -28,20 +28,20 @@ def run_qc_framework(
     Returns
     -------
     qc_results :
-        Results of running QC.
+        Results of running QC framework.
 
     """
     qc_results = {}
     shared_kwargs = kwargs_map.get("shared", {})
 
     if type(qc_framework) is str:
-        if qc_framework in inbuilt_qc_frameworks.keys():
+        if qc_framework in INBUILT_QC_FRAMEWORKS.keys():
             # select in-built qc framework by name
-            qc_framework = inbuilt_qc_frameworks[qc_framework]
+            qc_framework = INBUILT_QC_FRAMEWORKS[qc_framework]
         else:
             raise KeyError(
                 f"QC framework '{qc_framework}' is not known."
-                f"In-built QC frameworks include: {inbuilt_qc_frameworks.keys()}."
+                f"In-built QC frameworks include: {INBUILT_QC_FRAMEWORKS.keys()}."
             )
 
     for qc_method in qc_methods_to_run:

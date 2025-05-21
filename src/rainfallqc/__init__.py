@@ -10,12 +10,13 @@ from rainfallqc.checks import (
     neighbourhood_checks,
     timeseries_checks,
 )
-from rainfallqc.qc_frameworks import apply_framework
+from rainfallqc.qc_frameworks import apply_qc_framework
 
 __all__ = [
-    "apply_framework",
+    "apply_qc_framework",
     "comparison_checks",
     "gauge_checks",
     "neighbourhood_checks",
     "timeseries_checks",
+    "apply_qc_framework",
 ]
