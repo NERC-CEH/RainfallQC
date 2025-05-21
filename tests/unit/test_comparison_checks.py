@@ -2,6 +2,7 @@
 
 """Tests for comparison quality control checks."""
 
+import numpy as np
 import polars as pl
 import pytest
 
@@ -32,7 +33,7 @@ def test_check_daily_exceedance_of_rainfall_world_record(daily_gdsr_data):
     result = comparison_checks.check_exceedance_of_rainfall_world_record(
         daily_gdsr_data, rain_col=DEFAULT_RAIN_COL, time_res="daily"
     )
-    print(result['world_record_check'].value_counts())
+    print(result["world_record_check"].value_counts())
     assert len(result.filter(pl.col("world_record_check") == 0)) == 1759
 
 
@@ -69,3 +70,4 @@ def test_check_daily_exceedance_etccdi_rx1day(daily_gdsr_data, gdsr_metadata):
 )
 def test_flag_exceedance_of_ref_val(vals, max_ref_val, expected):
     assert comparison_checks.flag_exceedance_of_ref_val(vals, max_ref_val) == expected
+    assert np.isnan(comparison_checks.flag_exceedance_of_ref_val(val=None, ref_val=None))
