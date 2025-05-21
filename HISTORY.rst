@@ -2,7 +2,7 @@
 History
 =======
 
-0.0.9 (2025-05-??)
+0.0.9 (2025-05-21)
 ------------------
 * Add methods to run QC frameworks
 * Handle np.nans
