@@ -716,7 +716,7 @@ def flag_accumulation_periods(
 
 def flag_n_hours_accumulation_based_on_threshold(
     period_rain_vals: pl.Series, accumulation_threshold: float, n_hours: int
-) -> int:
+) -> int | float:
     """
     Flag a period as accumulation if a value is preceded by n hourly recordings of 0.
 
@@ -736,10 +736,14 @@ def flag_n_hours_accumulation_based_on_threshold(
 
     """
     flag = 0
-    if period_rain_vals[n_hours - 1] > 0:
+    if period_rain_vals.is_nan().all():
+        return np.nan
+    elif period_rain_vals[n_hours - 1] > 0:
         dry_hours = 0
         for h in range(n_hours - 1):
-            if period_rain_vals[h] <= 0:
+            if not period_rain_vals[h]:
+                continue
+            elif period_rain_vals[h] <= 0:
                 dry_hours += 1
         if dry_hours == n_hours - 1:
             if period_rain_vals[n_hours - 1] > accumulation_threshold:

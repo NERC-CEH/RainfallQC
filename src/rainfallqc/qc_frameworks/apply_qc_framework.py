@@ -9,7 +9,7 @@ from rainfallqc.qc_frameworks.inbuilt_qc_frameworks import INBUILT_QC_FRAMEWORKS
 
 
 def run_qc_framework(
-    data: pl.DataFrame, qc_framework: dict | str, qc_methods_to_run: list, kwargs_map: dict
+    data: pl.DataFrame, qc_framework: dict | str, qc_methods_to_run: list, qc_kwargs: dict
 ) -> pl.DataFrame:
     """
     Run QC methods from a QC framework.
@@ -22,7 +22,7 @@ def run_qc_framework(
         QC framework to run, can be 'in-built' type i.e. IntenseQC or user defined
     qc_methods_to_run :
         Which methods should be run within that framework i.e. [QC1, QC2]
-    kwargs_map :
+    qc_kwargs :
         Keyword arguments to pass to QC framework methods.
 
     Returns
@@ -32,7 +32,7 @@ def run_qc_framework(
 
     """
     qc_results = {}
-    shared_kwargs = kwargs_map.get("shared", {})
+    shared_kwargs = qc_kwargs.get("shared", {})
 
     if type(qc_framework) is str:
         if qc_framework in INBUILT_QC_FRAMEWORKS.keys():
@@ -46,7 +46,7 @@ def run_qc_framework(
 
     for qc_method in qc_methods_to_run:
         qc_func = qc_framework[qc_method]["function"]
-        specific_kwargs = kwargs_map.get(qc_method, {})
+        specific_kwargs = qc_kwargs.get(qc_method, {})
         combined_kwargs = {**shared_kwargs, **specific_kwargs}
 
         # Filter kwargs to only those the function accepts

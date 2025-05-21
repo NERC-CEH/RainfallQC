@@ -6,7 +6,7 @@ from rainfallqc.qc_frameworks import apply_qc_framework
 
 
 def test_apply_qc_frameworks(daily_gpcc_network, gpcc_metadata):
-    qc_to_run = ["QC1", "QC8", "QC9", "QC10", "QC11", "QC12", "QC13", "QC14", "QC15", "QC16"]
+    qc_methods_to_run = ["QC1", "QC8", "QC9", "QC10", "QC11", "QC12", "QC13", "QC14", "QC15", "QC16"]
     qc_kwargs = {
         "QC1": {"quantile": 5},
         "QC13": {"wet_day_threshold": 1.0, "accumulation_multiplying_factor": 2.0},
@@ -20,14 +20,16 @@ def test_apply_qc_frameworks(daily_gpcc_network, gpcc_metadata):
         },
         # Shared defaults applied to all
         "shared": {
-            "rain_col": "rain_mm_DE_01300",
-            "target_gauge_col": "rain_mm_DE_01300",
+            "rain_col": "rain_mm_tw_2483",
+            "target_gauge_col": "rain_mm_tw_2483",
             "gauge_lat": gpcc_metadata["latitude"],
             "gauge_lon": gpcc_metadata["longitude"],
-            "time_res": "hourly",
+            "time_res": "daily",
             "data_resolution": 0.1,
         },
     }
-    apply_qc_framework.run_qc_framework(
-        daily_gpcc_network, qc_framework="IntenseQC", qc_to_run=qc_to_run, qc_kwargs=qc_kwargs
+    result = apply_qc_framework.run_qc_framework(
+        daily_gpcc_network, qc_framework="IntenseQC", qc_methods_to_run=qc_methods_to_run, qc_kwargs=qc_kwargs
     )
+
+    assert len(result.keys()) == 10
