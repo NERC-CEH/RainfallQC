@@ -2,8 +2,7 @@
 RainfallQC - Quality control for rainfall data
 ===============================================
 
-..
-    image:: https://img.shields.io/pypi/v/rainfallqc.svg
+.. image:: https://img.shields.io/pypi/v/rainfallqc.svg
         :target: https://pypi.python.org/pypi/rainfallqc
 
 ..
