@@ -29,7 +29,23 @@ def test_wet_neighbour_check_hourly(hourly_gdsr_network):
     assert result["majority_wet_flag"][357] == 3
 
 
-def test_wet_neighbour_check_daily(daily_gpcc_network):
+def test_wet_neighbour_check_daily_gdsr(daily_gdsr_network):
+    assert len(daily_gdsr_network) == 1825
+    all_neighbour_cols = daily_gdsr_network.columns[1:]  # exclude time
+
+    result = neighbourhood_checks.check_wet_neighbours(
+        daily_gdsr_network,
+        target_gauge_col=f"{DEFAULT_RAIN_COL}_DE_00310",
+        neighbouring_gauge_cols=all_neighbour_cols,
+        time_res="daily",
+        wet_threshold=0.5,
+        min_n_neighbours=3,
+    )
+    assert len(result.columns) == 12
+    assert result["majority_wet_flag"].max() == 1.0
+
+
+def test_wet_neighbour_check_daily_gpcc(daily_gpcc_network):
     assert len(daily_gpcc_network) == 32142
     all_neighbour_cols = daily_gpcc_network.columns[1:]  # exclude time
 

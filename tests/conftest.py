@@ -30,6 +30,28 @@ def get_gpcc_data(time_res: str) -> pl.DataFrame:
     return gpcc_data
 
 
+def get_hourly_gdsr_network(
+    path_to_gdsr_dir: str,
+    target_id: str,
+    distance_threshold: int = 50,
+    n_closest: int = 10,
+    min_overlap_days: int = 500,
+) -> pl.DataFrame:
+    gdsr_obj = data_readers.GDSRNetworkReader(path_to_gdsr_dir=path_to_gdsr_dir)
+    nearby_ids = list(
+        gdsr_obj.get_nearest_overlapping_neighbours_to_target(
+            target_id=target_id,
+            distance_threshold=distance_threshold,
+            n_closest=n_closest,
+            min_overlap_days=min_overlap_days,
+        )
+    )
+    nearby_ids.append(target_id)
+    nearby_data_paths = gdsr_obj.metadata.filter(pl.col("station_id").is_in(nearby_ids))["path"]
+    gdsr_network = gdsr_obj.load_network_data(data_paths=nearby_data_paths)
+    return gdsr_network
+
+
 @pytest.fixture
 def hourly_gdsr_data() -> pl.DataFrame:
     data_path = "./tests/data/GDSR/DE_02483.txt"  # TODO: maybe randomise this with every call? Or use parameterise
@@ -96,17 +118,18 @@ def daily_gpcc_network() -> pl.DataFrame:
 
 @pytest.fixture()
 def hourly_gdsr_network() -> pl.DataFrame:
-    gdsr_obj = data_readers.GDSRNetworkReader(path_to_gdsr_dir="./tests/data/GDSR/")
-    target_id = "DE_00310"
-    nearby_ids = list(
-        gdsr_obj.get_nearest_overlapping_neighbours_to_target(
-            target_id=target_id, distance_threshold=50, n_closest=10, min_overlap_days=500
-        )
+    return get_hourly_gdsr_network(path_to_gdsr_dir="./tests/data/GDSR/", target_id="DE_00310")
+
+
+@pytest.fixture()
+def daily_gdsr_network() -> pl.DataFrame:
+    gdsr_network = get_hourly_gdsr_network(path_to_gdsr_dir="./tests/data/GDSR/", target_id="DE_00310")
+
+    # convert to daily
+    daily_gdsr_network = data_readers.convert_gdsr_hourly_to_daily(
+        gdsr_network, rain_cols=gdsr_network.columns[1:], hour_offset=DEFAULT_GDSR_OFFSET
     )
-    nearby_ids.append(target_id)
-    nearby_data_paths = gdsr_obj.metadata.filter(pl.col("station_id").is_in(nearby_ids))["path"]
-    gdsr_network = gdsr_obj.load_network_data(data_paths=nearby_data_paths)
-    return gdsr_network
+    return daily_gdsr_network
 
 
 @pytest.fixture
