@@ -1,6 +1,6 @@
-==============================================
+===============================================
 RainfallQC - Quality control for rainfall data
-==============================================
+===============================================
 
 ..
     image:: https://img.shields.io/pypi/v/rainfallqc.svg
@@ -46,7 +46,7 @@ Example 1. - Individual quality checks on single rain gauge
 
 
 Example 2. - Individual quality checks on networks of rain gauges
-================================================================
+=================================================================
 
 .. code-block:: python
 
