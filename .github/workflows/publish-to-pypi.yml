@@ -7,7 +7,7 @@ jobs:
     name: Build distribution 📦
     runs-on: ubuntu-latest
 
-    steps:git s
+    steps:
     - uses: actions/checkout@v4
       with:
         persist-credentials: false
