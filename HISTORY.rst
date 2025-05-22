@@ -2,6 +2,10 @@
 History
 =======
 
+0.1.0 (2025-05-22)
+------------------
+* First release to PyPi
+
 0.0.9 (2025-05-21)
 ------------------
 * Add methods to run QC frameworks
