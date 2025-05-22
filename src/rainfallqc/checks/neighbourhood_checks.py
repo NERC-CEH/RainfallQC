@@ -69,6 +69,7 @@ def check_wet_neighbours(
     # 1. Resample to daily
     if time_res == "hourly":
         rain_cols = neighbour_data.columns[1:]  # get rain columns
+        original_hourly_neighbour_data = neighbour_data.clone()
         neighbour_data = data_readers.convert_gdsr_hourly_to_daily(neighbour_data, rain_cols=rain_cols)
 
     # 2. Loop through each neighbour and get wet_flags
@@ -93,9 +94,22 @@ def check_wet_neighbours(
     )
 
     # 6. Clean up data for return
-    return neighbour_data_w_wet_flags.select(
+    neighbour_data_w_wet_flags = neighbour_data_w_wet_flags.select(
         ["time", target_gauge_col] + neighbouring_gauge_cols + ["majority_wet_flag"]
     )
+
+    # 7. If hourly data join back and forward flood fill
+    if time_res == "hourly":
+        hourly_neighbour_data_w_wet_flags = original_hourly_neighbour_data.join(
+            neighbour_data_w_wet_flags[["time", "majority_wet_flag"]], on="time", how="left"
+        )
+        # Forward flood-fill data to convert the flags back to hourly
+        hourly_neighbour_data_w_wet_flags = hourly_neighbour_data_w_wet_flags.with_columns(
+            pl.col("majority_wet_flag").forward_fill(limit=23)  # hours
+        )
+        return hourly_neighbour_data_w_wet_flags
+    else:
+        return neighbour_data_w_wet_flags
 
 
 def get_majority_max_flag(
