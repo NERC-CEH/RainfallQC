@@ -23,6 +23,15 @@ Project To Do:
 - add flag descriptions
 - Use timestep str maker to the checks
 
+Installation
+------------
+RainfallQC can be installed from PyPi:
+
+.. code-block:: bash
+
+    pip install rainfallqc
+
+
 Example use
 -----------
 
