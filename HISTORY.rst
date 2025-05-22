@@ -2,6 +2,10 @@
 History
 =======
 
+0.1.1 (2025-05-22)
+------------------
+* *Hotfix* reupload to PyPi
+
 0.1.0 (2025-05-22)
 ------------------
 * First release to PyPi
