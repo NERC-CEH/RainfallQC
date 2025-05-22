@@ -12,7 +12,7 @@ RainfallQC - Quality control for rainfall data
         :alt: Documentation Status
 
 
-Provides methods for running rainfall quality control frameworks.
+Provides methods for running rainfall quality control.
 
 **NOTEBOOK DEMO AVAILABLE** `HERE <https://github.com/Thomasjkeel/RainfallQC-notebooks/blob/main/notebooks/demo/rainfallQC_demo.ipynb>`_
 
