@@ -44,7 +44,7 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: pypi
-      url: https://pypi.org/p/project/rainfallqc/
+      url: https://pypi.org/p/rainfallqc/
     permissions:
       id-token: write  # IMPORTANT: mandatory for trusted publishing
 
