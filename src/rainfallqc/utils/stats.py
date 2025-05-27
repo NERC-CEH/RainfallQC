@@ -196,6 +196,26 @@ def get_rainfall_world_records() -> dict[str, float]:
     return RAINFALL_WORLD_RECORDS
 
 
+def percentage_diff(target: pl.Series, other: pl.Series) -> pl.Series:
+    """
+    Percentage difference between target and other column.
+
+    Parameters
+    ----------
+    target:
+        Target data to compare other too
+    other:
+        Other data
+
+    Returns
+    -------
+    perc_diff:
+        Percentage difference
+
+    """
+    return (target - other) * 100 / other
+
+
 def pettitt_test(arr: pl.Series | np.ndarray) -> (int | float, int | float):
     """
     Pettitt test for detecting a change point in a time series.
