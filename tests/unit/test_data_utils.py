@@ -47,8 +47,9 @@ def test_convert_daily_data_to_monthly(daily_gdsr_data, daily_gpcc_data, hourly_
         data_utils.convert_daily_data_to_monthly(hourly_gdsr_data, rain_cols=[DEFAULT_RAIN_COL])
 
 
-def test_check_data_is_monthly(hourly_gdsr_data, monthly_gpcc_data):
+def test_check_data_is_monthly(hourly_gdsr_data, monthly_gdsr_network, monthly_gpcc_data):
     data_utils.check_data_is_monthly(monthly_gpcc_data)
+    data_utils.check_data_is_monthly(monthly_gdsr_network)
     with pytest.raises(ValueError):
         data_utils.check_data_is_monthly(hourly_gdsr_data)
 

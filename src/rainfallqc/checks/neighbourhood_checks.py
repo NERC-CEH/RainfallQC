@@ -158,7 +158,7 @@ def check_monthly_neighbours(
 
     """
     # 0. Initial checks
-    data_utils.check_data_is_specific_time_res(monthly_neighbour_data, "1mo")
+    data_utils.check_data_is_monthly(monthly_neighbour_data)
     if target_gauge_col in neighbouring_gauge_cols:
         neighbouring_gauge_cols.remove(target_gauge_col)  # so target col is not included as a neighbour of itself.
     assert target_gauge_col in monthly_neighbour_data.columns, (

@@ -39,7 +39,7 @@ def check_data_has_consistent_time_step(data: pl.DataFrame) -> None:
         raise ValueError(f"Data has a inconsistent time step. Data has following time steps: {timestep_strings}")
 
 
-def check_data_is_monthly(data: pl.DataFrame) -> bool:
+def check_data_is_monthly(data: pl.DataFrame) -> None:
     """
     Check data is monthly.
 

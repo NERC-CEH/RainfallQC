@@ -96,6 +96,18 @@ def test_check_monthly_neighbours(monthly_gdsr_network):
     )
 
 
+def test_check_monthly_neighbours_gpcc(monthly_gpcc_network):
+    all_neighbour_cols = monthly_gpcc_network.columns[1:]  # exclude time
+
+    neighbourhood_checks.check_monthly_neighbours(
+        monthly_gpcc_network,
+        target_gauge_col=f"{DEFAULT_RAIN_COL}_mw_310",
+        neighbouring_gauge_cols=all_neighbour_cols,
+        min_n_neighbours=3,
+        n_neighbours_ignored=0,
+    )
+
+
 def test_make_num_neighbours_online_col(hourly_gdsr_network):
     all_neighbour_cols = hourly_gdsr_network.columns[1:]
     result = neighbourhood_checks.make_num_neighbours_online_col(

@@ -20,10 +20,10 @@ def random() -> np.random.Generator:
     return np.random.default_rng(seed=list(map(ord, "𝕽𝔞𝖓𝔡𝖔𝔪")))
 
 
-def get_gpcc_data(time_res: str) -> pl.DataFrame:
+def get_gpcc_data(time_res: str, gauge_id: str = "2483") -> pl.DataFrame:
     # TODO: maybe randomise this with every call? Or use parameterise
-    gpcc_zip_path = f"./tests/data/GPCC/{time_res}_2483.zip"
-    gpcc_file_name = f"{time_res}_2483.dat"
+    gpcc_zip_path = f"./tests/data/GPCC/{time_res}_{gauge_id}.zip"
+    gpcc_file_name = f"{time_res}_{gauge_id}.dat"
     gpcc_data = data_readers.read_gpcc_data_from_zip(
         gpcc_zip_path, gpcc_file_name, rain_col=DEFAULT_RAIN_COL, time_res=GPCC_TIME_RES_CONVERSION[time_res]
     )
@@ -113,6 +113,22 @@ def daily_gpcc_network() -> pl.DataFrame:
     nearby_ids.append(target_id)
     nearby_data_paths = gpcc_obj.metadata.filter(pl.col("station_id").is_in(nearby_ids))["path"]
     gpcc_network = gpcc_obj.load_network_data(data_paths=nearby_data_paths, rain_col=DEFAULT_RAIN_COL)
+    return gpcc_network
+
+
+@pytest.fixture()
+def monthly_gpcc_network() -> pl.DataFrame:
+    gpcc_obj = data_readers.GPCCNetworkReader(path_to_gpcc_dir="./tests/data/GPCC/", time_res="mw")
+    target_id = "310"
+    nearby_ids = list(
+        gpcc_obj.get_nearest_overlapping_neighbours_to_target(
+            target_id=target_id, distance_threshold=50, n_closest=10, min_overlap_days=500
+        )
+    )
+    nearby_ids.append(target_id)
+    nearby_data_paths = gpcc_obj.metadata.filter(pl.col("station_id").is_in(nearby_ids))["path"]
+    gpcc_network = gpcc_obj.load_network_data(data_paths=nearby_data_paths, rain_col=DEFAULT_RAIN_COL)
+    print(gpcc_network)
     return gpcc_network
 
 
