@@ -74,31 +74,38 @@ def check_wet_neighbours(
 
     # 2. Loop through each neighbour and get wet_flags
     for neighbouring_gauge_col in neighbouring_gauge_cols:
+        # 2.1 Flag data based on comparison of wet values in neighbours
         one_neighbour_data_wet_flags = flag_wet_day_errors_based_on_neighbours(
             neighbour_data, target_gauge_col, neighbouring_gauge_col, wet_threshold
         )
 
-        # 3. Join to all data
+        # 2.2 Join to all data
         neighbour_data = neighbour_data.join(
-            one_neighbour_data_wet_flags[["time", f"wet_flags_{neighbouring_gauge_col}"]],
+            one_neighbour_data_wet_flags[["time", f"wet_flag_{neighbouring_gauge_col}"]],
             on="time",
             how="left",
         )
 
-    # 4. Get number of neighbours 'online' for each time step
+    # 3. Get number of neighbours 'online' for each time step
     neighbour_data = make_num_neighbours_online_col(neighbour_data, neighbouring_gauge_cols)
 
-    # 5. Neighbour majority voting where the flag is the highest flag in all neighbours
-    neighbour_data_w_wet_flags = get_majority_max_flag(
-        neighbour_data, neighbouring_gauge_cols, min_n_neighbours, n_zeros_allowed=n_neighbours_ignored
+    # 4. Neighbour majority voting where the flag is the highest flag in all neighbours
+    neighbour_data_w_wet_flags = get_majority_voting_flag(
+        neighbour_data,
+        neighbouring_gauge_cols,
+        min_n_neighbours,
+        n_zeros_allowed=n_neighbours_ignored,
+        flag_col_prefix="wet_flag_",
+        new_flag_col_name="majority_wet_flag",
+        aggregation="min",
     )
 
-    # 6. Clean up data for return
+    # 5. Clean up data for return
     neighbour_data_w_wet_flags = neighbour_data_w_wet_flags.select(
         ["time", target_gauge_col] + neighbouring_gauge_cols + ["majority_wet_flag"]
     )
 
-    # 7. If hourly data join back and forward flood fill
+    # 6. If hourly data join back and forward flood fill
     if time_res == "hourly":
         hourly_neighbour_data_w_wet_flags = original_hourly_neighbour_data.join(
             neighbour_data_w_wet_flags[["time", "majority_wet_flag"]], on="time", how="left"
@@ -153,8 +160,8 @@ def check_monthly_neighbours(
 
     Returns
     -------
-    data_w_wet_flags :
-        Target data with wet flags
+    data_w_monthly_flags :
+        Target data with monthly flags
 
     """
     # 0. Initial checks
@@ -165,12 +172,174 @@ def check_monthly_neighbours(
         f"Target column: '{target_gauge_col}' needs to column be in data."
     )
 
-    # 1.
-    return monthly_neighbour_data
+    # 2. Loop through each neighbour and get percentage diff flags
+    for neighbouring_gauge_col in neighbouring_gauge_cols:
+        # 2.1. Calculate percentage difference between target and neighbour
+        one_neighbour_data_perc_diff = monthly_neighbour_data.select(
+            ["time", stats.percentage_diff(pl.col(target_gauge_col), pl.col(neighbouring_gauge_col)).alias("perc_diff")]
+        )
+
+        # 2.2 Flag percentage difference
+        one_neighbour_data_monthly_flags = flag_percentage_diff_of_neighbour(
+            one_neighbour_data_perc_diff, neighbouring_gauge_col=neighbouring_gauge_col
+        )
+
+        # 2.3 Join to all data
+        monthly_neighbour_data = monthly_neighbour_data.join(
+            one_neighbour_data_monthly_flags[["time", f"perc_diff_flag_{neighbouring_gauge_col}"]],
+            on="time",
+            how="left",
+        )
+
+    # 3. Get majority flag for positive and negative flags
+    # i.e. get minimum positive flag, when positive, and maximum negative flag when negative
+    monthly_neighbour_data_w_flags = get_majority_positive_or_negative_flags(
+        monthly_neighbour_data,
+        neighbouring_gauge_cols=neighbouring_gauge_cols,
+        min_n_neighbours=min_n_neighbours,
+        n_neighbours_ignored=n_neighbours_ignored,
+    )
+
+    return monthly_neighbour_data_w_flags
 
 
-def get_majority_max_flag(
-    neighbour_data: pl.DataFrame, neighbouring_gauge_cols: list[str], min_n_neighbours: int, n_zeros_allowed: int
+def get_majority_positive_or_negative_flags(
+    monthly_neighbour_data: pl.DataFrame,
+    neighbouring_gauge_cols: list,
+    min_n_neighbours: int,
+    n_neighbours_ignored: int,
+) -> pl.DataFrame:
+    """
+    Get majority voted positive or negative flags i.e. get minimum positive flag, or maximum negative flag.
+
+    Parameters
+    ----------
+    monthly_neighbour_data :
+        Monthly rainfall data of neighbouring gauges with time col
+    neighbouring_gauge_cols:
+        List of columns with neighbouring gauges
+    min_n_neighbours :
+        Minimum number of neighbours needed to be checked for flag
+    n_neighbours_ignored :
+        Number of zero flags allowed for majority voting
+
+    Returns
+    -------
+    data_w_monthly_flag :
+        Data with majority_monthly_flag
+
+    """
+    # 1. Get negative and positive only data for flagging
+    all_flag_cols = [f"perc_diff_flag_{col}" for col in neighbouring_gauge_cols]
+    data_positive = data_utils.extract_positive_values_from_data(
+        monthly_neighbour_data, cols_to_extract_from=all_flag_cols
+    )
+    data_negative = data_utils.extract_negative_values_from_data(
+        monthly_neighbour_data, cols_to_extract_from=all_flag_cols
+    )
+
+    # 2. Get number of neighbours 'online' at each time step for positive and negative data
+    data_positive = make_num_neighbours_online_col(data_positive, all_flag_cols)
+    data_negative = make_num_neighbours_online_col(data_negative, all_flag_cols)
+
+    # 3. Neighbour majority voting where the flag is the highest flag in all neighbours
+    data_positive_flags = get_majority_voting_flag(
+        data_positive,
+        neighbouring_gauge_cols,
+        min_n_neighbours,
+        n_zeros_allowed=n_neighbours_ignored,
+        flag_col_prefix="perc_diff_flag_",
+        new_flag_col_name="majority_monthly_flag",
+        aggregation="min",
+    )
+    data_negative_flags = get_majority_voting_flag(
+        data_negative,
+        neighbouring_gauge_cols,
+        min_n_neighbours,
+        n_zeros_allowed=n_neighbours_ignored,
+        flag_col_prefix="perc_diff_flag_",
+        new_flag_col_name="majority_monthly_flag",
+        aggregation="max",
+    )
+
+    # 4. Merge flags together
+    monthly_neighbour_data_w_flags = data_positive_flags.select(["time", "majority_monthly_flag"]).join(
+        data_negative_flags.select(["time", "majority_monthly_flag"]), on="time", how="full"
+    )
+    monthly_neighbour_data_w_flags = monthly_neighbour_data_w_flags.with_columns(
+        [
+            pl.when((pl.col("majority_monthly_flag") != 0) & pl.col("majority_monthly_flag").is_not_nan())
+            .then(pl.col("majority_monthly_flag"))
+            .when((pl.col("majority_monthly_flag_right") != 0) & pl.col("majority_monthly_flag_right").is_not_nan())
+            .then(pl.col("majority_monthly_flag_right"))
+            .when(
+                (pl.col("majority_monthly_flag") == 0) & pl.col("majority_monthly_flag_right").is_nan()
+                | (pl.col("majority_monthly_flag_right") == 0) & pl.col("majority_monthly_flag").is_nan()
+                | (pl.col("majority_monthly_flag") == 0) & (pl.col("majority_monthly_flag_right") == 0)
+            )
+            .then(0)
+            .otherwise(np.nan)
+            .alias("majority_monthly_flag")
+        ]
+    )
+
+    # 5. Join back to original data
+    return monthly_neighbour_data.join(monthly_neighbour_data_w_flags, on="time", how="left")
+
+
+def flag_percentage_diff_of_neighbour(neighbour_data: pl.DataFrame, neighbouring_gauge_col: str) -> pl.DataFrame:
+    """
+    Flag percentage difference between target gauge and neighbouring gauge.
+
+    Flags -3 to 3 based on percentage difference:
+    -3, -100% (i.e. gauge dry but neighbours not)
+    -2, <= 50%
+    -1, <= 25%
+    1, >= 25%
+    2, >= 50%
+    3, >= 100%
+
+    Parameters
+    ----------
+    neighbour_data :
+        Rainfall data of all neighbouring gauges with time col
+    neighbouring_gauge_col:
+        Neighbouring gauge column
+
+    Returns
+    -------
+    neighbour_data_w_flags :
+        Data with perc_diff flags
+
+    """
+    return neighbour_data.with_columns(
+        pl.when((pl.col("perc_diff") <= -100.0))
+        .then(-3)
+        .when((pl.col("perc_diff") <= -50.0) & (pl.col("perc_diff") > -100.0))
+        .then(-2)
+        .when((pl.col("perc_diff") <= -25.0) & (pl.col("perc_diff") > -50.0))
+        .then(-1)
+        .when((pl.col("perc_diff") <= 25.0) & (pl.col("perc_diff") > -25.0))
+        .then(0)
+        .when((pl.col("perc_diff") >= 25.0) & (pl.col("perc_diff") < 50.0))
+        .then(1)
+        .when((pl.col("perc_diff") >= 50.0) & (pl.col("perc_diff") < 100.0))
+        .then(2)
+        .when((pl.col("perc_diff") >= 100.0))
+        .then(3)
+        .otherwise(0)
+        .alias(f"perc_diff_flag_{neighbouring_gauge_col}")
+    )
+
+
+def get_majority_voting_flag(
+    neighbour_data: pl.DataFrame,
+    neighbouring_gauge_cols: list[str],
+    min_n_neighbours: int,
+    n_zeros_allowed: int,
+    flag_col_prefix: str,
+    new_flag_col_name: str,
+    aggregation: str,
 ) -> pl.DataFrame:
     """
     Get the highest flag that is in all neighbours.
@@ -189,6 +358,12 @@ def get_majority_max_flag(
         Minimum number of neighbours online that will be considered
     n_zeros_allowed :
         Number of zero flags allowed (default: 0)
+    flag_col_prefix :
+        Prefix for flag column e.g. "wet_flag_"
+    new_flag_col_name :
+        New flag column name
+    aggregation :
+        "min" or "max"
 
     Returns
     -------
@@ -196,27 +371,40 @@ def get_majority_max_flag(
         Data with majority wet flag
 
     """
+    # Added because if flags are negative then we want to use 'max_horizontal' else use 'min_horizontal'
+    aggregate_func = pl.min_horizontal if aggregation == "min" else pl.max_horizontal
     return neighbour_data.with_columns(
         pl.when(pl.col("n_neighbours_online") < min_n_neighbours)
         .then(np.nan)
         .otherwise(
-            # Check if there is less than or equal to the number of allowed zeros.
+            # Check if there is less than or equal to the number of allowed zeros. Zeros mean no flag, thus no error.
             pl.when(
-                pl.sum_horizontal([(pl.col(f"wet_flags_{c}") == 0).cast(pl.Int8) for c in neighbouring_gauge_cols])
+                pl.sum_horizontal(
+                    [
+                        (pl.col(f"{flag_col_prefix}{neighbour_col}") == 0).cast(pl.Int8)
+                        for neighbour_col in neighbouring_gauge_cols
+                    ]
+                )
                 <= n_zeros_allowed
             )
             .then(
                 # ignore zeros in calculation of min
-                pl.min_horizontal(
+                aggregate_func(
                     [
-                        pl.when(pl.col(f"wet_flags_{c}") == 0).then(None).otherwise(pl.col(f"wet_flags_{c}"))
-                        for c in neighbouring_gauge_cols
+                        pl.when(pl.col(f"{flag_col_prefix}{neighbour_col}") == 0)
+                        .then(None)
+                        .otherwise(pl.col(f"{flag_col_prefix}{neighbour_col}"))
+                        for neighbour_col in neighbouring_gauge_cols
                     ]
                 )
             )
-            .otherwise(pl.min_horizontal([pl.col(f"wet_flags_{c}") for c in neighbouring_gauge_cols]))
+            .otherwise(
+                aggregate_func(
+                    [pl.col(f"{flag_col_prefix}{neighbour_col}") for neighbour_col in neighbouring_gauge_cols]
+                )
+            )
         )
-        .alias("majority_wet_flag")
+        .alias(new_flag_col_name)
     )
 
 
@@ -246,14 +434,14 @@ def make_num_neighbours_online_col(neighbour_data: pl.DataFrame, neighbouring_ga
 
 
 def flag_wet_day_errors_based_on_neighbours(
-    all_neighbour_data: pl.DataFrame, target_gauge_col: str, neighbouring_gauge_col: str, wet_threshold: float
+    neighbour_data: pl.DataFrame, target_gauge_col: str, neighbouring_gauge_col: str, wet_threshold: float
 ) -> pl.DataFrame:
     """
     Flag wet days with errors based on the percentile difference with neighbouring gauge.
 
     Parameters
     ----------
-    all_neighbour_data :
+    neighbour_data :
         Rainfall data of all neighbouring gauges with time col
     target_gauge_col :
         Target gauge column
@@ -264,20 +452,20 @@ def flag_wet_day_errors_based_on_neighbours(
 
     Returns
     -------
-    all_neighbour_data_wet_flags :
+    neighbour_data_wet_flags :
         Data with wet flags
 
     """
     # 1. Remove nans from target and neighbour
-    all_neighbour_data_clean = all_neighbour_data.drop_nans(subset=[target_gauge_col, neighbouring_gauge_col])
+    neighbour_data_clean = neighbour_data.drop_nans(subset=[target_gauge_col, neighbouring_gauge_col])
 
     # 2. Get normalised difference between target and neighbour
-    all_neighbour_data_diff = normalised_diff_between_target_neighbours(
-        all_neighbour_data_clean, target_gauge_col=target_gauge_col, neighbouring_gauge_col=neighbouring_gauge_col
+    neighbour_data_diff = normalised_diff_between_target_neighbours(
+        neighbour_data_clean, target_gauge_col=target_gauge_col, neighbouring_gauge_col=neighbouring_gauge_col
     )
     # 3. filter wet values
-    all_neighbour_data_filtered_diff = filter_data_based_on_unusual_wetness(
-        all_neighbour_data_diff,
+    neighbour_data_filtered_diff = filter_data_based_on_unusual_wetness(
+        neighbour_data_diff,
         target_gauge_col=target_gauge_col,
         neighbouring_gauge_col=neighbouring_gauge_col,
         wet_threshold=wet_threshold,
@@ -285,11 +473,11 @@ def flag_wet_day_errors_based_on_neighbours(
 
     # 4. Fit exponential function of normalised diff and get q95, q99 and q999
     expon_percentiles = stats.fit_expon_and_get_percentile(
-        all_neighbour_data_filtered_diff[f"diff_{neighbouring_gauge_col}"], percentiles=[0.95, 0.99, 0.999]
+        neighbour_data_filtered_diff[f"diff_{neighbouring_gauge_col}"], percentiles=[0.95, 0.99, 0.999]
     )
     # 5. Assign flags
     all_neighbour_data_wet_flags = add_wet_flags_to_data(
-        all_neighbour_data_diff, target_gauge_col, neighbouring_gauge_col, expon_percentiles, wet_threshold
+        neighbour_data_diff, target_gauge_col, neighbouring_gauge_col, expon_percentiles, wet_threshold
     )
     return all_neighbour_data_wet_flags
 
@@ -348,7 +536,7 @@ def add_wet_flags_to_data(
         )
         .then(3)
         .otherwise(0)
-        .alias(f"wet_flags_{neighbouring_gauge_col}")
+        .alias(f"wet_flag_{neighbouring_gauge_col}")
     )
 
 

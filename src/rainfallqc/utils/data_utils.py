@@ -58,7 +58,9 @@ def check_data_is_monthly(data: pl.DataFrame) -> None:
     timestep_strings = [format_timedelta_duration(td) for td in unique_timesteps]
 
     if not all(ts in MONTHLY_TIME_STEPS for ts in timestep_strings):
-        raise ValueError(f"Data contains timesteps not in {MONTHLY_TIME_STEPS}. Timesteps found are {timestep_strings}")
+        raise ValueError(
+            f"Data contains non-monthly timesteps not like '29d', '30d', etc. Timesteps found are {timestep_strings}"
+        )
 
     if not timestep_strings:
         raise ValueError("No timesteps found in data.")
@@ -166,6 +168,64 @@ def convert_daily_data_to_monthly(
     )
 
     return monthly_data
+
+
+def extract_negative_values_from_data(data: pl.DataFrame, cols_to_extract_from: list) -> pl.DataFrame:
+    """
+    Extract negative values from data.
+
+    Parameters
+    ----------
+    data :
+        Rainfall data.
+    cols_to_extract_from :
+        Columns to extract negative values from
+
+    Returns
+    -------
+    data :
+        Data with only negative values or 0.
+
+    """
+    return data.select(
+        [
+            "time",
+            *[
+                pl.when(pl.col(col) <= 0).then(pl.col(col)).otherwise(None).alias(col)
+                for col in cols_to_extract_from
+                if col != "time"
+            ],
+        ]
+    )
+
+
+def extract_positive_values_from_data(data: pl.DataFrame, cols_to_extract_from: list) -> pl.DataFrame:
+    """
+    Extract positive values from data.
+
+    Parameters
+    ----------
+    data :
+        Rainfall data.
+    cols_to_extract_from :
+        Columns to extract positive values from
+
+    Returns
+    -------
+    data :
+        Data with only positive values or 0.
+
+    """
+    return data.select(
+        [
+            "time",
+            *[
+                pl.when(pl.col(col) >= 0).then(pl.col(col)).otherwise(None).alias(col)
+                for col in cols_to_extract_from
+                if col != "time"
+            ],
+        ]
+    )
 
 
 def format_timedelta_duration(td: datetime.timedelta) -> str:

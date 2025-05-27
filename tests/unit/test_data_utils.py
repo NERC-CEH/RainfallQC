@@ -52,6 +52,8 @@ def test_check_data_is_monthly(hourly_gdsr_data, monthly_gdsr_network, monthly_g
     data_utils.check_data_is_monthly(monthly_gdsr_network)
     with pytest.raises(ValueError):
         data_utils.check_data_is_monthly(hourly_gdsr_data)
+    with pytest.raises(ValueError):
+        data_utils.check_data_is_monthly(hourly_gdsr_data.filter(pl.col("time") is None))
 
 
 def test_get_dry_spells(hourly_gdsr_data):

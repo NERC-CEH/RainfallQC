@@ -87,13 +87,14 @@ def test_check_wet_neighbour_hourly(hourly_gdsr_network):
 def test_check_monthly_neighbours(monthly_gdsr_network):
     all_neighbour_cols = monthly_gdsr_network.columns[1:]  # exclude time
 
-    neighbourhood_checks.check_monthly_neighbours(
+    result = neighbourhood_checks.check_monthly_neighbours(
         monthly_gdsr_network,
         target_gauge_col=f"{DEFAULT_RAIN_COL}_DE_00310",
         neighbouring_gauge_cols=all_neighbour_cols,
         min_n_neighbours=3,
         n_neighbours_ignored=0,
     )
+    assert len(result.filter(pl.col("majority_monthly_flag") == 1)) == 1
 
 
 def test_check_monthly_neighbours_gpcc(monthly_gpcc_network):
