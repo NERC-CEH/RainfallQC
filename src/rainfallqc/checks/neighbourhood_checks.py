@@ -112,6 +112,10 @@ def check_wet_neighbours(
         return neighbour_data_w_wet_flags
 
 
+# def check_monthly_neighbours(neighbour_data: pl.DataFrame) -> pl.DataFrame:
+#     return neighbour_data
+
+
 def get_majority_max_flag(
     neighbour_data: pl.DataFrame, neighbouring_gauge_cols: list[str], min_n_neighbours: int, n_zeros_allowed: int
 ) -> pl.DataFrame:

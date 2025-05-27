@@ -29,7 +29,7 @@ def test_wet_neighbour_check_daily_gdsr(daily_gdsr_network):
     assert len(result.filter(pl.col("majority_wet_flag") == 1)) == 1
 
 
-def test_wet_neighbour_check_daily_gpcc(daily_gpcc_network):
+def test_check_wet_neighbour_daily_gpcc(daily_gpcc_network):
     assert len(daily_gpcc_network) == 32142
     all_neighbour_cols = daily_gpcc_network.columns[1:]  # exclude time
 
@@ -66,7 +66,7 @@ def test_wet_neighbour_check_daily_gpcc(daily_gpcc_network):
         )
 
 
-def test_wet_neighbour_check_hourly(hourly_gdsr_network):
+def test_check_wet_neighbour_hourly(hourly_gdsr_network):
     assert len(hourly_gdsr_network) == 43824
     all_neighbour_cols = hourly_gdsr_network.columns[1:]  # exclude time
     assert len(all_neighbour_cols) == 10
@@ -82,6 +82,10 @@ def test_wet_neighbour_check_hourly(hourly_gdsr_network):
     assert len(result.columns) == 12
     assert result["majority_wet_flag"].max() == 1.0
     assert len(result.filter(pl.col("majority_wet_flag") == 1)) == 24
+
+
+def test_check_monthly_neighbours(daily_gdsr_network):
+    neighbourhood_checks.check_monthly_neighbours(daily_gdsr_network)
 
 
 def test_make_num_neighbours_online_col(hourly_gdsr_network):
