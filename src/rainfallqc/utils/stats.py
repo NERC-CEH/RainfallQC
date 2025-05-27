@@ -196,7 +196,7 @@ def get_rainfall_world_records() -> dict[str, float]:
     return RAINFALL_WORLD_RECORDS
 
 
-def percentage_diff(target: pl.Series, other: pl.Series) -> pl.Series:
+def percentage_diff(target: pl.Expr, other: pl.Expr) -> pl.Series:
     """
     Percentage difference between target and other column.
 
