@@ -93,7 +93,7 @@ def convert_datarray_seconds_to_days(series_seconds: xr.DataArray) -> np.ndarray
 
 
 def convert_daily_data_to_monthly(
-    daily_data: pl.DataFrame, rain_col: str, perc_for_valid_month: int | float = 95
+    daily_data: pl.DataFrame, rain_cols: list, perc_for_valid_month: int | float = 95
 ) -> pl.DataFrame:
     """
     Convert daily data to monthly whilst setting month to NaN if less than a given percentage of days is missing.
@@ -102,8 +102,8 @@ def convert_daily_data_to_monthly(
     ----------
     daily_data :
         Daily data to convert to monthly
-    rain_col :
-        Column with rainfall data
+    rain_cols :
+        Columns with rainfall data
     perc_for_valid_month :
         Percentage of month needed to be classed as a valid month for the monthly group by
 
@@ -121,16 +121,13 @@ def convert_daily_data_to_monthly(
     # 2. Calculate expected days in month
     daily_data = get_expected_days_in_month(daily_data)
 
+    agg_expressions = [pl.len().alias("n_days"), pl.col("expected_days_in_month").first()]
+    agg_expressions += [pl.col(col).sum().alias(col) for col in rain_cols]
+
     # 3. Group data into monthly
     monthly_data = (
         daily_data.group_by_dynamic("time", every="1mo", closed="right")
-        .agg(
-            [
-                pl.len().alias("n_days"),
-                pl.col(rain_col).sum().alias(rain_col),
-                pl.col("expected_days_in_month").first(),
-            ]
-        )
+        .agg(agg_expressions)
         .filter(
             pl.col("n_days")
             >= (

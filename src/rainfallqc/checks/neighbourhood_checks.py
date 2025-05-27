@@ -112,8 +112,61 @@ def check_wet_neighbours(
         return neighbour_data_w_wet_flags
 
 
-# def check_monthly_neighbours(neighbour_data: pl.DataFrame) -> pl.DataFrame:
-#     return neighbour_data
+def check_monthly_neighbours(
+    monthly_neighbour_data: pl.DataFrame,
+    target_gauge_col: str,
+    neighbouring_gauge_cols: List[str],
+    min_n_neighbours: int,
+    n_neighbours_ignored: int = 0,
+) -> pl.DataFrame:
+    """
+    Identify suspicious monthly totals by comparison to neighbouring monthly gauges.
+
+    Flags (majority voting where flag is the highest value across all neighbours):
+    Flags -3 to 3 based on percentage difference:
+    -3, -100% (i.e. gauge dry but neighbours not)
+    -2, <= 50%
+    -1, <= 25%
+    1, >= 25%
+    2, >= 50%
+    3, >= 100%
+    Flags equal to 3 may be upgraded to:
+    4, >=1.25 x record maximum for all neighbours
+    5, >=2 x record maximum for all neighbours
+    Or:
+    0, if not in extreme exceedance of neighbours
+
+    This is QC20 from the IntenseQC framework.
+
+    Parameters
+    ----------
+    monthly_neighbour_data :
+        Monthly rainfall data of neighbouring gauges with time col
+    target_gauge_col :
+        Target gauge column
+    neighbouring_gauge_cols:
+        List of columns with neighbouring gauges
+    min_n_neighbours :
+        Minimum number of neighbours needed to be checked for flag
+    n_neighbours_ignored :
+        Number of zero flags allowed for majority voting (default: 0)
+
+    Returns
+    -------
+    data_w_wet_flags :
+        Target data with wet flags
+
+    """
+    # 0. Initial checks
+    data_utils.check_data_is_specific_time_res(monthly_neighbour_data, "1mo")
+    if target_gauge_col in neighbouring_gauge_cols:
+        neighbouring_gauge_cols.remove(target_gauge_col)  # so target col is not included as a neighbour of itself.
+    assert target_gauge_col in monthly_neighbour_data.columns, (
+        f"Target column: '{target_gauge_col}' needs to column be in data."
+    )
+
+    # 1.
+    return monthly_neighbour_data
 
 
 def get_majority_max_flag(

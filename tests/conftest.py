@@ -8,7 +8,7 @@ import numpy as np
 import polars as pl
 import pytest
 
-from rainfallqc.utils import data_readers
+from rainfallqc.utils import data_readers, data_utils
 
 DEFAULT_RAIN_COL = "rain_mm"
 DEFAULT_GDSR_OFFSET = 7  # 7 hours
@@ -130,6 +130,22 @@ def daily_gdsr_network() -> pl.DataFrame:
         gdsr_network, rain_cols=gdsr_network.columns[1:], hour_offset=DEFAULT_GDSR_OFFSET
     )
     return daily_gdsr_network
+
+
+@pytest.fixture()
+def monthly_gdsr_network() -> pl.DataFrame:
+    gdsr_network = get_hourly_gdsr_network(path_to_gdsr_dir="./tests/data/GDSR/", target_id="DE_00310")
+
+    # convert to daily
+    daily_gdsr_network = data_readers.convert_gdsr_hourly_to_daily(
+        gdsr_network, rain_cols=gdsr_network.columns[1:], hour_offset=DEFAULT_GDSR_OFFSET
+    )
+
+    # convert to monthly
+    monthly_gdsr_network = data_utils.convert_daily_data_to_monthly(
+        daily_gdsr_network, rain_cols=daily_gdsr_network.columns[1:], perc_for_valid_month=95
+    )
+    return monthly_gdsr_network
 
 
 @pytest.fixture
