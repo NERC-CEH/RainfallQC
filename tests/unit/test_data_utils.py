@@ -47,6 +47,12 @@ def test_convert_daily_data_to_monthly(daily_gdsr_data, daily_gpcc_data, hourly_
         data_utils.convert_daily_data_to_monthly(hourly_gdsr_data, rain_cols=[DEFAULT_RAIN_COL])
 
 
+def test_check_data_is_monthly(hourly_gdsr_data, monthly_gpcc_data):
+    data_utils.check_data_is_monthly(monthly_gpcc_data)
+    with pytest.raises(ValueError):
+        data_utils.check_data_is_monthly(hourly_gdsr_data)
+
+
 def test_get_dry_spells(hourly_gdsr_data):
     result = data_utils.get_dry_spells(hourly_gdsr_data, rain_col=DEFAULT_RAIN_COL)
     assert "is_dry" in result

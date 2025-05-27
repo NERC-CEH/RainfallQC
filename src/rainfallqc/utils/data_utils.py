@@ -15,6 +15,7 @@ import xarray as xr
 
 SECONDS_IN_DAY = 86400.0
 TEMPORAL_CONVERSIONS = {"hourly": "1h", "daily": "1d", "monthly": "1mo"}
+MONTHLY_TIME_STEPS = ["28d", "29d", "30d", "31d"]
 
 
 def check_data_has_consistent_time_step(data: pl.DataFrame) -> None:
@@ -38,9 +39,36 @@ def check_data_has_consistent_time_step(data: pl.DataFrame) -> None:
         raise ValueError(f"Data has a inconsistent time step. Data has following time steps: {timestep_strings}")
 
 
+def check_data_is_monthly(data: pl.DataFrame) -> bool:
+    """
+    Check data is monthly.
+
+    Parameters
+    ----------
+    data :
+        Data with time column
+
+    Raises
+    ------
+    ValueError :
+        If data has a no monthly time steps
+
+    """
+    unique_timesteps = get_data_timesteps(data)
+    timestep_strings = [format_timedelta_duration(td) for td in unique_timesteps]
+
+    if not all(ts in MONTHLY_TIME_STEPS for ts in timestep_strings):
+        raise ValueError(f"Data contains timesteps not in {MONTHLY_TIME_STEPS}. Timesteps found are {timestep_strings}")
+
+    if not timestep_strings:
+        raise ValueError("No timesteps found in data.")
+
+
 def check_data_is_specific_time_res(data: pl.DataFrame, time_res: str | list) -> None:
     """
     Check data has a hourly or daily time step.
+
+    Does not work for monthly data, please use 'check_data_is_monthly'.
 
     Parameters
     ----------
