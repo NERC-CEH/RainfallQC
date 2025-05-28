@@ -106,9 +106,9 @@ def test_check_monthly_neighbours_gpcc(monthly_gpcc_network):
         target_gauge_col=f"{DEFAULT_RAIN_COL}_mw_310",
         neighbouring_gauge_cols=all_neighbour_cols,
         min_n_neighbours=3,
-        n_neighbours_ignored=0,
+        n_neighbours_ignored=1,
     )
-    assert len(result.filter(pl.col("majority_monthly_flag") == 0)) == 1536
+    assert len(result.filter(pl.col("majority_monthly_flag") > 0)) == 9
 
 
 def test_make_num_neighbours_online_col(hourly_gdsr_network):
