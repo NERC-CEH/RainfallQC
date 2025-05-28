@@ -95,6 +95,7 @@ def test_check_monthly_neighbours(monthly_gdsr_network):
         n_neighbours_ignored=0,
     )
     assert len(result.filter(pl.col("majority_monthly_flag") == 1)) == 1
+    assert len(result.filter(pl.col("majority_monthly_flag") == 5)) == 9
 
 
 def test_check_monthly_neighbours_gpcc(monthly_gpcc_network):
@@ -107,7 +108,7 @@ def test_check_monthly_neighbours_gpcc(monthly_gpcc_network):
         min_n_neighbours=3,
         n_neighbours_ignored=0,
     )
-    assert len(result.filter(pl.col("majority_monthly_flag") == 1)) == 1
+    assert len(result.filter(pl.col("majority_monthly_flag") == 0)) == 1536
 
 
 def test_make_num_neighbours_online_col(hourly_gdsr_network):

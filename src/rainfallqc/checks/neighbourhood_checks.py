@@ -199,16 +199,94 @@ def check_monthly_neighbours(
         min_n_neighbours=min_n_neighbours,
         n_neighbours_ignored=n_neighbours_ignored,
     )
-    # 4. Calculate neighbour max monthly climatology
-    monthly_neighbour_data_w_flags = data_utils.make_month_and_year_col(monthly_neighbour_data_w_flags)
-    monthly_neighbour_data_w_flags = make_num_neighbours_online_col(
+    # 4. Calculate neighbour monthly max column
+    monthly_neighbour_data_w_flags = make_neighbour_monthly_max_climatology(
         monthly_neighbour_data_w_flags, neighbouring_gauge_cols
     )
 
-    # monthly_neighbour_data_max = monthly_neighbour_data_w_flags.group_by("month").agg(
-    #     pl.max_horizontal([pl.col(col).max() for col in neighbouring_gauge_cols]).alias("neighbour_max")
-    # )
-    return monthly_neighbour_data_w_flags
+    # 5. Upgrade extreme wet flags to 4 or 5 based on excess of neighbour monthly max climatology
+    monthly_neighbour_data_w_flags = upgrade_monthly_flag_using_neighbour_max_climatology(
+        monthly_neighbour_data_w_flags, target_gauge_col, min_n_neighbours
+    )
+
+    return monthly_neighbour_data_w_flags.select(
+        ["time", target_gauge_col, *neighbouring_gauge_cols, "majority_monthly_flag"]
+    )
+
+
+def make_neighbour_monthly_max_climatology(
+    monthly_neighbour_data: pl.DataFrame, neighbouring_gauge_cols: list
+) -> pl.DataFrame:
+    """
+    Make neighbourhood monthly max climatology.
+
+    Parameters
+    ----------
+    monthly_neighbour_data :
+        Monthly rainfall data of neighbouring gauges with time col
+    neighbouring_gauge_cols:
+        List of columns with neighbouring gauges
+
+    Returns
+    -------
+    data_w_monthly_flags :
+        Target data with monthly flags
+
+    """
+    # 1. Make number of neighbours online column
+    monthly_neighbour_data = make_num_neighbours_online_col(monthly_neighbour_data, neighbouring_gauge_cols)
+
+    # 2. Make month and year column
+    monthly_neighbour_data = data_utils.make_month_and_year_col(monthly_neighbour_data)
+
+    # 3. Calculate neighbour max monthly climatology
+    monthly_neighbour_data_max = monthly_neighbour_data.group_by("month").agg(
+        pl.max_horizontal([pl.col(col).max() for col in neighbouring_gauge_cols]).alias("neighbour_max")
+    )
+
+    # 4. Join neighbour max climatology back to data
+    monthly_neighbour_data = monthly_neighbour_data.join(monthly_neighbour_data_max, on="month")
+    return monthly_neighbour_data
+
+
+def upgrade_monthly_flag_using_neighbour_max_climatology(
+    monthly_neighbour_data_w_flags: pl.DataFrame, target_gauge_col: str, min_n_neighbours: int
+) -> pl.DataFrame:
+    """
+    Upgrade flags to 4 and 5 flags for monthly neighbours in excess of neighbourhood monthly climatological max.
+
+    Parameters
+    ----------
+    monthly_neighbour_data_w_flags :
+        Monthly rainfall data of neighbouring gauges with time col and 'majority_monthly_flag'
+    target_gauge_col :
+        Target gauge column
+    min_n_neighbours :
+        Minimum number of neighbours needed to be checked for flag
+
+    Returns
+    -------
+    data_w_monthly_flags :
+        Target data with monthly flags
+
+    """
+    return monthly_neighbour_data_w_flags.with_columns(
+        pl.when(
+            (pl.col("majority_monthly_flag") == 3)
+            & (pl.col("n_neighbours_online") >= min_n_neighbours)
+            & (pl.col(target_gauge_col) > (1.25 * pl.col("neighbour_max")))
+            & (pl.col(target_gauge_col) < (2 * pl.col("neighbour_max")))
+        )
+        .then(4)
+        .when(
+            (pl.col("majority_monthly_flag") == 3)
+            & (pl.col("n_neighbours_online") >= min_n_neighbours)
+            & (pl.col(target_gauge_col) > (2 * pl.col("neighbour_max")))
+        )
+        .then(5)
+        .otherwise(pl.col("majority_monthly_flag"))
+        .alias("majority_monthly_flag")
+    )
 
 
 def get_majority_positive_or_negative_flags(
