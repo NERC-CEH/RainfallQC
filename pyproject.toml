@@ -28,7 +28,7 @@ license = { file = "LICENSE" }
 dependencies = [
   "scipy",
   "numpy",
-  "polars",
+  "polars>=1.30",
   "pandas",
   "xarray",
   "bottleneck",
