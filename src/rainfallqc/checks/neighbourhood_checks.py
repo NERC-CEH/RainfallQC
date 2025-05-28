@@ -107,16 +107,141 @@ def check_wet_neighbours(
 
     # 6. If hourly data join back and forward flood fill
     if time_res == "hourly":
+        # 6.1 Join flags back to original hourly data
         hourly_neighbour_data_w_wet_flags = original_hourly_neighbour_data.join(
             neighbour_data_w_wet_flags[["time", "majority_wet_flag"]], on="time", how="left"
         )
-        # Forward flood-fill data to convert the flags back to hourly
+        # 6.2 Forward flood-fill data to convert the flags back to hourly
         hourly_neighbour_data_w_wet_flags = hourly_neighbour_data_w_wet_flags.with_columns(
             pl.col("majority_wet_flag").forward_fill(limit=23)  # hours
         )
         return hourly_neighbour_data_w_wet_flags
     else:
         return neighbour_data_w_wet_flags
+
+
+def check_dry_neighbours(
+    neighbour_data: pl.DataFrame,
+    target_gauge_col: str,
+    neighbouring_gauge_cols: List[str],
+    time_res: str,
+    min_n_neighbours: int,
+    dry_period_days: int = 15,
+    n_neighbours_ignored: int = 0,
+) -> pl.DataFrame:
+    """
+    Identify suspicious dry periods by comparison to neighbour for hourly or daily data.
+
+    Flags (majority voting where flag is the highest value across all neighbours):
+    3, if >= 3 average number of wet days in neighbours during a dry period in target.
+    2, ...if 2 days
+    1, ...if 1 day
+    0, if not neighbours on average dry during dry target gauge period.
+
+    This is QC18 & QC19 from the IntenseQC framework.
+
+    Parameters
+    ----------
+    neighbour_data :
+        Rainfall data of neighbouring gauges with time col
+    target_gauge_col :
+        Target gauge column
+    neighbouring_gauge_cols:
+        List of columns with neighbouring gauges
+    time_res :
+        Time resolution of data
+    min_n_neighbours :
+        Minimum number of neighbours needed to be checked for flag
+    dry_period_days :
+        Length for of a "dry_spell" (default: 15 days)
+    n_neighbours_ignored :
+        Number of zero flags allowed for majority voting (default: 0)
+
+    Returns
+    -------
+    data_w_dry_flags :
+        Target data with dry flags
+
+    """
+    # 0. Initial checks
+    data_utils.check_data_is_specific_time_res(neighbour_data, time_res)
+    if target_gauge_col in neighbouring_gauge_cols:
+        neighbouring_gauge_cols.remove(target_gauge_col)  # so target col is not included as a neighbour of itself.
+    assert target_gauge_col in neighbour_data.columns, (
+        f"Target column: '{target_gauge_col}' needs to column be in data."
+    )
+
+    # 1. Get proportions of dry period required to be flagged 1, 2, or 3
+    dry_period_proportions = data_utils.get_dry_period_proportions(dry_period_days)
+
+    # 2. Resample to daily
+    if time_res == "hourly":
+        rain_cols = neighbour_data.columns[1:]  # get rain columns
+        original_hourly_neighbour_data = neighbour_data.clone()
+        neighbour_data = data_readers.convert_gdsr_hourly_to_daily(neighbour_data, rain_cols=rain_cols)
+
+    # 3. Loop through each neighbour and get wet_flags
+    for neighbouring_gauge_col in neighbouring_gauge_cols:
+        # 3.1 Convert to dry spell fraction
+        one_neighbour_data = get_dry_spell_fraction_col(
+            neighbour_data,
+            target_gauge_col=target_gauge_col,
+            dry_period_days=dry_period_days,
+            neighbouring_gauge_col=neighbouring_gauge_col,
+        )
+
+        # 3.2 Flag dry spell fractions
+        one_neighbour_data_dry_flags = flag_dry_spell_fractions(
+            one_neighbour_data,
+            target_gauge_col=target_gauge_col,
+            neighbouring_gauge_col=neighbouring_gauge_col,
+            proportion_of_dry_day_for_flags=dry_period_proportions,
+        )
+
+        # 3.3 Join to all data
+        neighbour_data = neighbour_data.join(
+            one_neighbour_data_dry_flags[["time", f"dry_flag_{neighbouring_gauge_col}"]],
+            on="time",
+            how="left",
+        )
+        print(neighbour_data[f"dry_flag_{neighbouring_gauge_col}"].value_counts())
+
+    # 4. Get number of neighbours 'online' for each time step
+    neighbour_data = make_num_neighbours_online_col(neighbour_data, neighbouring_gauge_cols)
+
+    # 5. Neighbour majority voting where the flag is the highest flag in all neighbours
+    neighbour_data_w_dry_flags = get_majority_voting_flag(
+        neighbour_data,
+        neighbouring_gauge_cols,
+        min_n_neighbours,
+        n_zeros_allowed=n_neighbours_ignored,
+        flag_col_prefix="dry_flag_",
+        new_flag_col_name="majority_dry_flag",
+        aggregation="min",
+    )
+
+    # 6. Clean up data for return
+    neighbour_data_w_dry_flags = neighbour_data_w_dry_flags.select(
+        ["time", target_gauge_col] + neighbouring_gauge_cols + ["majority_dry_flag"]
+    )
+    # 7. Backwards propogate dry flags into dry period
+    neighbour_data_w_dry_flags = data_utils.back_propagate_daily_data_flags(
+        neighbour_data_w_dry_flags, flag_column="majority_dry_flag", num_days=(dry_period_days - 1)
+    )
+
+    # 8. If hourly data join back and forward flood fill
+    if time_res == "hourly":
+        # 8.1 Join flags back to original hourly data
+        hourly_neighbour_data_w_dry_flags = original_hourly_neighbour_data.join(
+            neighbour_data_w_dry_flags[["time", "majority_dry_flag"]], on="time", how="left"
+        )
+        # 8.2 Forward flood-fill data to convert the flags back to hourly
+        hourly_neighbour_data_w_dry_flags = hourly_neighbour_data_w_dry_flags.with_columns(
+            pl.col("majority_dry_flag").forward_fill(limit=23)  # hours
+        )
+        return hourly_neighbour_data_w_dry_flags
+    else:
+        return neighbour_data_w_dry_flags
 
 
 def check_monthly_neighbours(
@@ -371,6 +496,101 @@ def get_majority_positive_or_negative_flags(
 
     # 5. Join back to original data
     return monthly_neighbour_data.join(monthly_neighbour_data_w_flags, on="time", how="left")
+
+
+def get_dry_spell_fraction_col(
+    neighbour_data: pl.DataFrame, target_gauge_col: str, neighbouring_gauge_col: str, dry_period_days: int
+) -> pl.DataFrame:
+    """
+    Get dry spell fraction column.
+
+    Parameters
+    ----------
+    neighbour_data :
+        Rainfall data of neighbouring gauges with time col
+    target_gauge_col :
+        Target gauge column
+    neighbouring_gauge_col:
+        Neighbouring gauge column
+    dry_period_days :
+        Length for of a "dry_spell" (default: 15 days)
+
+    Returns
+    -------
+    data_w_dry_spell_fraction :
+        Target data with dry spell fractions
+
+    """
+    return neighbour_data.with_columns(
+        pl.col(target_gauge_col)
+        .map_batches(
+            lambda row: data_utils.calculate_dry_spell_fraction(
+                row, rain_col=target_gauge_col, dry_period_days=dry_period_days
+            )
+        )
+        .alias(f"dry_spell_fraction_{target_gauge_col}"),
+        pl.col(neighbouring_gauge_col)
+        .map_batches(
+            lambda row: data_utils.calculate_dry_spell_fraction(
+                row, rain_col=neighbouring_gauge_col, dry_period_days=dry_period_days
+            )
+        )
+        .alias(f"dry_spell_fraction_{neighbouring_gauge_col}"),
+    )
+
+
+def flag_dry_spell_fractions(
+    one_neighbour_data: pl.DataFrame,
+    target_gauge_col: str,
+    neighbouring_gauge_col: str,
+    proportion_of_dry_day_for_flags: dict,
+) -> pl.DataFrame:
+    """
+    Flag dry spell fractions.
+
+    Parameters
+    ----------
+    one_neighbour_data :
+        Rainfall data of one neighbouring gauge with time col
+    target_gauge_col :
+        Target gauge column
+    neighbouring_gauge_col :
+        Neighbouring gauge column
+    proportion_of_dry_day_for_flags :
+        Proportion of dry days needed to be flagged 1, 2, or 3
+
+    Returns
+    -------
+    data_w_dry_spell_fraction :
+        Target data with dry spell fractions
+
+    """
+    return one_neighbour_data.with_columns(
+        pl.when(
+            (pl.col(f"dry_spell_fraction_{target_gauge_col}") == 1.0)
+            & (pl.col(f"dry_spell_fraction_{neighbouring_gauge_col}") == 1.0)
+        )
+        .then(0)
+        .when(
+            (pl.col(f"dry_spell_fraction_{target_gauge_col}") == 1.0)
+            & (pl.col(f"dry_spell_fraction_{neighbouring_gauge_col}") < 1.0)
+            & (pl.col(f"dry_spell_fraction_{neighbouring_gauge_col}") >= proportion_of_dry_day_for_flags["1"]),
+        )
+        .then(1)
+        .when(
+            (pl.col(f"dry_spell_fraction_{target_gauge_col}") == 1.0)
+            & (pl.col(f"dry_spell_fraction_{neighbouring_gauge_col}") < proportion_of_dry_day_for_flags["1"])
+            & (pl.col(f"dry_spell_fraction_{neighbouring_gauge_col}") >= proportion_of_dry_day_for_flags["2"]),
+        )
+        .then(2)
+        .when(
+            (pl.col(f"dry_spell_fraction_{target_gauge_col}") == 1.0)
+            & (pl.col(f"dry_spell_fraction_{neighbouring_gauge_col}") < proportion_of_dry_day_for_flags["2"])
+        )
+        .then(3)
+        .otherwise(0)
+        .alias(f"dry_flag_{neighbouring_gauge_col}")
+    )
 
 
 def flag_percentage_diff_of_neighbour(neighbour_data: pl.DataFrame, neighbouring_gauge_col: str) -> pl.DataFrame:
