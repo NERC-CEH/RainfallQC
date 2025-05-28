@@ -329,7 +329,7 @@ def convert_gdsr_hourly_to_daily(
 
     """
     agg_expressions = [pl.len().alias("n_hours")]
-    agg_expressions += [pl.col(col).mean().round(1).alias(col) for col in rain_cols]
+    agg_expressions += [pl.col(col).sum().round(1).alias(col) for col in rain_cols]
     # resample into daily (also round to 1 decimal place)
     return (
         hourly_data.group_by_dynamic("time", every="1d", offset=f"{hour_offset}h", closed="right")

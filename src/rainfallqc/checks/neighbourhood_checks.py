@@ -199,7 +199,15 @@ def check_monthly_neighbours(
         min_n_neighbours=min_n_neighbours,
         n_neighbours_ignored=n_neighbours_ignored,
     )
+    # 4. Calculate neighbour max monthly climatology
+    monthly_neighbour_data_w_flags = data_utils.make_month_and_year_col(monthly_neighbour_data_w_flags)
+    monthly_neighbour_data_w_flags = make_num_neighbours_online_col(
+        monthly_neighbour_data_w_flags, neighbouring_gauge_cols
+    )
 
+    # monthly_neighbour_data_max = monthly_neighbour_data_w_flags.group_by("month").agg(
+    #     pl.max_horizontal([pl.col(col).max() for col in neighbouring_gauge_cols]).alias("neighbour_max")
+    # )
     return monthly_neighbour_data_w_flags
 
 

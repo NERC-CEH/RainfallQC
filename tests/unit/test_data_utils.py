@@ -4,6 +4,7 @@
 
 import datetime
 
+import numpy as np
 import polars as pl
 import pytest
 
@@ -28,7 +29,7 @@ def test_check_data_is_specific_time_res(hourly_gdsr_data):
 
 def test_convert_daily_data_to_monthly(daily_gdsr_data, daily_gpcc_data, hourly_gdsr_data):
     result = data_utils.convert_daily_data_to_monthly(daily_gdsr_data, rain_cols=[DEFAULT_RAIN_COL])
-    assert result[DEFAULT_RAIN_COL].max() == 208.2
+    assert round(np.nanmean(result[DEFAULT_RAIN_COL]), 1) == 277.9
     assert len(result.filter(pl.col(DEFAULT_RAIN_COL).is_nan())) == 17
     data_time_steps = data_utils.get_data_timesteps(result)
     data_time_steps_str = [data_utils.format_timedelta_duration(td) for td in data_time_steps]
