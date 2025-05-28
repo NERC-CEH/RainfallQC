@@ -18,6 +18,77 @@ TEMPORAL_CONVERSIONS = {"hourly": "1h", "daily": "1d", "monthly": "1mo"}
 MONTHLY_TIME_STEPS = ["28d", "29d", "30d", "31d"]
 
 
+def back_propagate_daily_data_flags(data: pl.DataFrame, flag_column: str, num_days: int) -> pl.DataFrame:
+    """
+    Back fill-in flags a number of days.
+
+    This will prioritise higher flag values.
+
+    Parameters
+    ----------
+    data :
+        Daily data with `flag_column`
+    flag_column :
+        column with flags
+    num_days:
+        Number of days to back-propagate
+
+    Returns
+    -------
+    data :
+        Data with flags back-propogated
+
+    """
+    data = data.clone()
+    # Extract flag values
+    flag_values = (flag for flag in data[flag_column].unique() if (np.isfinite(flag) & (flag > 0)))
+    for flag, data_filtered in [(flag, data.filter(pl.col(flag_column) == flag)) for flag in flag_values]:
+        for time_to_use in data_filtered["time"]:
+            assert isinstance(time_to_use, datetime.datetime), "time_to_use must be datetime.datetime"
+            start_time = time_to_use - datetime.timedelta(days=num_days)
+            data = data.with_columns(
+                pl.when((pl.col("time") >= start_time) & (pl.col("time") <= time_to_use))
+                .then(flag)
+                .otherwise(pl.col(flag_column))
+                .alias(flag_column)
+            )
+
+    return data
+
+
+def calculate_dry_spell_fraction(data: pl.DataFrame, rain_col: str, dry_period_days: int) -> pl.Series:
+    """
+    Calculate dry spell fraction.
+
+    Parameters
+    ----------
+    data :
+        Data with time column
+    rain_col :
+        Column with rainfall data
+    dry_period_days :
+        Length for of a "dry_spell"
+
+    Returns
+    -------
+    rain_daily_dry_day :
+        Data with dry spell fraction
+
+    """
+    if not isinstance(data, pl.DataFrame):
+        data = data.to_frame()
+
+    # 1. make dry day column
+    data_dry_days = get_dry_spells(data, rain_col)
+
+    # 2. Calculate late dry spell fraction
+    data_dry_days = data_dry_days.with_columns(
+        dry_spell_fraction=pl.col("is_dry").rolling_sum(window_size=dry_period_days, min_samples=dry_period_days)
+        / dry_period_days
+    )
+    return data_dry_days["dry_spell_fraction"]
+
+
 def check_data_has_consistent_time_step(data: pl.DataFrame) -> None:
     """
     Check data has a consistent time step i.e. '1h'.
@@ -293,6 +364,27 @@ def get_data_timesteps(data: pl.DataFrame) -> pl.Series:
     data_timesteps = data.with_columns([pl.col("time").diff().alias("time_step")])
     unique_timesteps = data_timesteps["time_step"].drop_nulls().unique()
     return unique_timesteps
+
+
+def get_dry_period_proportions(dry_period_days: int) -> dict:
+    """
+    Get dry period proportions.
+
+    Parameters
+    ----------
+    dry_period_days :
+        Length for of a "dry_spell" (default: 15 days)
+
+    Returns
+    -------
+    fraction_dry_days :
+        Dictionary with keys "1", "2", "3" with dry spell fractions
+
+    """
+    fraction_dry_days = {}
+    for d in range(1, 3 + 1):
+        fraction_dry_days[str(d)] = np.trunc((1.0 - (float(d) / dry_period_days)) * 10**2) / (10**2)
+    return fraction_dry_days
 
 
 def get_dry_spells(data: pl.DataFrame, rain_col: str) -> pl.DataFrame:
