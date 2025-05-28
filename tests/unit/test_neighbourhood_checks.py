@@ -92,12 +92,12 @@ def test_dry_neighbour_check_daily_gdsr(daily_gdsr_network):
         target_gauge_col=f"{DEFAULT_RAIN_COL}_DE_02483",
         neighbouring_gauge_cols=all_neighbour_cols,
         time_res="daily",
-        min_n_neighbours=3,
+        min_n_neighbours=5,
         dry_period_days=15,
     )
     assert len(result.columns) == 12
     assert result["majority_dry_flag"].max() == 3.0
-    assert len(result.filter(pl.col("majority_dry_flag") == 1)) == 1
+    assert len(result.filter(pl.col("majority_dry_flag") == 3)) == 150
 
 
 def test_check_dry_neighbour_daily_gpcc(daily_gpcc_network):
@@ -110,10 +110,25 @@ def test_check_dry_neighbour_daily_gpcc(daily_gpcc_network):
         neighbouring_gauge_cols=all_neighbour_cols,
         time_res="daily",
         dry_period_days=15,
-        min_n_neighbours=3,
+        min_n_neighbours=5,
     )
     assert len(result.columns) == 12
     assert result["majority_dry_flag"].max() == 0
+
+
+def test_check_dry_neighbour_hourly(hourly_gdsr_network):
+    all_neighbour_cols = hourly_gdsr_network.columns[1:]  # exclude time
+    assert len(all_neighbour_cols) == 10
+    result = neighbourhood_checks.check_dry_neighbours(
+        hourly_gdsr_network,
+        target_gauge_col=f"{DEFAULT_RAIN_COL}_DE_02483",
+        neighbouring_gauge_cols=all_neighbour_cols,
+        time_res="hourly",
+        min_n_neighbours=3,
+        dry_period_days=15,
+    )
+    assert result["majority_dry_flag"].max() == 3.0
+    assert len(result.filter(pl.col("majority_dry_flag") == 3)) == 150 * 24
 
 
 def test_check_monthly_neighbours(monthly_gdsr_network):
