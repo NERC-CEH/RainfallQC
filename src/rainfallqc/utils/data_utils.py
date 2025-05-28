@@ -1,10 +1,11 @@
 # -*- coding: utf-8 -*-
 """
-All data operations.
+All data operations for polars including datetime and calendar functionality.
 
 Classes and functions ordered alphabetically.
 """
 
+import calendar
 import datetime
 from collections.abc import Sequence
 
@@ -14,6 +15,7 @@ import xarray as xr
 
 SECONDS_IN_DAY = 86400.0
 TEMPORAL_CONVERSIONS = {"hourly": "1h", "daily": "1d", "monthly": "1mo"}
+MONTHLY_TIME_STEPS = ["28d", "29d", "30d", "31d"]
 
 
 def check_data_has_consistent_time_step(data: pl.DataFrame) -> None:
@@ -37,9 +39,38 @@ def check_data_has_consistent_time_step(data: pl.DataFrame) -> None:
         raise ValueError(f"Data has a inconsistent time step. Data has following time steps: {timestep_strings}")
 
 
+def check_data_is_monthly(data: pl.DataFrame) -> None:
+    """
+    Check data is monthly.
+
+    Parameters
+    ----------
+    data :
+        Data with time column
+
+    Raises
+    ------
+    ValueError :
+        If data has a no monthly time steps
+
+    """
+    unique_timesteps = get_data_timesteps(data)
+    timestep_strings = [format_timedelta_duration(td) for td in unique_timesteps]
+
+    if not all(ts in MONTHLY_TIME_STEPS for ts in timestep_strings):
+        raise ValueError(
+            f"Data contains non-monthly timesteps not like '29d', '30d', etc. Timesteps found are {timestep_strings}"
+        )
+
+    if not timestep_strings:
+        raise ValueError("No timesteps found in data.")
+
+
 def check_data_is_specific_time_res(data: pl.DataFrame, time_res: str | list) -> None:
     """
     Check data has a hourly or daily time step.
+
+    Does not work for monthly data, please use 'check_data_is_monthly'.
 
     Parameters
     ----------
@@ -89,6 +120,112 @@ def convert_datarray_seconds_to_days(series_seconds: xr.DataArray) -> np.ndarray
 
     """
     return series_seconds.values.astype("timedelta64[s]").astype("float32") / SECONDS_IN_DAY
+
+
+def convert_daily_data_to_monthly(
+    daily_data: pl.DataFrame, rain_cols: list, perc_for_valid_month: int | float = 95
+) -> pl.DataFrame:
+    """
+    Convert daily data to monthly whilst setting month to NaN if less than a given percentage of days is missing.
+
+    Parameters
+    ----------
+    daily_data :
+        Daily data to convert to monthly
+    rain_cols :
+        Columns with rainfall data
+    perc_for_valid_month :
+        Percentage of month needed to be classed as a valid month for the monthly group by
+
+    Returns
+    -------
+    monthly_data :
+        Monthly data
+
+    """
+    check_data_is_specific_time_res(daily_data, "daily")
+
+    # 1. Make month and year column
+    daily_data = make_month_and_year_col(daily_data)
+
+    # 2. Calculate expected days in month
+    daily_data = get_expected_days_in_month(daily_data)
+
+    agg_expressions = [pl.len().alias("n_days"), pl.col("expected_days_in_month").first()]
+    agg_expressions += [pl.col(col).sum().alias(col) for col in rain_cols]
+
+    # 3. Group data into monthly
+    monthly_data = (
+        daily_data.group_by_dynamic("time", every="1mo", closed="right")
+        .agg(agg_expressions)
+        .filter(
+            pl.col("n_days")
+            >= (
+                pl.col("expected_days_in_month") * perc_for_valid_month / 100
+            )  # TODO: Ensure at least n% values for month are available
+        )
+        .drop("n_days", "expected_days_in_month")
+    )
+
+    return monthly_data
+
+
+def extract_negative_values_from_data(data: pl.DataFrame, cols_to_extract_from: list) -> pl.DataFrame:
+    """
+    Extract negative values from data.
+
+    Parameters
+    ----------
+    data :
+        Rainfall data.
+    cols_to_extract_from :
+        Columns to extract negative values from
+
+    Returns
+    -------
+    data :
+        Data with only negative values or 0.
+
+    """
+    return data.select(
+        [
+            "time",
+            *[
+                pl.when(pl.col(col) <= 0).then(pl.col(col)).otherwise(None).alias(col)
+                for col in cols_to_extract_from
+                if col != "time"
+            ],
+        ]
+    )
+
+
+def extract_positive_values_from_data(data: pl.DataFrame, cols_to_extract_from: list) -> pl.DataFrame:
+    """
+    Extract positive values from data.
+
+    Parameters
+    ----------
+    data :
+        Rainfall data.
+    cols_to_extract_from :
+        Columns to extract positive values from
+
+    Returns
+    -------
+    data :
+        Data with only positive values or 0.
+
+    """
+    return data.select(
+        [
+            "time",
+            *[
+                pl.when(pl.col(col) >= 0).then(pl.col(col)).otherwise(None).alias(col)
+                for col in cols_to_extract_from
+                if col != "time"
+            ],
+        ]
+    )
 
 
 def format_timedelta_duration(td: datetime.timedelta) -> str:
@@ -180,6 +317,34 @@ def get_dry_spells(data: pl.DataFrame, rain_col: str) -> pl.DataFrame:
     )
 
 
+def get_expected_days_in_month(data: pl.DataFrame) -> pl.DataFrame:
+    """
+    Get expected number of days in a months within the data.
+
+    Parameters
+    ----------
+    data :
+        Data with 'year' and 'month' columns
+
+    Returns
+    -------
+    data:
+        Data with 'expected_days_in_month" column
+
+    """
+    # Use map_elements + calendar.monthrange to compute days in each month
+    return data.with_columns(
+        [
+            pl.struct(["year", "month"])
+            .map_elements(
+                lambda x: calendar.monthrange(x["year"], x["month"])[1],
+                return_dtype=pl.Int64,
+            )
+            .alias("expected_days_in_month")
+        ]
+    )
+
+
 def get_normalised_diff(data: pl.DataFrame, target_col: str, other_col: str, diff_col_name: str) -> pl.DataFrame:
     """
     Ger normalised difference between two columns in data.
@@ -198,10 +363,34 @@ def get_normalised_diff(data: pl.DataFrame, target_col: str, other_col: str, dif
     Returns
     -------
     data_w_norm_diff :
+        Data with normalised diff
 
     """
     return data.with_columns(
         (normalise_data(pl.col(target_col)) - normalise_data(pl.col(other_col))).alias(diff_col_name)
+    )
+
+
+def make_month_and_year_col(data: pl.DataFrame) -> pl.DataFrame:
+    """
+    Make year and month columns for polars dataframe.
+
+    Parameters
+    ----------
+    data :
+        Data with time column
+
+    Returns
+    -------
+    data :
+        Data with year and month columns
+
+    """
+    return data.with_columns(
+        [
+            pl.col("time").dt.year().alias("year"),
+            pl.col("time").dt.month().alias("month"),
+        ]
     )
 
 

@@ -4,6 +4,8 @@
 
 import datetime
 
+import numpy as np
+import polars as pl
 import pytest
 
 from rainfallqc.utils import data_utils
@@ -23,6 +25,36 @@ def test_check_data_is_specific_time_res(hourly_gdsr_data):
         data_utils.check_data_is_specific_time_res(hourly_gdsr_data, time_res=120)
     with pytest.raises(ValueError):
         data_utils.check_data_is_specific_time_res(hourly_gdsr_data, time_res="1d")
+
+
+def test_convert_daily_data_to_monthly(daily_gdsr_data, daily_gpcc_data, hourly_gdsr_data):
+    result = data_utils.convert_daily_data_to_monthly(daily_gdsr_data, rain_cols=[DEFAULT_RAIN_COL])
+    assert round(np.nanmean(result[DEFAULT_RAIN_COL]), 1) == 277.9
+    assert len(result.filter(pl.col(DEFAULT_RAIN_COL).is_nan())) == 17
+    data_time_steps = data_utils.get_data_timesteps(result)
+    data_time_steps_str = [data_utils.format_timedelta_duration(td) for td in data_time_steps]
+    assert data_time_steps_str == ["28d", "29d", "30d", "31d"]
+
+    result = data_utils.convert_daily_data_to_monthly(
+        daily_gpcc_data, rain_cols=[DEFAULT_RAIN_COL], perc_for_valid_month=99
+    )
+    assert len(result.filter(pl.col(DEFAULT_RAIN_COL).is_nan())) == 0
+    assert round(result[DEFAULT_RAIN_COL].max(), 1) == 413.1
+    data_time_steps = data_utils.get_data_timesteps(result)
+    data_time_steps_str = [data_utils.format_timedelta_duration(td) for td in data_time_steps]
+    assert data_time_steps_str == ["28d", "29d", "30d", "31d"]
+
+    with pytest.raises(ValueError):
+        data_utils.convert_daily_data_to_monthly(hourly_gdsr_data, rain_cols=[DEFAULT_RAIN_COL])
+
+
+def test_check_data_is_monthly(hourly_gdsr_data, monthly_gdsr_network, monthly_gpcc_data):
+    data_utils.check_data_is_monthly(monthly_gpcc_data)
+    data_utils.check_data_is_monthly(monthly_gdsr_network)
+    with pytest.raises(ValueError):
+        data_utils.check_data_is_monthly(hourly_gdsr_data)
+    with pytest.raises(ValueError):
+        data_utils.check_data_is_monthly(hourly_gdsr_data.filter(pl.col("time") is None))
 
 
 def test_get_dry_spells(hourly_gdsr_data):

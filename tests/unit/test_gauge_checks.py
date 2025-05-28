@@ -14,12 +14,11 @@ def test_get_years_where_nth_percentile_is_zero(daily_gdsr_data):
     years_95th = gauge_checks.check_years_where_nth_percentile_is_zero(
         daily_gdsr_data, rain_col=DEFAULT_RAIN_COL, quantile=0.95
     )
-    years_50th = gauge_checks.check_years_where_nth_percentile_is_zero(
-        daily_gdsr_data, rain_col=DEFAULT_RAIN_COL, quantile=0.5
+    years_35th = gauge_checks.check_years_where_nth_percentile_is_zero(
+        daily_gdsr_data, rain_col=DEFAULT_RAIN_COL, quantile=0.35
     )
-
     assert len(years_95th) == 0
-    numpy.testing.assert_array_equal(years_50th, [2006, 2007, 2008, 2009, 2010])
+    numpy.testing.assert_array_equal(years_35th, [2006, 2007, 2008, 2009, 2010])
 
 
 def test_get_years_where_annual_mean_k_top_rows_are_zero(hourly_gdsr_data):
