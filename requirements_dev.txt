@@ -6,6 +6,7 @@ pre_commit
 pylint
 pytest
 pytest-cov
+bump-my-version
 # Documentation and examples
 matplotlib
 sphinx
