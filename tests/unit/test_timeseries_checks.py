@@ -125,7 +125,7 @@ def test_monthly_accumulations_daily_data(daily_gdsr_data, gdsr_metadata):
         gauge_lat=gdsr_metadata["latitude"],
         gauge_lon=gdsr_metadata["longitude"],
     )
-    assert len(result.filter(pl.col("monthly_accumulation") > 0)) == 2
+    assert len(result.filter(pl.col("monthly_accumulation") > 0)) == 36
 
 
 def test_streaks_check(hourly_gdsr_data, gdsr_metadata):

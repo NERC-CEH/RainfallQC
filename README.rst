@@ -19,6 +19,7 @@ Please email tomkee@ceh.ac.uk if you have any questions.
 
 Project To Do:
 
+- There is a plan to make a ReadTheDocs for the package!
 - add flag descriptions
 - Use timestep str maker to the checks
 

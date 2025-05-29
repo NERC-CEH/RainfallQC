@@ -8,7 +8,7 @@ import numpy as np
 import polars as pl
 import pytest
 
-from rainfallqc.utils import data_readers
+from rainfallqc.utils import data_readers, data_utils
 
 DEFAULT_RAIN_COL = "rain_mm"
 DEFAULT_GDSR_OFFSET = 7  # 7 hours
@@ -20,14 +20,36 @@ def random() -> np.random.Generator:
     return np.random.default_rng(seed=list(map(ord, "𝕽𝔞𝖓𝔡𝖔𝔪")))
 
 
-def get_gpcc_data(time_res: str) -> pl.DataFrame:
+def get_gpcc_data(time_res: str, gauge_id: str = "2483") -> pl.DataFrame:
     # TODO: maybe randomise this with every call? Or use parameterise
-    gpcc_zip_path = f"./tests/data/GPCC/{time_res}_2483.zip"
-    gpcc_file_name = f"{time_res}_2483.dat"
+    gpcc_zip_path = f"./tests/data/GPCC/{time_res}_{gauge_id}.zip"
+    gpcc_file_name = f"{time_res}_{gauge_id}.dat"
     gpcc_data = data_readers.read_gpcc_data_from_zip(
         gpcc_zip_path, gpcc_file_name, rain_col=DEFAULT_RAIN_COL, time_res=GPCC_TIME_RES_CONVERSION[time_res]
     )
     return gpcc_data
+
+
+def get_hourly_gdsr_network(
+    path_to_gdsr_dir: str,
+    target_id: str,
+    distance_threshold: int = 50,
+    n_closest: int = 10,
+    min_overlap_days: int = 500,
+) -> pl.DataFrame:
+    gdsr_obj = data_readers.GDSRNetworkReader(path_to_gdsr_dir=path_to_gdsr_dir)
+    nearby_ids = list(
+        gdsr_obj.get_nearest_overlapping_neighbours_to_target(
+            target_id=target_id,
+            distance_threshold=distance_threshold,
+            n_closest=n_closest,
+            min_overlap_days=min_overlap_days,
+        )
+    )
+    nearby_ids.append(target_id)
+    nearby_data_paths = gdsr_obj.metadata.filter(pl.col("station_id").is_in(nearby_ids))["path"]
+    gdsr_network = gdsr_obj.load_network_data(data_paths=nearby_data_paths)
+    return gdsr_network
 
 
 @pytest.fixture
@@ -95,18 +117,51 @@ def daily_gpcc_network() -> pl.DataFrame:
 
 
 @pytest.fixture()
-def hourly_gdsr_network() -> pl.DataFrame:
-    gdsr_obj = data_readers.GDSRNetworkReader(path_to_gdsr_dir="./tests/data/GDSR/")
-    target_id = "DE_00310"
+def monthly_gpcc_network() -> pl.DataFrame:
+    gpcc_obj = data_readers.GPCCNetworkReader(path_to_gpcc_dir="./tests/data/GPCC/", time_res="mw")
+    target_id = "310"
     nearby_ids = list(
-        gdsr_obj.get_nearest_overlapping_neighbours_to_target(
+        gpcc_obj.get_nearest_overlapping_neighbours_to_target(
             target_id=target_id, distance_threshold=50, n_closest=10, min_overlap_days=500
         )
     )
     nearby_ids.append(target_id)
-    nearby_data_paths = gdsr_obj.metadata.filter(pl.col("station_id").is_in(nearby_ids))["path"]
-    gdsr_network = gdsr_obj.load_network_data(data_paths=nearby_data_paths)
-    return gdsr_network
+    nearby_data_paths = gpcc_obj.metadata.filter(pl.col("station_id").is_in(nearby_ids))["path"]
+    gpcc_network = gpcc_obj.load_network_data(data_paths=nearby_data_paths, rain_col=DEFAULT_RAIN_COL)
+    print(gpcc_network)
+    return gpcc_network
+
+
+@pytest.fixture()
+def hourly_gdsr_network() -> pl.DataFrame:
+    return get_hourly_gdsr_network(path_to_gdsr_dir="./tests/data/GDSR/", target_id="DE_00310")
+
+
+@pytest.fixture()
+def daily_gdsr_network() -> pl.DataFrame:
+    gdsr_network = get_hourly_gdsr_network(path_to_gdsr_dir="./tests/data/GDSR/", target_id="DE_00310")
+
+    # convert to daily
+    daily_gdsr_network = data_readers.convert_gdsr_hourly_to_daily(
+        gdsr_network, rain_cols=gdsr_network.columns[1:], hour_offset=DEFAULT_GDSR_OFFSET
+    )
+    return daily_gdsr_network
+
+
+@pytest.fixture()
+def monthly_gdsr_network() -> pl.DataFrame:
+    gdsr_network = get_hourly_gdsr_network(path_to_gdsr_dir="./tests/data/GDSR/", target_id="DE_00310")
+
+    # convert to daily
+    daily_gdsr_network = data_readers.convert_gdsr_hourly_to_daily(
+        gdsr_network, rain_cols=gdsr_network.columns[1:], hour_offset=DEFAULT_GDSR_OFFSET
+    )
+
+    # convert to monthly
+    monthly_gdsr_network = data_utils.convert_daily_data_to_monthly(
+        daily_gdsr_network, rain_cols=daily_gdsr_network.columns[1:], perc_for_valid_month=95
+    )
+    return monthly_gdsr_network
 
 
 @pytest.fixture

@@ -85,18 +85,18 @@ def test_get_target_neighbour_non_zero_minima(gauge_comparison_data):
     assert result == 1.2
 
 
-def test_get_gauges_not_minima_column_target_or_neighbour(gauge_comparison_data):
-    result = neighbourhood_utils.get_gauges_not_minima_column_target_or_neighbour(
+def test_make_rain_not_minima_column_target_or_neighbour(gauge_comparison_data):
+    result = neighbourhood_utils.make_rain_not_minima_column_target_or_neighbour(
         gauge_comparison_data, target_col="gauge1", other_col="gauge2", data_minima=0.1
     )
-    assert result["gauges_not_minima"].value_counts().filter(pl.col("gauges_not_minima") == 0)["count"].item() == 2
-    assert result["gauges_not_minima"].value_counts().filter(pl.col("gauges_not_minima") == 1)["count"].item() == 4
-    result = neighbourhood_utils.get_gauges_not_minima_column_target_or_neighbour(
+    assert result["rain_not_minima"].value_counts().filter(pl.col("rain_not_minima") == 0)["count"].item() == 2
+    assert result["rain_not_minima"].value_counts().filter(pl.col("rain_not_minima") == 1)["count"].item() == 4
+    result = neighbourhood_utils.make_rain_not_minima_column_target_or_neighbour(
         gauge_comparison_data, target_col="gauge1", other_col="gauge2", data_minima=0.7
     )
-    assert result["gauges_not_minima"].value_counts().filter(pl.col("gauges_not_minima") == 0)["count"].item() == 1
-    assert result["gauges_not_minima"].value_counts().filter(pl.col("gauges_not_minima") == 1)["count"].item() == 2
-    result = neighbourhood_utils.get_gauges_not_minima_column_target_or_neighbour(
+    assert result["rain_not_minima"].value_counts().filter(pl.col("rain_not_minima") == 0)["count"].item() == 1
+    assert result["rain_not_minima"].value_counts().filter(pl.col("rain_not_minima") == 1)["count"].item() == 2
+    result = neighbourhood_utils.make_rain_not_minima_column_target_or_neighbour(
         gauge_comparison_data, target_col="gauge1", other_col="gauge2", data_minima=2.0
     )
-    assert result["gauges_not_minima"].value_counts().filter(pl.col("gauges_not_minima") == 1)["count"].item() == 1
+    assert result["rain_not_minima"].value_counts().filter(pl.col("rain_not_minima") == 1)["count"].item() == 1
