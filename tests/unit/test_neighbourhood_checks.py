@@ -256,6 +256,34 @@ def test_check_neighbour_correlation_daily(daily_gdsr_network, daily_gpcc_networ
     assert round(result, 2) == 0.31
 
 
+def test_check_daily_factor(hourly_gdsr_network, daily_gdsr_network):
+    result = neighbourhood_checks.check_daily_factor(
+        daily_gdsr_network,
+        target_gauge_col=f"{DEFAULT_RAIN_COL}_DE_02483",
+        neighbouring_gauge_col=f"{DEFAULT_RAIN_COL}_DE_00310",
+        averaging_method="mean",
+    )
+
+    assert round(result, 2) == 4.47
+
+    result = neighbourhood_checks.check_daily_factor(
+        daily_gdsr_network,
+        target_gauge_col=f"{DEFAULT_RAIN_COL}_DE_02483",
+        neighbouring_gauge_col=f"{DEFAULT_RAIN_COL}_DE_00310",
+        averaging_method="median",
+    )
+
+    assert round(result, 2) == 1.71
+
+    with pytest.raises(ValueError):
+        neighbourhood_checks.check_daily_factor(
+            daily_gdsr_network,
+            target_gauge_col=f"{DEFAULT_RAIN_COL}_DE_02483",
+            neighbouring_gauge_col=f"{DEFAULT_RAIN_COL}_DE_00310",
+            averaging_method="mode",
+        )
+
+
 def test_make_num_neighbours_online_col(hourly_gdsr_network):
     all_neighbour_cols = hourly_gdsr_network.columns[1:]
     result = neighbourhood_checks.make_num_neighbours_online_col(

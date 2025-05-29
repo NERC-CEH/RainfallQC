@@ -486,7 +486,9 @@ def check_neighbour_correlation(
     return stats.gauge_correlation(neighbour_data, target_col=target_gauge_col, other_col=neighbouring_gauge_col)
 
 
-def check_daily_factor(neighbour_data: pl.DataFrame, target_gauge_col: str, neighbouring_gauge_col: str) -> float:
+def check_daily_factor(
+    neighbour_data: pl.DataFrame, target_gauge_col: str, neighbouring_gauge_col: str, averaging_method: str = "mean"
+) -> float:
     """
     Daily factor difference between target and neighbouring gauge.
 
@@ -503,16 +505,38 @@ def check_daily_factor(neighbour_data: pl.DataFrame, target_gauge_col: str, neig
         Target gauge column
     neighbouring_gauge_col :
         Neighbouring gauge column
+    averaging_method :
+        Method to use to get average i.e. mean or median (default mean)
 
     Returns
     -------
     daily_factor :
-        factor diff
+        Average factor diff between target and neighbour
+
+    Raises
+    ------
+    ValueError :
+        If averaging method not 'mean' or 'median'
+
 
     """
+    # 0. Initial checks
+    data_utils.check_data_is_specific_time_res(neighbour_data, "daily")
+
     # 1. Daily factor difference
     daily_factor = stats.factor_diff(neighbour_data, target_col=target_gauge_col, other_col=neighbouring_gauge_col)
-    return daily_factor
+
+    # 2. Get mean daily factor difference
+    daily_factor_positive_vals = daily_factor.drop_nans().filter(
+        (pl.col(target_gauge_col) > 0) & (pl.col(neighbouring_gauge_col) > 0)
+    )
+
+    if averaging_method == "mean":
+        return daily_factor_positive_vals["factor_diff"].mean()
+    elif averaging_method == "median":
+        return daily_factor_positive_vals["factor_diff"].median()
+    else:
+        raise ValueError(f"{averaging_method} not recognised, please use 'mean' or 'median'")
 
 
 def make_neighbour_monthly_max_climatology(
