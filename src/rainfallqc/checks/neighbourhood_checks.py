@@ -340,30 +340,46 @@ def check_monthly_neighbours(
     )
 
 
-# def check_timing_offset(neighbour_data: pl.DataFrame, target_gauge: str, neighbouring_gauge: str) -> pl.DataFrame:
-#     """
-#     Identify suspicious data offset using Affinity Index and correlation (r^2) between target and nearest neighbour.
-#
-#     Flags:
-#     -1, -1 day offset
-#     0, no offset
-#     1, +1 day offset
-#
-#     This is QC21 from the IntenseQC framework.
-#
-#     Parameters
-#     ----------
-#     neighbour_data :
-#         Rainfall data with target and neighbouring gauge and time col
-#
-#     target_gauge
-#     neighbouring_gauge
-#
-#     Returns
-#     -------
-#
-#     """
-#     return neighbour_data
+def check_timing_offset(
+    neighbour_data: pl.DataFrame, target_gauge_col: str, neighbouring_gauge_col: str, time_res: str
+) -> pl.DataFrame:
+    """
+    Identify suspicious data offset using Affinity Index and correlation (r^2) between target and nearest neighbour.
+
+    Flags:
+    -1, -1 day offset
+    0, no offset
+    1, +1 day offset
+
+    This is QC21 from the IntenseQC framework.
+
+    Parameters
+    ----------
+    neighbour_data :
+        Rainfall data with target and neighbouring gauge and time col
+    target_gauge_col :
+        Target gauge column
+    neighbouring_gauge_col :
+        Neighbouring gauge column
+    time_res :
+        Time resolution of data
+
+    Returns
+    -------
+    data_w_flags :
+        Data with timing offset flags
+
+    """
+    assert all(column in neighbour_data.columns for column in [target_gauge_col, neighbouring_gauge_col]), (
+        f"Not all of {[target_gauge_col, neighbouring_gauge_col]} found in input data columns"
+    )
+    neighbour_data_minus1 = data_utils.offset_data_by_time(
+        neighbour_data, target_col=target_gauge_col, offset_in_time=-1, time_res=time_res
+    )
+    neighbour_data_plus1 = data_utils.offset_data_by_time(
+        neighbour_data, target_col=target_gauge_col, offset_in_time=1, time_res=time_res
+    )
+    return neighbour_data_minus1, neighbour_data_plus1
 
 
 def make_neighbour_monthly_max_climatology(

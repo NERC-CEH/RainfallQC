@@ -158,8 +158,13 @@ def test_check_monthly_neighbours_gpcc(monthly_gpcc_network):
     assert len(result.filter(pl.col("majority_monthly_flag") > 0)) == 9
 
 
-def test_timing_offset(daily_gdsr_data):
-    neighbourhood_checks.timing_offset(daily_gdsr_data)
+def test_check_timing_offset(daily_gpcc_network):
+    neighbourhood_checks.check_timing_offset(
+        daily_gpcc_network,
+        target_gauge_col=f"{DEFAULT_RAIN_COL}_tw_2483",
+        neighbouring_gauge_col=f"{DEFAULT_RAIN_COL}_tw_310",
+        time_res="daily",
+    )
 
 
 def test_make_num_neighbours_online_col(hourly_gdsr_network):
