@@ -7,12 +7,12 @@ Neighbourhood checks are QC checks that: "detect abnormalities in a gauges given
 Classes and functions ordered by appearance in IntenseQC framework.
 """
 
-from typing import List
+from typing import Iterable, List
 
 import numpy as np
 import polars as pl
 
-from rainfallqc.utils import data_readers, data_utils, stats
+from rainfallqc.utils import data_readers, data_utils, neighbourhood_utils, stats
 
 
 def check_wet_neighbours(
@@ -224,7 +224,7 @@ def check_dry_neighbours(
     neighbour_data_w_dry_flags = neighbour_data_w_dry_flags.select(
         ["time", target_gauge_col] + neighbouring_gauge_cols + ["majority_dry_flag"]
     )
-    # 7. Backwards propogate dry flags into dry period
+    # 7. Backwards propagate dry flags into dry period
     neighbour_data_w_dry_flags = data_utils.back_propagate_daily_data_flags(
         neighbour_data_w_dry_flags, flag_column="majority_dry_flag", num_days=(dry_period_days - 1)
     )
@@ -316,7 +316,7 @@ def check_monthly_neighbours(
             how="left",
         )
 
-    # 3. Get majority flag for positive and negative flags
+    # 3. Get majority-voted flag for positive and negative flags
     # i.e. get minimum positive flag, when positive, and maximum negative flag when negative
     monthly_neighbour_data_w_flags = get_majority_positive_or_negative_flags(
         monthly_neighbour_data,
@@ -324,6 +324,7 @@ def check_monthly_neighbours(
         min_n_neighbours=min_n_neighbours,
         n_neighbours_ignored=n_neighbours_ignored,
     )
+
     # 4. Calculate neighbour monthly max column
     monthly_neighbour_data_w_flags = make_neighbour_monthly_max_climatology(
         monthly_neighbour_data_w_flags, neighbouring_gauge_cols
@@ -336,6 +337,292 @@ def check_monthly_neighbours(
 
     return monthly_neighbour_data_w_flags.select(
         ["time", target_gauge_col, *neighbouring_gauge_cols, "majority_monthly_flag"]
+    )
+
+
+def check_timing_offset(
+    neighbour_data: pl.DataFrame,
+    target_gauge_col: str,
+    neighbouring_gauge_col: str,
+    time_res: str,
+    offsets_to_check: Iterable[int] = (-1, 0, 1),
+) -> int:
+    """
+    Identify suspicious data offset using Affinity Index and correlation (r^2) between target and nearest neighbour.
+
+    Flags:
+    -1, -1 day offset
+    0, no offset
+    1, +1 day offset
+
+    This is QC21 from the IntenseQC framework.
+
+    Parameters
+    ----------
+    neighbour_data :
+        Rainfall data with target and neighbouring gauge and time col
+    target_gauge_col :
+        Target gauge column
+    neighbouring_gauge_col :
+        Neighbouring gauge column
+    time_res :
+        Time resolution of data
+    offsets_to_check :
+        Offset values to check (default: -1, 0, 1)
+
+    Returns
+    -------
+    offset_flag :
+        e.g. -1, 0 or 1
+
+    """
+    # 0. Initial checks
+    assert all(column in neighbour_data.columns for column in [target_gauge_col, neighbouring_gauge_col]), (
+        f"Not all of {[target_gauge_col, neighbouring_gauge_col]} found in input data columns"
+    )
+    # Add 0 (i.e. no lag) to offsets to check if not included
+    if 0 not in offsets_to_check:
+        offsets_to_check = list(offsets_to_check)
+        offsets_to_check.append(0)
+
+    # 1. create dictionaries to store affinity index and correlation at different offsets/lags
+    neighbour_affinities = {}
+    neighbour_correlation = {}
+
+    # 2. Loop through offsets and calculate affinity index and correlation
+    for offset in offsets_to_check:
+        # 2.1. Offset neighbour data by offset amount
+        offset_neighbour_data = data_utils.offset_data_by_time(
+            neighbour_data, target_col=target_gauge_col, offset_in_time=offset, time_res=time_res
+        )
+
+        # 2.2 get non-zero minima column
+        offset_neighbour_data = neighbourhood_utils.get_rain_not_minima_column(
+            offset_neighbour_data, target_col=target_gauge_col, other_col=neighbouring_gauge_col
+        )
+
+        # 2.3 Calculate affinity index
+        neighbour_affinities[offset] = stats.affinity_index(offset_neighbour_data, binary_col="rain_not_minima")
+
+        # 2.4 Calculate neighbour pearson correlation
+        neighbour_correlation[offset] = stats.gauge_correlation(
+            offset_neighbour_data,
+            target_col=target_gauge_col,
+            other_col=neighbouring_gauge_col,
+        )
+
+    # Get flag
+    offset_flag = 0
+    if max(neighbour_affinities, key=neighbour_affinities.get) == max(
+        neighbour_correlation, key=neighbour_correlation.get
+    ):
+        offset_flag = max(neighbour_affinities, key=neighbour_affinities.get)
+
+    return offset_flag
+
+
+def check_neighbour_affinity_index(
+    neighbour_data: pl.DataFrame, target_gauge_col: str, neighbouring_gauge_col: str
+) -> float:
+    """
+    Pre-QC Affinity index calculated between target and nearest neighbouring gauge.
+
+    Flag:
+    Between 0-1 for affinity index
+
+    This is QC22 from the IntenseQC framework.
+
+    Parameters
+    ----------
+    neighbour_data :
+        Rainfall data with target and neighbouring gauge and time col
+    target_gauge_col :
+        Target gauge column
+    neighbouring_gauge_col :
+        Neighbouring gauge column
+
+    Returns
+    -------
+    affinity_index :
+        Between 0 and 1
+
+    """
+    # 1. get non-zero minima column
+    neighbour_data = neighbourhood_utils.get_rain_not_minima_column(
+        neighbour_data, target_col=target_gauge_col, other_col=neighbouring_gauge_col
+    )
+
+    # 2. Calculate affinity index
+    return stats.affinity_index(neighbour_data, binary_col="rain_not_minima")
+
+
+def check_neighbour_correlation(
+    neighbour_data: pl.DataFrame, target_gauge_col: str, neighbouring_gauge_col: str
+) -> float:
+    """
+    Pre-QC pearson correlation calculated between target and neighbouring gauge.
+
+    Flag:
+    Between -1 to +1 for pearson correlation coefficient
+
+    This is QC23 from the IntenseQC framework.
+
+    Parameters
+    ----------
+    neighbour_data :
+        Rainfall data with target and neighbouring gauge and time col
+    target_gauge_col :
+        Target gauge column
+    neighbouring_gauge_col :
+        Neighbouring gauge column
+
+    Returns
+    -------
+    r_squared :
+        Between -1 to 1
+
+    """
+    # 1. Calculate pearson correlation
+    return stats.gauge_correlation(neighbour_data, target_col=target_gauge_col, other_col=neighbouring_gauge_col)
+
+
+def check_daily_factor(
+    neighbour_data: pl.DataFrame, target_gauge_col: str, neighbouring_gauge_col: str, averaging_method: str = "mean"
+) -> float:
+    """
+    Daily factor difference between target and neighbouring gauge.
+
+    Flag:
+    Scalar factor difference.
+
+    This is QC24 from the IntenseQC framework.
+
+    Parameters
+    ----------
+    neighbour_data :
+        Daily rainfall data with target and neighbouring gauge and time col
+    target_gauge_col :
+        Target gauge column
+    neighbouring_gauge_col :
+        Neighbouring gauge column
+    averaging_method :
+        Method to use to get average i.e. mean or median (default mean)
+
+    Returns
+    -------
+    daily_factor :
+        Average factor diff between target and neighbour
+
+    Raises
+    ------
+    ValueError :
+        If averaging method not 'mean' or 'median'
+
+    """
+    # 0. Initial checks
+    data_utils.check_data_is_specific_time_res(neighbour_data, "daily")
+
+    # 1. Daily factor difference
+    daily_factor = stats.factor_diff(neighbour_data, target_col=target_gauge_col, other_col=neighbouring_gauge_col)
+
+    # 2. Get mean daily factor difference
+    daily_factor_positive_vals = daily_factor.drop_nans().filter(
+        (pl.col(target_gauge_col) > 0) & (pl.col(neighbouring_gauge_col) > 0)
+    )
+
+    if averaging_method == "mean":
+        return daily_factor_positive_vals["factor_diff"].mean()
+    elif averaging_method == "median":
+        return daily_factor_positive_vals["factor_diff"].median()
+    else:
+        raise ValueError(f"{averaging_method} not recognised, please use 'mean' or 'median'")
+
+
+def check_monthly_factor(
+    neighbour_data: pl.DataFrame, target_gauge_col: str, neighbouring_gauge_col: str
+) -> pl.DataFrame:
+    """
+    Monthly factor difference between target and neighbouring gauge.
+
+    Flags:
+    1, when ~10 x greater than neighbour monthly total
+    2, when ~25.4 x greater ...
+    3, when ~2.54 x greater ...
+    4, when ~10 x smaller than neighbour monthly total
+    5, when ~25.4 x smaller ...
+    6, when ~2.54 x smaller ...
+    else, 0
+
+    This is QC25 from the IntenseQC framework.
+
+    Parameters
+    ----------
+    neighbour_data :
+        Daily rainfall data with target and neighbouring gauge and time col
+    target_gauge_col :
+        Target gauge column
+    neighbouring_gauge_col :
+        Neighbouring gauge column
+
+    Returns
+    -------
+    monthly_factor_flag :
+        Factor diff flags between target and neighbour
+
+    """
+    # 0. Initial checks
+    data_utils.check_data_is_monthly(neighbour_data)
+
+    # 1. Calculate monthly factor difference
+    monthly_factor = stats.factor_diff(neighbour_data, target_col=target_gauge_col, other_col=neighbouring_gauge_col)
+
+    # 2. Flag factor difference
+    monthly_factor_flags = flag_monthly_factor_differences(monthly_factor, rain_col=neighbouring_gauge_col)
+    return monthly_factor_flags
+
+
+def flag_monthly_factor_differences(monthly_factor: pl.DataFrame, rain_col: str) -> pl.DataFrame:
+    """
+    Flag monthly difference flag after IntenseQC framework for QC25.
+
+    Flags:
+    1, when ~10 x greater than neighbour monthly total
+    2, when ~25.4 x greater ...
+    3, when ~2.54 x greater ...
+    4, when ~10 x smaller than neighbour monthly total
+    5, when ~25.4 x smaller ...
+    6, when ~2.54 x smaller ...
+    else, 0
+
+
+    Parameters
+    ----------
+    monthly_factor :
+        Rainfall data with 'factor_diff' and gauge_col
+    rain_col :
+        Rain column
+
+    Returns
+    -------
+    monthly_factor_w_flag :
+        Rainfall data with flags based on monthly factor difference
+
+    """
+    return monthly_factor.with_columns(
+        pl.when((pl.col("factor_diff") < 11) & (pl.col("factor_diff") > 9))
+        .then(1)
+        .when((pl.col("factor_diff") < 26) & (pl.col("factor_diff") > 24))
+        .then(2)
+        .when((pl.col("factor_diff") < 3) & (pl.col("factor_diff") > 2))
+        .then(3)
+        .when((pl.col("factor_diff") > 1 / 11) & (pl.col("factor_diff") < 1 / 9))
+        .then(4)
+        .when((pl.col("factor_diff") > 1 / 26) & (pl.col("factor_diff") < 1 / 24))
+        .then(5)
+        .when((pl.col("factor_diff") > 1 / 3) & (pl.col("factor_diff") < 1 / 2))
+        .then(6)
+        .otherwise(0)
+        .alias(f"factor_flags_{rain_col}")
     )
 
 

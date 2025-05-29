@@ -45,14 +45,13 @@ def read_gdsr_metadata(data_path: str) -> dict:
     metadata = {}
     with open(data_path, "r", encoding="utf-8") as f:
         for line in f:
-            if ":" not in line:
-                continue  # these rows are not metadata
-            key, val = line.strip().split(":", maxsplit=1)
-            key = key.lower().replace(" ", "_").strip()
-            val = val.strip()
-            metadata[key] = val
-            if key == "other":
-                break
+            if ":" in line:  # these rows are the metadata
+                key, val = line.strip().split(":", maxsplit=1)
+                key = key.lower().replace(" ", "_").strip()
+                val = val.strip()
+                metadata[key] = val
+                if key == "other":
+                    break
     metadata = convert_gdsr_metadata_dates_to_datetime(metadata)
     return metadata
 
@@ -77,7 +76,7 @@ def read_gpcc_metadata_from_zip(data_path: str, time_res: str, gpcc_file_format:
 
     """
     assert "zip" in data_path, "Data needs to be a zip file"
-    gpcc_file_name = data_path.split("/")[-1].split(".zip")[0]
+    gpcc_file_name = data_path.rsplit("/", maxsplit=1)[-1].split(".zip")[0]
     gpcc_unzip = zipfile.ZipFile(data_path).open(f"{gpcc_file_name}{gpcc_file_format}", "r")
     with gpcc_unzip:
         gpcc_header = gpcc_unzip.readline().decode("utf-8")

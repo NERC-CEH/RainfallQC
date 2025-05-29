@@ -41,11 +41,11 @@ def get_target_neighbour_non_zero_minima(
     return non_zero_minima
 
 
-def get_gauges_not_minima_column_target_or_neighbour(
+def make_rain_not_minima_column_target_or_neighbour(
     data: pl.DataFrame, target_col: str, other_col: str, data_minima: float
 ) -> pl.DataFrame:
     """
-    Get values that are not minima rainfall for target or neighbour.
+    Get rain values that are not minima rainfall for target or neighbour.
 
     Parameters
     ----------
@@ -60,7 +60,8 @@ def get_gauges_not_minima_column_target_or_neighbour(
 
     Returns
     -------
-    data_w_gauges_not_minima :
+    data :
+     Rainfall data with "rain_not_minima" column
 
     """
     valid_data = pl.col(target_col).is_not_nan() & pl.col(other_col).is_not_nan()
@@ -78,8 +79,40 @@ def get_gauges_not_minima_column_target_or_neighbour(
         .when(valid_data & (pl.col(target_col) > data_minima) & (pl.col(other_col) == data_minima))
         .then(0)
         .otherwise(np.nan)
-        .alias("gauges_not_minima")
+        .alias("rain_not_minima")
     )
+
+
+def get_rain_not_minima_column(data: pl.DataFrame, target_col: str, other_col: str) -> pl.DataFrame:
+    """
+    Get rain not equal to minima column.
+
+    Combines two functions for getting non_zero_minima i.e. 0.1 and then get 'rain_not_minima'
+
+    Parameters
+    ----------
+    data :
+        Rainfall data
+    target_col :
+        Target rainfall column
+    other_col :
+        Other rainfall column
+
+    Returns
+    -------
+    data_w_minima_col :
+        Rainfall data with rain is minima column
+
+    """
+    non_zero_minima = get_target_neighbour_non_zero_minima(data, target_col=target_col, other_col=other_col)
+    # 2.3 make 'rain_not_minima' column
+    data_w_minima_col = make_rain_not_minima_column_target_or_neighbour(
+        data,
+        target_col=target_col,
+        other_col=other_col,
+        data_minima=non_zero_minima,
+    )
+    return data_w_minima_col
 
 
 def get_ids_of_n_nearest_overlapping_neighbouring_gauges(

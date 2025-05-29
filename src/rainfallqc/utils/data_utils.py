@@ -172,7 +172,7 @@ def check_data_is_specific_time_res(data: pl.DataFrame, time_res: str | list) ->
     # Get actual time step as a string like "1h"
     time_step = get_data_timestep_as_str(data)
     if time_step not in allowed_res:
-        raise ValueError(f"Invalid time step. Expected one of {allowed_res}, but got: {time_step}")
+        raise ValueError(f"Invalid time step. Expected one of {allowed_res}, but data has time-step(s): {time_step}")
 
 
 def convert_datarray_seconds_to_days(series_seconds: xr.DataArray) -> np.ndarray:
@@ -233,7 +233,7 @@ def convert_daily_data_to_monthly(
             pl.col("n_days")
             >= (
                 pl.col("expected_days_in_month") * perc_for_valid_month / 100
-            )  # TODO: Ensure at least n% values for month are available
+            )  # Ensure at least n% values for month are available
         )
         .drop("n_days", "expected_days_in_month")
     )
@@ -502,6 +502,42 @@ def normalise_data(data: pl.Series | pl.expr.Expr) -> pl.Series:
 
     """
     return (data - data.min()) / (data.max() - data.min())
+
+
+def offset_data_by_time(data: pl.DataFrame, target_col: str, offset_in_time: int, time_res: str) -> pl.DataFrame:
+    """
+    Shift/offset data either backwards or forwards in time.
+
+    Parameters
+    ----------
+    data :
+        Data with column to offset in 'time'
+    target_col :
+        Column of data to offset
+    offset_in_time :
+        Amount to offset data by i.e. 1 for 1 day if time_res set to '1d'
+    time_res :
+        Time resolution like 'hourly', 'daily', '1h' or '1d'
+
+    Returns
+    -------
+    data :
+        Offset data by 'offset_in_time' amount
+
+    """
+    # 0. Check data is specific time_res
+    check_data_is_specific_time_res(data, time_res=time_res)
+
+    # 1. If time_res is like 'hourly' then get time res in a format that works with upsample i.e. '1d'
+    time_res = TEMPORAL_CONVERSIONS.get(time_res, time_res)
+
+    # 2. Upsample data to time_res to fill in gaps
+    data = data.upsample("time", every=time_res)
+
+    # 3. Shift data in time
+    return data.with_columns(
+        pl.col(target_col).last().over(pl.col("time").dt.truncate(time_res)).shift(offset_in_time),
+    )
 
 
 def replace_missing_vals_with_nan(

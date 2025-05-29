@@ -6,6 +6,7 @@ import polars as pl
 import pytest
 
 from rainfallqc.checks import neighbourhood_checks
+from rainfallqc.utils import data_utils
 
 DEFAULT_RAIN_COL = "rain_mm"
 DISTANCE_THRESHOLD = 50  # 50 km
@@ -156,6 +157,150 @@ def test_check_monthly_neighbours_gpcc(monthly_gpcc_network):
         n_neighbours_ignored=1,
     )
     assert len(result.filter(pl.col("majority_monthly_flag") > 0)) == 9
+
+
+def test_check_timing_offset_gdsr(daily_gdsr_network):
+    result = neighbourhood_checks.check_timing_offset(
+        daily_gdsr_network,
+        target_gauge_col=f"{DEFAULT_RAIN_COL}_DE_02483",
+        neighbouring_gauge_col=f"{DEFAULT_RAIN_COL}_DE_00310",
+        time_res="daily",
+    )
+    assert result == 0
+
+    result = neighbourhood_checks.check_timing_offset(
+        daily_gdsr_network,
+        target_gauge_col=f"{DEFAULT_RAIN_COL}_DE_02483",
+        neighbouring_gauge_col=f"{DEFAULT_RAIN_COL}_DE_00310",
+        time_res="daily",
+        offsets_to_check=(-5, 5),
+    )
+    assert result == 0
+
+
+def test_check_timing_offset_gpcc(daily_gpcc_network):
+    result = neighbourhood_checks.check_timing_offset(
+        daily_gpcc_network,
+        target_gauge_col=f"{DEFAULT_RAIN_COL}_tw_2483",
+        neighbouring_gauge_col=f"{DEFAULT_RAIN_COL}_tw_310",
+        time_res="daily",
+    )
+    assert result == 0
+
+    # offset neighbour data by one day to pick up a +1 day offset
+    offset_data = data_utils.offset_data_by_time(
+        daily_gpcc_network, target_col=f"{DEFAULT_RAIN_COL}_tw_310", offset_in_time=1, time_res="daily"
+    )
+    result = neighbourhood_checks.check_timing_offset(
+        offset_data,
+        target_gauge_col=f"{DEFAULT_RAIN_COL}_tw_2483",
+        neighbouring_gauge_col=f"{DEFAULT_RAIN_COL}_tw_310",
+        time_res="daily",
+    )
+    assert result == 1
+
+
+def test_check_nearest_neighbour_affinity_index_hourly(hourly_gdsr_network):
+    result = neighbourhood_checks.check_neighbour_affinity_index(
+        hourly_gdsr_network,
+        target_gauge_col=f"{DEFAULT_RAIN_COL}_DE_02483",
+        neighbouring_gauge_col=f"{DEFAULT_RAIN_COL}_DE_00310",
+    )
+
+    assert round(result, 2) == 0.81
+
+
+def test_check_nearest_neighbour_affinity_index_daily(daily_gdsr_network, daily_gpcc_network):
+    result = neighbourhood_checks.check_neighbour_affinity_index(
+        daily_gdsr_network,
+        target_gauge_col=f"{DEFAULT_RAIN_COL}_DE_02483",
+        neighbouring_gauge_col=f"{DEFAULT_RAIN_COL}_DE_00310",
+    )
+
+    assert round(result, 2) == 0.95
+
+    result = neighbourhood_checks.check_neighbour_affinity_index(
+        daily_gpcc_network,
+        target_gauge_col=f"{DEFAULT_RAIN_COL}_tw_2483",
+        neighbouring_gauge_col=f"{DEFAULT_RAIN_COL}_tw_310",
+    )
+
+    assert round(result, 2) == 0.97
+
+
+def test_check_neighbour_correlation_hourly(hourly_gdsr_network):
+    result = neighbourhood_checks.check_neighbour_correlation(
+        hourly_gdsr_network,
+        target_gauge_col=f"{DEFAULT_RAIN_COL}_DE_02483",
+        neighbouring_gauge_col=f"{DEFAULT_RAIN_COL}_DE_00310",
+    )
+
+    assert round(result, 2) == 0.03
+
+
+def test_check_neighbour_correlation_daily(daily_gdsr_network, daily_gpcc_network):
+    result = neighbourhood_checks.check_neighbour_correlation(
+        daily_gdsr_network,
+        target_gauge_col=f"{DEFAULT_RAIN_COL}_DE_02483",
+        neighbouring_gauge_col=f"{DEFAULT_RAIN_COL}_DE_00310",
+    )
+
+    assert round(result, 2) == 0.01
+
+    result = neighbourhood_checks.check_neighbour_correlation(
+        daily_gpcc_network,
+        target_gauge_col=f"{DEFAULT_RAIN_COL}_tw_2483",
+        neighbouring_gauge_col=f"{DEFAULT_RAIN_COL}_tw_310",
+    )
+
+    assert round(result, 2) == 0.31
+
+
+def test_check_daily_factor(daily_gdsr_network):
+    result = neighbourhood_checks.check_daily_factor(
+        daily_gdsr_network,
+        target_gauge_col=f"{DEFAULT_RAIN_COL}_DE_02483",
+        neighbouring_gauge_col=f"{DEFAULT_RAIN_COL}_DE_00310",
+        averaging_method="mean",
+    )
+
+    assert round(result, 2) == 4.47
+
+    result = neighbourhood_checks.check_daily_factor(
+        daily_gdsr_network,
+        target_gauge_col=f"{DEFAULT_RAIN_COL}_DE_02483",
+        neighbouring_gauge_col=f"{DEFAULT_RAIN_COL}_DE_00310",
+        averaging_method="median",
+    )
+
+    assert round(result, 2) == 1.71
+
+    with pytest.raises(ValueError):
+        neighbourhood_checks.check_daily_factor(
+            daily_gdsr_network,
+            target_gauge_col=f"{DEFAULT_RAIN_COL}_DE_02483",
+            neighbouring_gauge_col=f"{DEFAULT_RAIN_COL}_DE_00310",
+            averaging_method="mode",
+        )
+
+
+def test_check_monthly_factor(monthly_gdsr_network, monthly_gpcc_network):
+    result = neighbourhood_checks.check_monthly_factor(
+        monthly_gdsr_network,
+        target_gauge_col=f"{DEFAULT_RAIN_COL}_DE_02483",
+        neighbouring_gauge_col=f"{DEFAULT_RAIN_COL}_DE_00310",
+    )
+    assert round(result[f"factor_flags_{DEFAULT_RAIN_COL}_DE_00310"].max(), 2) == 6
+    assert len(result.filter(pl.col(f"factor_flags_{DEFAULT_RAIN_COL}_DE_00310") > 0)) == 6
+
+    result = neighbourhood_checks.check_monthly_factor(
+        monthly_gpcc_network,
+        target_gauge_col=f"{DEFAULT_RAIN_COL}_mw_2483",
+        neighbouring_gauge_col=f"{DEFAULT_RAIN_COL}_mw_310",
+    )
+
+    assert round(result[f"factor_flags_{DEFAULT_RAIN_COL}_mw_310"].max(), 2) == 3
+    assert len(result.filter(pl.col(f"factor_flags_{DEFAULT_RAIN_COL}_mw_310") > 0)) == 61
 
 
 def test_make_num_neighbours_online_col(hourly_gdsr_network):
