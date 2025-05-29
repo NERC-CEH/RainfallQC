@@ -75,6 +75,9 @@ def calculate_dry_spell_fraction(data: pl.DataFrame, rain_col: str, dry_period_d
         Data with dry spell fraction
 
     """
+    if not isinstance(data, pl.DataFrame):
+        data = data.to_frame()
+
     # 1. make dry day column
     data_dry_days = get_dry_spells(data, rain_col)
 
@@ -230,7 +233,7 @@ def convert_daily_data_to_monthly(
             pl.col("n_days")
             >= (
                 pl.col("expected_days_in_month") * perc_for_valid_month / 100
-            )  # TODO: Ensure at least n% values for month are available
+            )  # Ensure at least n% values for month are available
         )
         .drop("n_days", "expected_days_in_month")
     )
