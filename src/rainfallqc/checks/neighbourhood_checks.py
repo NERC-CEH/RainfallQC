@@ -7,12 +7,12 @@ Neighbourhood checks are QC checks that: "detect abnormalities in a gauges given
 Classes and functions ordered by appearance in IntenseQC framework.
 """
 
-from typing import List
+from typing import Iterable, List
 
 import numpy as np
 import polars as pl
 
-from rainfallqc.utils import data_readers, data_utils, stats
+from rainfallqc.utils import data_readers, data_utils, neighbourhood_utils, stats
 
 
 def check_wet_neighbours(
@@ -341,8 +341,12 @@ def check_monthly_neighbours(
 
 
 def check_timing_offset(
-    neighbour_data: pl.DataFrame, target_gauge_col: str, neighbouring_gauge_col: str, time_res: str
-) -> pl.DataFrame:
+    neighbour_data: pl.DataFrame,
+    target_gauge_col: str,
+    neighbouring_gauge_col: str,
+    time_res: str,
+    offsets_to_check: Iterable[int] = (-1, 0, 1),
+) -> int:
     """
     Identify suspicious data offset using Affinity Index and correlation (r^2) between target and nearest neighbour.
 
@@ -363,23 +367,57 @@ def check_timing_offset(
         Neighbouring gauge column
     time_res :
         Time resolution of data
+    offsets_to_check :
+        Offset values to check (default: -1, 0, 1)
 
     Returns
     -------
-    data_w_flags :
-        Data with timing offset flags
+    offset_flag :
+        e.g. -1, 0 or 1
 
     """
+    # 0. Initial checks
     assert all(column in neighbour_data.columns for column in [target_gauge_col, neighbouring_gauge_col]), (
         f"Not all of {[target_gauge_col, neighbouring_gauge_col]} found in input data columns"
     )
-    neighbour_data_minus1 = data_utils.offset_data_by_time(
-        neighbour_data, target_col=target_gauge_col, offset_in_time=-1, time_res=time_res
-    )
-    neighbour_data_plus1 = data_utils.offset_data_by_time(
-        neighbour_data, target_col=target_gauge_col, offset_in_time=1, time_res=time_res
-    )
-    return neighbour_data_minus1, neighbour_data_plus1
+
+    # 1. create dictionaries to store affinity index and correlation at different offsets/lags
+    neighbour_affinities = {}
+    neighbour_correlation = {}
+
+    # 2. Loop through offsets and calculate affinity index and correlation
+    for offset in offsets_to_check:
+        # 2.1. Offset neighbour data by offset amount
+        offset_neighbour_data = data_utils.offset_data_by_time(
+            neighbour_data, target_col=target_gauge_col, offset_in_time=offset, time_res=time_res
+        )
+
+        # 2.2 get non-zero minima
+        non_zero_minima = neighbourhood_utils.get_target_neighbour_non_zero_minima(
+            offset_neighbour_data, target_col=target_gauge_col, other_col=neighbouring_gauge_col
+        )
+
+        # 2.3 make 'gauge_not_minima' column
+        one_offset_neighbour_data_minima = neighbourhood_utils.make_rain_not_minima_column_target_or_neighbour(
+            offset_neighbour_data,
+            target_col=target_gauge_col,
+            other_col=neighbouring_gauge_col,
+            data_minima=non_zero_minima,
+        )
+
+        # 2.4 Calculate affinity index
+        neighbour_affinities[offset] = stats.affinity_index(
+            one_offset_neighbour_data_minima, binary_col="rain_not_minima"
+        )
+
+        # 2.5 Calculate neighbour pearson correlation
+        neighbour_correlation[offset] = stats.gauge_correlation(
+            one_offset_neighbour_data_minima,
+            target_col=target_gauge_col,
+            other_col=neighbouring_gauge_col,
+        )
+
+    return offset_neighbour_data
 
 
 def make_neighbour_monthly_max_climatology(
