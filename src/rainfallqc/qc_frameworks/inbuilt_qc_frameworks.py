@@ -25,6 +25,10 @@ INTENSE_QC = {
     "QC19": {"function": neighbourhood_checks.check_dry_neighbours},
     "QC20": {"function": neighbourhood_checks.check_monthly_neighbours},
     "QC21": {"function": neighbourhood_checks.check_timing_offset},
+    "QC22": {"function": neighbourhood_checks.check_neighbour_affinity_index},
+    "QC23": {"function": neighbourhood_checks.check_neighbour_correlation},
+    "QC24": {"function": neighbourhood_checks.check_daily_factor},
+    "QC25": {"function": neighbourhood_checks.check_monthly_factor},
 }
 
 INBUILT_QC_FRAMEWORKS = {"IntenseQC": INTENSE_QC}
