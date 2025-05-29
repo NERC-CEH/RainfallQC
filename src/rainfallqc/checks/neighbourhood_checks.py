@@ -224,7 +224,7 @@ def check_dry_neighbours(
     neighbour_data_w_dry_flags = neighbour_data_w_dry_flags.select(
         ["time", target_gauge_col] + neighbouring_gauge_cols + ["majority_dry_flag"]
     )
-    # 7. Backwards propogate dry flags into dry period
+    # 7. Backwards propagate dry flags into dry period
     neighbour_data_w_dry_flags = data_utils.back_propagate_daily_data_flags(
         neighbour_data_w_dry_flags, flag_column="majority_dry_flag", num_days=(dry_period_days - 1)
     )
@@ -316,7 +316,7 @@ def check_monthly_neighbours(
             how="left",
         )
 
-    # 3. Get majority flag for positive and negative flags
+    # 3. Get majority-voted flag for positive and negative flags
     # i.e. get minimum positive flag, when positive, and maximum negative flag when negative
     monthly_neighbour_data_w_flags = get_majority_positive_or_negative_flags(
         monthly_neighbour_data,
@@ -324,6 +324,7 @@ def check_monthly_neighbours(
         min_n_neighbours=min_n_neighbours,
         n_neighbours_ignored=n_neighbours_ignored,
     )
+
     # 4. Calculate neighbour monthly max column
     monthly_neighbour_data_w_flags = make_neighbour_monthly_max_climatology(
         monthly_neighbour_data_w_flags, neighbouring_gauge_cols
