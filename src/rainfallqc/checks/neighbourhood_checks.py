@@ -380,6 +380,10 @@ def check_timing_offset(
     assert all(column in neighbour_data.columns for column in [target_gauge_col, neighbouring_gauge_col]), (
         f"Not all of {[target_gauge_col, neighbouring_gauge_col]} found in input data columns"
     )
+    # Add 0 (i.e. no lag) to offsets to check if not included
+    if 0 not in offsets_to_check:
+        offsets_to_check = list(offsets_to_check)
+        offsets_to_check.append(0)
 
     # 1. create dictionaries to store affinity index and correlation at different offsets/lags
     neighbour_affinities = {}
@@ -392,40 +396,94 @@ def check_timing_offset(
             neighbour_data, target_col=target_gauge_col, offset_in_time=offset, time_res=time_res
         )
 
-        # 2.2 get non-zero minima
-        non_zero_minima = neighbourhood_utils.get_target_neighbour_non_zero_minima(
+        # 2.2 get non-zero minima column
+        offset_neighbour_data = neighbourhood_utils.get_rain_not_minima_column(
             offset_neighbour_data, target_col=target_gauge_col, other_col=neighbouring_gauge_col
         )
 
-        # 2.3 make 'gauge_not_minima' column
-        one_offset_neighbour_data_minima = neighbourhood_utils.make_rain_not_minima_column_target_or_neighbour(
-            offset_neighbour_data,
-            target_col=target_gauge_col,
-            other_col=neighbouring_gauge_col,
-            data_minima=non_zero_minima,
-        )
+        # 2.3 Calculate affinity index
+        neighbour_affinities[offset] = stats.affinity_index(offset_neighbour_data, binary_col="rain_not_minima")
 
-        # 2.4 Calculate affinity index
-        neighbour_affinities[offset] = stats.affinity_index(
-            one_offset_neighbour_data_minima, binary_col="rain_not_minima"
-        )
-
-        # 2.5 Calculate neighbour pearson correlation
+        # 2.4 Calculate neighbour pearson correlation
         neighbour_correlation[offset] = stats.gauge_correlation(
-            one_offset_neighbour_data_minima,
+            offset_neighbour_data,
             target_col=target_gauge_col,
             other_col=neighbouring_gauge_col,
         )
 
     # Get flag
+    offset_flag = 0
     if max(neighbour_affinities, key=neighbour_affinities.get) == max(
         neighbour_correlation, key=neighbour_correlation.get
     ):
         offset_flag = max(neighbour_affinities, key=neighbour_affinities.get)
-    else:
-        offset_flag = 0
 
     return offset_flag
+
+
+def check_neighbour_affinity_index(
+    neighbour_data: pl.DataFrame, target_gauge_col: str, neighbouring_gauge_col: str
+) -> float:
+    """
+    Pre-QC Affinity index calculated between target and nearest neighbouring gauge.
+
+    Flag:
+    Between 0-1 for affinity index
+
+    This is QC22 from the IntenseQC framework.
+
+    Parameters
+    ----------
+    neighbour_data :
+        Rainfall data with target and neighbouring gauge and time col
+    target_gauge_col :
+        Target gauge column
+    neighbouring_gauge_col :
+        Neighbouring gauge column
+
+    Returns
+    -------
+    affinity_index :
+        Between 0 and 1
+
+    """
+    # 1. get non-zero minima column
+    neighbour_data = neighbourhood_utils.get_rain_not_minima_column(
+        neighbour_data, target_col=target_gauge_col, other_col=neighbouring_gauge_col
+    )
+
+    # 2. Calculate affinity index
+    return stats.affinity_index(neighbour_data, binary_col="rain_not_minima")
+
+
+def check_neighbour_correlation(
+    neighbour_data: pl.DataFrame, target_gauge_col: str, neighbouring_gauge_col: str
+) -> float:
+    """
+    Pre-QC pearson correlation calculated between target and neighbouring gauge.
+
+    Flag:
+    Between -1 to +1 for pearson correlation coefficient
+
+    This is QC23 from the IntenseQC framework.
+
+    Parameters
+    ----------
+    neighbour_data :
+        Rainfall data with target and neighbouring gauge and time col
+    target_gauge_col :
+        Target gauge column
+    neighbouring_gauge_col :
+        Neighbouring gauge column
+
+    Returns
+    -------
+    r_squared :
+        Between -1 to 1
+
+    """
+    # 1. Calculate pearson correlation
+    return stats.gauge_correlation(neighbour_data, target_col=target_gauge_col, other_col=neighbouring_gauge_col)
 
 
 def make_neighbour_monthly_max_climatology(

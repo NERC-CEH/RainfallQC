@@ -168,6 +168,15 @@ def test_check_timing_offset_gdsr(daily_gdsr_network):
     )
     assert result == 0
 
+    result = neighbourhood_checks.check_timing_offset(
+        daily_gdsr_network,
+        target_gauge_col=f"{DEFAULT_RAIN_COL}_DE_02483",
+        neighbouring_gauge_col=f"{DEFAULT_RAIN_COL}_DE_00310",
+        time_res="daily",
+        offsets_to_check=(-5, 5),
+    )
+    assert result == 0
+
 
 def test_check_timing_offset_gpcc(daily_gpcc_network):
     result = neighbourhood_checks.check_timing_offset(
@@ -189,6 +198,26 @@ def test_check_timing_offset_gpcc(daily_gpcc_network):
         time_res="daily",
     )
     assert result == 1
+
+
+def test_check_nearest_neighbour_affinity_index(hourly_gdsr_network):
+    result = neighbourhood_checks.check_neighbour_affinity_index(
+        hourly_gdsr_network,
+        target_gauge_col=f"{DEFAULT_RAIN_COL}_DE_02483",
+        neighbouring_gauge_col=f"{DEFAULT_RAIN_COL}_DE_00310",
+    )
+
+    assert round(result, 2) == 0.81
+
+
+def test_check_neighbour_correlation(hourly_gdsr_network):
+    result = neighbourhood_checks.check_neighbour_correlation(
+        hourly_gdsr_network,
+        target_gauge_col=f"{DEFAULT_RAIN_COL}_DE_02483",
+        neighbouring_gauge_col=f"{DEFAULT_RAIN_COL}_DE_00310",
+    )
+
+    assert round(result, 2) == 0.03
 
 
 def test_make_num_neighbours_online_col(hourly_gdsr_network):

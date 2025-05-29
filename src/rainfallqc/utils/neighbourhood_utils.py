@@ -83,6 +83,38 @@ def make_rain_not_minima_column_target_or_neighbour(
     )
 
 
+def get_rain_not_minima_column(data: pl.DataFrame, target_col: str, other_col: str) -> pl.DataFrame:
+    """
+    Get rain not equal to minima column.
+
+    Combines two functions for getting non_zero_minima i.e. 0.1 and then get 'rain_not_minima'
+
+    Parameters
+    ----------
+    data :
+        Rainfall data
+    target_col :
+        Target rainfall column
+    other_col :
+        Other rainfall column
+
+    Returns
+    -------
+    data_w_minima_col :
+        Rainfall data with rain is minima column
+
+    """
+    non_zero_minima = get_target_neighbour_non_zero_minima(data, target_col=target_col, other_col=other_col)
+    # 2.3 make 'rain_not_minima' column
+    data_w_minima_col = make_rain_not_minima_column_target_or_neighbour(
+        data,
+        target_col=target_col,
+        other_col=other_col,
+        data_minima=non_zero_minima,
+    )
+    return data_w_minima_col
+
+
 def get_ids_of_n_nearest_overlapping_neighbouring_gauges(
     gauge_network_metadata: pl.DataFrame,
     target_id: str,
