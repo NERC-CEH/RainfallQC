@@ -538,6 +538,94 @@ def check_daily_factor(
         raise ValueError(f"{averaging_method} not recognised, please use 'mean' or 'median'")
 
 
+def check_monthly_factor(
+    neighbour_data: pl.DataFrame, target_gauge_col: str, neighbouring_gauge_col: str
+) -> pl.DataFrame:
+    """
+    Monthly factor difference between target and neighbouring gauge.
+
+    Flags:
+    1, when ~10 x greater than neighbour monthly total
+    2, when ~25.4 x greater ...
+    3, when ~2.54 x greater ...
+    4, when ~10 x smaller than neighbour monthly total
+    5, when ~25.4 x smaller ...
+    6, when ~2.54 x smaller ...
+    else, 0
+
+    This is QC25 from the IntenseQC framework.
+
+    Parameters
+    ----------
+    neighbour_data :
+        Daily rainfall data with target and neighbouring gauge and time col
+    target_gauge_col :
+        Target gauge column
+    neighbouring_gauge_col :
+        Neighbouring gauge column
+
+    Returns
+    -------
+    monthly_factor_flag :
+        Factor diff flags between target and neighbour
+
+    """
+    # 0. Initial checks
+    data_utils.check_data_is_monthly(neighbour_data)
+
+    # 1. Calculate monthly factor difference
+    monthly_factor = stats.factor_diff(neighbour_data, target_col=target_gauge_col, other_col=neighbouring_gauge_col)
+
+    # 2. Flag factor difference
+    monthly_factor_flags = flag_monthly_factor_differences(monthly_factor, rain_col=neighbouring_gauge_col)
+    return monthly_factor_flags
+
+
+def flag_monthly_factor_differences(monthly_factor: pl.DataFrame, rain_col: str) -> pl.DataFrame:
+    """
+    Flag monthly difference flag after IntenseQC framework for QC25.
+
+    Flags:
+    1, when ~10 x greater than neighbour monthly total
+    2, when ~25.4 x greater ...
+    3, when ~2.54 x greater ...
+    4, when ~10 x smaller than neighbour monthly total
+    5, when ~25.4 x smaller ...
+    6, when ~2.54 x smaller ...
+    else, 0
+
+
+    Parameters
+    ----------
+    monthly_factor :
+        Rainfall data with 'factor_diff' and gauge_col
+    rain_col :
+        Rain column
+
+    Returns
+    -------
+    monthly_factor_w_flag :
+        Rainfall data with flags based on monthly factor difference
+
+    """
+    return monthly_factor.with_columns(
+        pl.when((pl.col("factor_diff") < 11) & (pl.col("factor_diff") > 9))
+        .then(1)
+        .when((pl.col("factor_diff") < 26) & (pl.col("factor_diff") > 24))
+        .then(2)
+        .when((pl.col("factor_diff") < 3) & (pl.col("factor_diff") > 2))
+        .then(3)
+        .when((pl.col("factor_diff") > 1 / 11) & (pl.col("factor_diff") < 1 / 9))
+        .then(4)
+        .when((pl.col("factor_diff") > 1 / 26) & (pl.col("factor_diff") < 1 / 24))
+        .then(5)
+        .when((pl.col("factor_diff") > 1 / 3) & (pl.col("factor_diff") < 1 / 2))
+        .then(6)
+        .otherwise(0)
+        .alias(f"factor_flags_{rain_col}")
+    )
+
+
 def make_neighbour_monthly_max_climatology(
     monthly_neighbour_data: pl.DataFrame, neighbouring_gauge_cols: list
 ) -> pl.DataFrame:

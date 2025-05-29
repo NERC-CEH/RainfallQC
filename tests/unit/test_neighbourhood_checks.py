@@ -256,7 +256,7 @@ def test_check_neighbour_correlation_daily(daily_gdsr_network, daily_gpcc_networ
     assert round(result, 2) == 0.31
 
 
-def test_check_daily_factor(hourly_gdsr_network, daily_gdsr_network):
+def test_check_daily_factor(daily_gdsr_network):
     result = neighbourhood_checks.check_daily_factor(
         daily_gdsr_network,
         target_gauge_col=f"{DEFAULT_RAIN_COL}_DE_02483",
@@ -282,6 +282,25 @@ def test_check_daily_factor(hourly_gdsr_network, daily_gdsr_network):
             neighbouring_gauge_col=f"{DEFAULT_RAIN_COL}_DE_00310",
             averaging_method="mode",
         )
+
+
+def test_check_monthly_factor(monthly_gdsr_network, monthly_gpcc_network):
+    result = neighbourhood_checks.check_monthly_factor(
+        monthly_gdsr_network,
+        target_gauge_col=f"{DEFAULT_RAIN_COL}_DE_02483",
+        neighbouring_gauge_col=f"{DEFAULT_RAIN_COL}_DE_00310",
+    )
+    assert round(result[f"factor_flags_{DEFAULT_RAIN_COL}_DE_00310"].max(), 2) == 6
+    assert len(result.filter(pl.col(f"factor_flags_{DEFAULT_RAIN_COL}_DE_00310") > 0)) == 6
+
+    result = neighbourhood_checks.check_monthly_factor(
+        monthly_gpcc_network,
+        target_gauge_col=f"{DEFAULT_RAIN_COL}_mw_2483",
+        neighbouring_gauge_col=f"{DEFAULT_RAIN_COL}_mw_310",
+    )
+
+    assert round(result[f"factor_flags_{DEFAULT_RAIN_COL}_mw_310"].max(), 2) == 3
+    assert len(result.filter(pl.col(f"factor_flags_{DEFAULT_RAIN_COL}_mw_310") > 0)) == 61
 
 
 def test_make_num_neighbours_online_col(hourly_gdsr_network):
