@@ -75,9 +75,6 @@ def calculate_dry_spell_fraction(data: pl.DataFrame, rain_col: str, dry_period_d
         Data with dry spell fraction
 
     """
-    if not isinstance(data, pl.DataFrame):
-        data = data.to_frame()
-
     # 1. make dry day column
     data_dry_days = get_dry_spells(data, rain_col)
 
