@@ -12,13 +12,11 @@ def test_apply_qc_frameworks(daily_gpcc_network, gpcc_metadata):
     qc_methods_to_run = ["QC1", "QC8", "QC9", "QC10", "QC11", "QC12", "QC13", "QC14", "QC15", "QC16"]
     qc_kwargs = {
         "QC1": {"quantile": 5},
-        "QC13": {"wet_day_threshold": 1.0, "accumulation_multiplying_factor": 2.0},
-        "QC14": {"wet_day_threshold": 1.0, "accumulation_multiplying_factor": 2.0},
+        "QC13": {"accumulation_multiplying_factor": 2.0},
+        "QC14": {"accumulation_multiplying_factor": 2.0},
         # "QC15": {},
         "QC16": {
             "neighbouring_gauge_cols": daily_gpcc_network.columns[2:],
-            "wet_threshold": 1.0,
-            "min_n_neighbours": 5,
             "n_neighbours_ignored": 0,
         },
         # Shared defaults applied to all
@@ -29,6 +27,8 @@ def test_apply_qc_frameworks(daily_gpcc_network, gpcc_metadata):
             "gauge_lon": gpcc_metadata["longitude"],
             "time_res": "daily",
             "data_resolution": 0.1,
+            "wet_threshold": 1.0,
+            "min_n_neighbours": 5,
         },
     }
     result = apply_qc_framework.run_qc_framework(

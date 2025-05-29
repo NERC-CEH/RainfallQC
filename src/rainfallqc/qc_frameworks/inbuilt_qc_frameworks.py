@@ -20,6 +20,11 @@ INTENSE_QC = {
     "QC14": {"function": timeseries_checks.check_monthly_accumulations},
     "QC15": {"function": timeseries_checks.check_streaks},
     "QC16": {"function": neighbourhood_checks.check_wet_neighbours},
+    "QC17": {"function": neighbourhood_checks.check_wet_neighbours},
+    "QC18": {"function": neighbourhood_checks.check_dry_neighbours},
+    "QC19": {"function": neighbourhood_checks.check_dry_neighbours},
+    "QC20": {"function": neighbourhood_checks.check_monthly_neighbours},
+    "QC21": {"function": neighbourhood_checks.check_timing_offset},
 }
 
 INBUILT_QC_FRAMEWORKS = {"IntenseQC": INTENSE_QC}
