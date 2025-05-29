@@ -486,6 +486,35 @@ def check_neighbour_correlation(
     return stats.gauge_correlation(neighbour_data, target_col=target_gauge_col, other_col=neighbouring_gauge_col)
 
 
+def check_daily_factor(neighbour_data: pl.DataFrame, target_gauge_col: str, neighbouring_gauge_col: str) -> float:
+    """
+    Daily factor difference between target and neighbouring gauge.
+
+    Flag:
+    Scalar factor difference.
+
+    This is QC24 from the IntenseQC framework.
+
+    Parameters
+    ----------
+    neighbour_data :
+        Daily rainfall data with target and neighbouring gauge and time col
+    target_gauge_col :
+        Target gauge column
+    neighbouring_gauge_col :
+        Neighbouring gauge column
+
+    Returns
+    -------
+    daily_factor :
+        factor diff
+
+    """
+    # 1. Daily factor difference
+    daily_factor = stats.factor_diff(neighbour_data, target_col=target_gauge_col, other_col=neighbouring_gauge_col)
+    return daily_factor
+
+
 def make_neighbour_monthly_max_climatology(
     monthly_neighbour_data: pl.DataFrame, neighbouring_gauge_cols: list
 ) -> pl.DataFrame:
