@@ -518,7 +518,6 @@ def check_daily_factor(
     ValueError :
         If averaging method not 'mean' or 'median'
 
-
     """
     # 0. Initial checks
     data_utils.check_data_is_specific_time_res(neighbour_data, "daily")
