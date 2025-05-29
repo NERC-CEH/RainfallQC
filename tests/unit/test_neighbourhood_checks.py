@@ -6,6 +6,7 @@ import polars as pl
 import pytest
 
 from rainfallqc.checks import neighbourhood_checks
+from rainfallqc.utils import data_utils
 
 DEFAULT_RAIN_COL = "rain_mm"
 DISTANCE_THRESHOLD = 50  # 50 km
@@ -158,13 +159,36 @@ def test_check_monthly_neighbours_gpcc(monthly_gpcc_network):
     assert len(result.filter(pl.col("majority_monthly_flag") > 0)) == 9
 
 
-def test_check_timing_offset(daily_gpcc_network):
-    neighbourhood_checks.check_timing_offset(
+def test_check_timing_offset_gdsr(daily_gdsr_network):
+    result = neighbourhood_checks.check_timing_offset(
+        daily_gdsr_network,
+        target_gauge_col=f"{DEFAULT_RAIN_COL}_DE_02483",
+        neighbouring_gauge_col=f"{DEFAULT_RAIN_COL}_DE_00310",
+        time_res="daily",
+    )
+    assert result == 0
+
+
+def test_check_timing_offset_gpcc(daily_gpcc_network):
+    result = neighbourhood_checks.check_timing_offset(
         daily_gpcc_network,
         target_gauge_col=f"{DEFAULT_RAIN_COL}_tw_2483",
         neighbouring_gauge_col=f"{DEFAULT_RAIN_COL}_tw_310",
         time_res="daily",
     )
+    assert result == 0
+
+    # offset neighbour data by one day to pick up a +1 day offset
+    offset_data = data_utils.offset_data_by_time(
+        daily_gpcc_network, target_col=f"{DEFAULT_RAIN_COL}_tw_310", offset_in_time=1, time_res="daily"
+    )
+    result = neighbourhood_checks.check_timing_offset(
+        offset_data,
+        target_gauge_col=f"{DEFAULT_RAIN_COL}_tw_2483",
+        neighbouring_gauge_col=f"{DEFAULT_RAIN_COL}_tw_310",
+        time_res="daily",
+    )
+    assert result == 1
 
 
 def test_make_num_neighbours_online_col(hourly_gdsr_network):

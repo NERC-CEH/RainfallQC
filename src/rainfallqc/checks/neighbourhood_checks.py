@@ -417,7 +417,15 @@ def check_timing_offset(
             other_col=neighbouring_gauge_col,
         )
 
-    return offset_neighbour_data
+    # Get flag
+    if max(neighbour_affinities, key=neighbour_affinities.get) == max(
+        neighbour_correlation, key=neighbour_correlation.get
+    ):
+        offset_flag = max(neighbour_affinities, key=neighbour_affinities.get)
+    else:
+        offset_flag = 0
+
+    return offset_flag
 
 
 def make_neighbour_monthly_max_climatology(
