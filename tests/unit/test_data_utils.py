@@ -110,3 +110,23 @@ def test_get_normalised_diff(gauge_comparison_data):
         gauge_comparison_data, target_col="gauge1", other_col="gauge2", diff_col_name="diff"
     )
     assert round(result["diff"].drop_nans().mean(), 2) == 0.03
+
+
+def test_offset_data_by_time(hourly_gdsr_data):
+    result = data_utils.offset_data_by_time(
+        hourly_gdsr_data, target_col=DEFAULT_RAIN_COL, offset_in_time=1, time_res="hourly"
+    )
+    assert result["rain_mm"][1] == 0.9
+    assert result["rain_mm"][2] == 0.3
+    result = data_utils.offset_data_by_time(
+        hourly_gdsr_data, target_col=DEFAULT_RAIN_COL, offset_in_time=2, time_res="hourly"
+    )
+    assert result["rain_mm"][2] == 0.9
+    result = data_utils.offset_data_by_time(
+        hourly_gdsr_data, target_col=DEFAULT_RAIN_COL, offset_in_time=-1, time_res="hourly"
+    )
+    assert result["rain_mm"][0] == 0.3
+    result = data_utils.offset_data_by_time(
+        hourly_gdsr_data, target_col=DEFAULT_RAIN_COL, offset_in_time=0, time_res="hourly"
+    )
+    assert result["rain_mm"][0] == 0.9

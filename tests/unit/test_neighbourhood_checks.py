@@ -158,6 +158,10 @@ def test_check_monthly_neighbours_gpcc(monthly_gpcc_network):
     assert len(result.filter(pl.col("majority_monthly_flag") > 0)) == 9
 
 
+def test_timing_offset(daily_gdsr_data):
+    neighbourhood_checks.timing_offset(daily_gdsr_data)
+
+
 def test_make_num_neighbours_online_col(hourly_gdsr_network):
     all_neighbour_cols = hourly_gdsr_network.columns[1:]
     result = neighbourhood_checks.make_num_neighbours_online_col(

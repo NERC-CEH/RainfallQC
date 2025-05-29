@@ -340,6 +340,32 @@ def check_monthly_neighbours(
     )
 
 
+# def check_timing_offset(neighbour_data: pl.DataFrame, target_gauge: str, neighbouring_gauge: str) -> pl.DataFrame:
+#     """
+#     Identify suspicious data offset using Affinity Index and correlation (r^2) between target and nearest neighbour.
+#
+#     Flags:
+#     -1, -1 day offset
+#     0, no offset
+#     1, +1 day offset
+#
+#     This is QC21 from the IntenseQC framework.
+#
+#     Parameters
+#     ----------
+#     neighbour_data :
+#         Rainfall data with target and neighbouring gauge and time col
+#
+#     target_gauge
+#     neighbouring_gauge
+#
+#     Returns
+#     -------
+#
+#     """
+#     return neighbour_data
+
+
 def make_neighbour_monthly_max_climatology(
     monthly_neighbour_data: pl.DataFrame, neighbouring_gauge_cols: list
 ) -> pl.DataFrame:
