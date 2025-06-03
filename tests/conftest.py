@@ -128,7 +128,6 @@ def monthly_gpcc_network() -> pl.DataFrame:
     nearby_ids.append(target_id)
     nearby_data_paths = gpcc_obj.metadata.filter(pl.col("station_id").is_in(nearby_ids))["path"]
     gpcc_network = gpcc_obj.load_network_data(data_paths=nearby_data_paths, target_gauge_col=DEFAULT_RAIN_COL)
-    print(gpcc_network)
     return gpcc_network
 
 

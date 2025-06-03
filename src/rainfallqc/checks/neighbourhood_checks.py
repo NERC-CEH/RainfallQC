@@ -204,7 +204,6 @@ def check_dry_neighbours(
             on="time",
             how="left",
         )
-        print(neighbour_data[f"dry_flag_{neighbouring_gauge_col}"].value_counts())
 
     # 4. Get number of neighbours 'online' for each time step
     neighbour_data = make_num_neighbours_online_col(neighbour_data, neighbouring_gauge_cols)

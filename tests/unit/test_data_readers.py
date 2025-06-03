@@ -167,7 +167,6 @@ def test_gpcc_network_load_network_data():
         data_paths=["./tests/data/GPCC/tw_310.zip", "./tests/data/GPCC/tw_480.zip", "./tests/data/GPCC/tw_6303.zip"],
         target_gauge_col=DEFAULT_RAIN_COL,
     )
-    print(result)
     assert len(result.columns) == 4
     assert result[-2]["rain_mm_tw_310"].item() == 0.9
     assert result[-2]["rain_mm_tw_480"].item() == 0.3
