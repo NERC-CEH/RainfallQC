@@ -5,6 +5,7 @@ History
 0.1.4 (2025-06-03)
 ------------------
 * Rename 'rain_col' to 'target_gauge_col'
+* fix scipy problem with loading in xarray data ('ScipyArrayWrapper' object has no attribute 'oindex')
 
 
 0.1.3 (2025-05-29)
