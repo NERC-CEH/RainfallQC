@@ -42,7 +42,7 @@ def affinity_index(data: pl.DataFrame, binary_col: str, return_match_and_diff: b
     return affinity
 
 
-def dry_spell_fraction(rain_daily: pl.DataFrame, rain_col: str, dry_period_days: int) -> pl.Series:
+def dry_spell_fraction(rain_daily: pl.DataFrame, target_gauge_col: str, dry_period_days: int) -> pl.Series:
     """
     Make dry spell fraction column.
 
@@ -50,7 +50,7 @@ def dry_spell_fraction(rain_daily: pl.DataFrame, rain_col: str, dry_period_days:
     ----------
     rain_daily :
         Single time-step of rainfall data with 'dry_day' column
-    rain_col :
+    target_gauge_col :
         Column with Rainfall data
     dry_period_days :
         Dry periods window in days
@@ -64,7 +64,7 @@ def dry_spell_fraction(rain_daily: pl.DataFrame, rain_col: str, dry_period_days:
     assert "is_dry" in rain_daily, "No dry_day column found, please run rainfallqc.utils.data_utils.get_dry_spells()"
 
     # 1. Get dry spells
-    rain_daily_dry_day = data_utils.get_dry_spells(rain_daily, rain_col)
+    rain_daily_dry_day = data_utils.get_dry_spells(rain_daily, target_gauge_col)
 
     # 2. Get dry spell fraction
     rain_daily_dry_day = rain_daily_dry_day.with_columns(
@@ -101,7 +101,7 @@ def factor_diff(data: pl.DataFrame, target_col: str, other_col: str) -> pl.DataF
     )
 
 
-def filter_out_rain_world_records(data: pl.DataFrame, rain_col: str, time_res: str) -> pl.DataFrame:
+def filter_out_rain_world_records(data: pl.DataFrame, target_gauge_col: str, time_res: str) -> pl.DataFrame:
     """
     Filter out rain world records based on time resolution.
 
@@ -109,7 +109,7 @@ def filter_out_rain_world_records(data: pl.DataFrame, rain_col: str, time_res: s
     ----------
     data :
         Rainfall data
-    rain_col :
+    target_gauge_col :
         Column with rainfall data
     time_res :
         Temporal resolution of the time series either 'daily' or 'hourly'
@@ -124,10 +124,10 @@ def filter_out_rain_world_records(data: pl.DataFrame, rain_col: str, time_res: s
     rainfall_world_records = get_rainfall_world_records()
     # 2. Filter out world records
     data_not_wr = data.with_columns(
-        pl.when(pl.col(rain_col) > rainfall_world_records[time_res])
+        pl.when(pl.col(target_gauge_col) > rainfall_world_records[time_res])
         .then(np.nan)
-        .otherwise(pl.col(rain_col))
-        .alias(rain_col)
+        .otherwise(pl.col(target_gauge_col))
+        .alias(target_gauge_col)
     )
 
     return data_not_wr
@@ -256,7 +256,7 @@ def pettitt_test(arr: pl.Series | np.ndarray) -> (int | float, int | float):
     return tau, p
 
 
-def simple_precip_intensity_index(data: pl.DataFrame, rain_col: str, wet_threshold: int | float) -> float:
+def simple_precip_intensity_index(data: pl.DataFrame, target_gauge_col: str, wet_threshold: int | float) -> float:
     """
     Calculate simple precipitation intensity index.
 
@@ -264,7 +264,7 @@ def simple_precip_intensity_index(data: pl.DataFrame, rain_col: str, wet_thresho
     ----------
     data :
         Rainfall data
-    rain_col :
+    target_gauge_col :
         Column with rainfall data
     wet_threshold :
         Threshold for rainfall intensity in given time period
@@ -275,6 +275,6 @@ def simple_precip_intensity_index(data: pl.DataFrame, rain_col: str, wet_thresho
         Simple precipitation intensity index
 
     """
-    data_rain_sum = data.filter(pl.col(rain_col) >= wet_threshold).fill_nan(0.0).sum()[rain_col][0]
-    data_wet_day_count = data.filter(pl.col(rain_col) >= wet_threshold).drop_nans().count()[rain_col][0]
+    data_rain_sum = data.filter(pl.col(target_gauge_col) >= wet_threshold).fill_nan(0.0).sum()[target_gauge_col][0]
+    data_wet_day_count = data.filter(pl.col(target_gauge_col) >= wet_threshold).drop_nans().count()[target_gauge_col][0]
     return data_rain_sum / float(data_wet_day_count)

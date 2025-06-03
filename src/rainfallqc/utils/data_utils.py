@@ -56,7 +56,7 @@ def back_propagate_daily_data_flags(data: pl.DataFrame, flag_column: str, num_da
     return data
 
 
-def calculate_dry_spell_fraction(data: pl.DataFrame, rain_col: str, dry_period_days: int) -> pl.Series:
+def calculate_dry_spell_fraction(data: pl.DataFrame, target_gauge_col: str, dry_period_days: int) -> pl.Series:
     """
     Calculate dry spell fraction.
 
@@ -64,7 +64,7 @@ def calculate_dry_spell_fraction(data: pl.DataFrame, rain_col: str, dry_period_d
     ----------
     data :
         Data with time column
-    rain_col :
+    target_gauge_col :
         Column with rainfall data
     dry_period_days :
         Length for of a "dry_spell"
@@ -79,7 +79,7 @@ def calculate_dry_spell_fraction(data: pl.DataFrame, rain_col: str, dry_period_d
         data = data.to_frame()
 
     # 1. make dry day column
-    data_dry_days = get_dry_spells(data, rain_col)
+    data_dry_days = get_dry_spells(data, target_gauge_col)
 
     # 2. Calculate late dry spell fraction
     data_dry_days = data_dry_days.with_columns(
@@ -387,7 +387,7 @@ def get_dry_period_proportions(dry_period_days: int) -> dict:
     return fraction_dry_days
 
 
-def get_dry_spells(data: pl.DataFrame, rain_col: str) -> pl.DataFrame:
+def get_dry_spells(data: pl.DataFrame, target_gauge_col: str) -> pl.DataFrame:
     """
     Get dry spell column.
 
@@ -395,7 +395,7 @@ def get_dry_spells(data: pl.DataFrame, rain_col: str) -> pl.DataFrame:
     ----------
     data :
         Rainfall data
-    rain_col :
+    target_gauge_col :
         Column with rainfall data
 
     Returns
@@ -405,7 +405,7 @@ def get_dry_spells(data: pl.DataFrame, rain_col: str) -> pl.DataFrame:
 
     """
     return data.with_columns(
-        (pl.col(rain_col) == 0).cast(pl.Int8()).alias("is_dry"),
+        (pl.col(target_gauge_col) == 0).cast(pl.Int8()).alias("is_dry"),
     )
 
 
@@ -542,7 +542,7 @@ def offset_data_by_time(data: pl.DataFrame, target_col: str, offset_in_time: int
 
 def replace_missing_vals_with_nan(
     data: pl.DataFrame,
-    rain_col: str,
+    target_gauge_col: str,
     missing_val: int = None,
 ) -> pl.DataFrame:
     """
@@ -552,7 +552,7 @@ def replace_missing_vals_with_nan(
     ----------
     data :
         Rainfall data
-    rain_col :
+    target_gauge_col :
         Column of rainfall
     missing_val :
         Missing value identifier
@@ -565,12 +565,15 @@ def replace_missing_vals_with_nan(
     """
     if missing_val is None:
         return data.with_columns(
-            pl.when(pl.col(rain_col).is_null()).then(np.nan).otherwise(pl.col(rain_col)).alias(rain_col)
+            pl.when(pl.col(target_gauge_col).is_null())
+            .then(np.nan)
+            .otherwise(pl.col(target_gauge_col))
+            .alias(target_gauge_col)
         )
     else:
         return data.with_columns(
-            pl.when((pl.col(rain_col).is_null()) | (pl.col(rain_col) == missing_val))
+            pl.when((pl.col(target_gauge_col).is_null()) | (pl.col(target_gauge_col) == missing_val))
             .then(np.nan)
-            .otherwise(pl.col(rain_col))
-            .alias(rain_col)
+            .otherwise(pl.col(target_gauge_col))
+            .alias(target_gauge_col)
         )
