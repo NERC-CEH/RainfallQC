@@ -744,16 +744,17 @@ def flag_n_hours_accumulation_based_on_threshold(
     flag = 0
     if period_rain_vals.is_nan().all():
         return np.nan
-    elif period_rain_vals[n_hours - 1] > 0:
-        dry_hours = 0
-        for h in range(n_hours - 1):
-            if period_rain_vals[h] is None:
-                continue
-            elif period_rain_vals[h] <= 0:
-                dry_hours += 1
-        if dry_hours == n_hours - 1:
-            if period_rain_vals[n_hours - 1] > accumulation_threshold:
-                flag = 1
+    elif period_rain_vals[n_hours - 1]:
+        if period_rain_vals[n_hours - 1] > 0:
+            dry_hours = 0
+            for h in range(n_hours - 1):
+                if period_rain_vals[h] is None:
+                    continue
+                elif period_rain_vals[h] <= 0:
+                    dry_hours += 1
+            if dry_hours == n_hours - 1:
+                if period_rain_vals[n_hours - 1] > accumulation_threshold:
+                    flag = 1
     return flag
 
 

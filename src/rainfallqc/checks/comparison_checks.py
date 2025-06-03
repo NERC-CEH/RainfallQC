@@ -242,7 +242,7 @@ def flag_exceedance_of_max_etccdi_variable(
 
     """
     # 1. Get local maximum ETCCDI value
-    etccdi_var_max = nearby_etccdi_data[etccdi_var].max()
+    etccdi_var_max = np.max(nearby_etccdi_data[etccdi_var])
 
     # 2. Get flags.
     exceedance_flags = [
