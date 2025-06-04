@@ -2,6 +2,13 @@
 History
 =======
 
+0.1.4 (2025-06-04)
+------------------
+* Rename 'rain_col' to 'target_gauge_col'
+* fix scipy problem with loading in xarray data ('ScipyArrayWrapper' object has no attribute 'oindex')
+* fix 'None > int' probelm in method: flag_n_hours_accumulation_based_on_threshold
+* remove print statements
+
 0.1.3 (2025-05-29)
 ------------------
 * Add QC21-25

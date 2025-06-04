@@ -13,7 +13,7 @@ import scipy.stats
 from rainfallqc.utils import data_utils, stats
 
 
-def check_years_where_nth_percentile_is_zero(data: pl.DataFrame, rain_col: str, quantile: float) -> list:
+def check_years_where_nth_percentile_is_zero(data: pl.DataFrame, target_gauge_col: str, quantile: float) -> list:
     """
     Return years where the n-th percentiles is zero.
 
@@ -23,7 +23,7 @@ def check_years_where_nth_percentile_is_zero(data: pl.DataFrame, rain_col: str, 
     ----------
     data :
         Rainfall data
-    rain_col :
+    target_gauge_col :
         Column with rainfall data
     quantile :
         Between 0 & 1
@@ -34,11 +34,11 @@ def check_years_where_nth_percentile_is_zero(data: pl.DataFrame, rain_col: str, 
         List of years where n-th percentile is zero.
 
     """
-    nth_perc = data.group_by_dynamic("time", every="1y").agg(pl.quantile(rain_col, quantile))
-    return nth_perc.filter(pl.col(rain_col) == 0)["time"].dt.year().to_list()
+    nth_perc = data.group_by_dynamic("time", every="1y").agg(pl.quantile(target_gauge_col, quantile))
+    return nth_perc.filter(pl.col(target_gauge_col) == 0)["time"].dt.year().to_list()
 
 
-def check_years_where_annual_mean_k_top_rows_are_zero(data: pl.DataFrame, rain_col: str, k: int) -> list:
+def check_years_where_annual_mean_k_top_rows_are_zero(data: pl.DataFrame, target_gauge_col: str, k: int) -> list:
     """
     Return year list where the annual mean top-K rows are zero.
 
@@ -48,7 +48,7 @@ def check_years_where_annual_mean_k_top_rows_are_zero(data: pl.DataFrame, rain_c
     ----------
     data :
         Rainfall data
-    rain_col :
+    target_gauge_col :
         Column with rainfall data
     k :
         Number of top values check i.e. k==5 is top 5
@@ -59,13 +59,13 @@ def check_years_where_annual_mean_k_top_rows_are_zero(data: pl.DataFrame, rain_c
         List of years where k-largest are zero.
 
     """
-    data_top_k = data.group_by_dynamic("time", every="1y").agg(pl.col(rain_col).top_k(k).min())
-    return data_top_k.filter(pl.col(rain_col) == 0)["time"].dt.year().to_list()
+    data_top_k = data.group_by_dynamic("time", every="1y").agg(pl.col(target_gauge_col).top_k(k).min())
+    return data_top_k.filter(pl.col(target_gauge_col) == 0)["time"].dt.year().to_list()
 
 
 def check_temporal_bias(
     data: pl.DataFrame,
-    rain_col: str,
+    target_gauge_col: str,
     time_granularity: str,
     p_threshold: float = 0.01,
 ) -> int:
@@ -78,7 +78,7 @@ def check_temporal_bias(
     ----------
     data :
         Rainfall data
-    rain_col :
+    target_gauge_col :
         Column with rainfall data
     time_granularity :
         Temporal grouping, either 'weekday' or 'hour'
@@ -99,10 +99,10 @@ def check_temporal_bias(
         raise ValueError("time_granularity must be either 'weekday' or 'hour'")
 
     # 1. Get time-average mean
-    grouped_means = data.group_by(time_group).agg(pl.col(rain_col).drop_nans().mean())[rain_col]
+    grouped_means = data.group_by(time_group).agg(pl.col(target_gauge_col).drop_nans().mean())[target_gauge_col]
 
     # 2. Get data mean
-    overall_mean = data[rain_col].drop_nans().mean()
+    overall_mean = data[target_gauge_col].drop_nans().mean()
 
     # 3. Compute 1-sample t-test
     _, p_val = scipy.stats.ttest_1samp(grouped_means, overall_mean)
@@ -110,7 +110,7 @@ def check_temporal_bias(
 
 
 def check_intermittency(
-    data: pl.DataFrame, rain_col: str, no_data_threshold: int = 2, annual_count_threshold: int = 5
+    data: pl.DataFrame, target_gauge_col: str, no_data_threshold: int = 2, annual_count_threshold: int = 5
 ) -> list:
     """
     Return years where more than five periods of missing data are bounded by zeros.
@@ -122,7 +122,7 @@ def check_intermittency(
     ----------
     data :
         Rainfall data
-    rain_col :
+    target_gauge_col :
         Column with rainfall data
     no_data_threshold :
         Number of missing values needed to be counted as a no data period (default: 2 (days))
@@ -136,8 +136,8 @@ def check_intermittency(
 
     """
     # 1. Identify missing values
-    data = data_utils.replace_missing_vals_with_nan(data, rain_col)  # drops None by default
-    missing_vals_mask = data[rain_col].is_nan()
+    data = data_utils.replace_missing_vals_with_nan(data, target_gauge_col)  # drops None by default
+    missing_vals_mask = data[target_gauge_col].is_nan()
     data = data.with_columns(missing_vals_mask.alias("is_missing"))
 
     # 2. Identify group numbers for consecutive nulls
@@ -168,7 +168,7 @@ def check_intermittency(
 
 def check_breakpoints(
     data: pl.DataFrame,
-    rain_col: str,
+    target_gauge_col: str,
     p_threshold: float = 0.01,
 ) -> int:
     """
@@ -180,7 +180,7 @@ def check_breakpoints(
     ----------
     data :
         Rainfall data.
-    rain_col :
+    target_gauge_col :
         Column with rainfall data.
     p_threshold :
         Significance level for the test.
@@ -195,14 +195,14 @@ def check_breakpoints(
     data_upsampled = data.upsample("time", every="1d")
 
     # 2. Compute Pettitt test for breakpoints
-    _, p_val = stats.pettitt_test(data_upsampled[rain_col].fill_nan(0.0))
+    _, p_val = stats.pettitt_test(data_upsampled[target_gauge_col].fill_nan(0.0))
     if p_val < p_threshold:
         return 1
     else:
         return 0
 
 
-def check_min_val_change(data: pl.DataFrame, rain_col: str, expected_min_val: float) -> list:
+def check_min_val_change(data: pl.DataFrame, target_gauge_col: str, expected_min_val: float) -> list:
     """
     Return years when the minimum recorded value changes.
 
@@ -213,7 +213,7 @@ def check_min_val_change(data: pl.DataFrame, rain_col: str, expected_min_val: fl
     ----------
     data :
         Rainfall data
-    rain_col :
+    target_gauge_col :
         Column with rainfall data.
     expected_min_val :
         Expected value of rainfall i.e. basically the resolution of data.
@@ -225,10 +225,10 @@ def check_min_val_change(data: pl.DataFrame, rain_col: str, expected_min_val: fl
 
     """
     # 1. Filter out non-zero years
-    data_non_zero = data.filter(pl.col(rain_col) > 0)
+    data_non_zero = data.filter(pl.col(target_gauge_col) > 0)
 
     # 2. Get minimum value each year
-    data_min_by_year = data_non_zero.group_by_dynamic(pl.col("time"), every="1y").agg(pl.col(rain_col).min())
+    data_min_by_year = data_non_zero.group_by_dynamic(pl.col("time"), every="1y").agg(pl.col(target_gauge_col).min())
 
-    non_res_years = data_min_by_year.filter(pl.col(rain_col) != expected_min_val)
+    non_res_years = data_min_by_year.filter(pl.col(target_gauge_col) != expected_min_val)
     return non_res_years["time"].dt.year().to_list()

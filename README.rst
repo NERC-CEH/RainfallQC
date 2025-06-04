@@ -45,13 +45,13 @@ Example 1. - Individual quality checks on single rain gauge
 
         # 1. Simple 1 gauge QC
         # 1.1. Run 1 qc method for 1 gauge
-        intermittency_flag = gauge_checks.check_intermittency(data, rain_col="rain_mm")
+        intermittency_flag = gauge_checks.check_intermittency(data, target_gauge_col="rain_mm")
 
         # 1.2. Run 1 qc method for 1 gauge using in-built comparison dataset
-        wr_flags = comparison_checks.check_exceedance_of_rainfall_world_record(data, rain_col="rain_mm", time_res='hourly')
+        wr_flags = comparison_checks.check_exceedance_of_rainfall_world_record(data, target_gauge_col="rain_mm", time_res='hourly')
 
         # 1.3. Run 1 qc method for 1 gauge using in-built comparison dataset and location of gauge
-        rx1day_flags = comparison_checks.check_annual_exceedance_etccdi_rx1day(data, rain_col="rain_mm", gauge_lon=1.0, gauge_lat=55.0)
+        rx1day_flags = comparison_checks.check_annual_exceedance_etccdi_rx1day(data, target_gauge_col="rain_mm", gauge_lon=1.0, gauge_lat=55.0)
 
 
 Example 2. - Individual quality checks on networks of rain gauges
@@ -113,7 +113,6 @@ Example 3. - Applying a framework of QC methods (e.g. IntenseQC)
             },
             # Shared defaults applied to all
             "shared": {
-                "rain_col": "rain_mm_DE_02483",
                 "target_gauge_col": "rain_mm_DE_02483",
                 "gauge_lat": gpcc_metadata["latitude"],
                 "gauge_lon": gpcc_metadata["longitude"],

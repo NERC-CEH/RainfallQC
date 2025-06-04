@@ -36,7 +36,6 @@ def test_apply_qc_frameworks(daily_gpcc_network, gpcc_metadata):
         "QC24": {"averaging_method": "mean"},
         # Shared defaults applied to all
         "shared": {
-            "rain_col": "rain_mm_tw_2483",
             "target_gauge_col": "rain_mm_tw_2483",
             "gauge_lat": gpcc_metadata["latitude"],
             "gauge_lon": gpcc_metadata["longitude"],
