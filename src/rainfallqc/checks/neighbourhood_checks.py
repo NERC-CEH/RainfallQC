@@ -204,7 +204,6 @@ def check_dry_neighbours(
             on="time",
             how="left",
         )
-        print(neighbour_data[f"dry_flag_{neighbouring_gauge_col}"].value_counts())
 
     # 4. Get number of neighbours 'online' for each time step
     neighbour_data = make_num_neighbours_online_col(neighbour_data, neighbouring_gauge_cols)
@@ -577,11 +576,11 @@ def check_monthly_factor(
     monthly_factor = stats.factor_diff(neighbour_data, target_col=target_gauge_col, other_col=neighbouring_gauge_col)
 
     # 2. Flag factor difference
-    monthly_factor_flags = flag_monthly_factor_differences(monthly_factor, rain_col=neighbouring_gauge_col)
+    monthly_factor_flags = flag_monthly_factor_differences(monthly_factor, target_gauge_col=neighbouring_gauge_col)
     return monthly_factor_flags
 
 
-def flag_monthly_factor_differences(monthly_factor: pl.DataFrame, rain_col: str) -> pl.DataFrame:
+def flag_monthly_factor_differences(monthly_factor: pl.DataFrame, target_gauge_col: str) -> pl.DataFrame:
     """
     Flag monthly difference flag after IntenseQC framework for QC25.
 
@@ -599,7 +598,7 @@ def flag_monthly_factor_differences(monthly_factor: pl.DataFrame, rain_col: str)
     ----------
     monthly_factor :
         Rainfall data with 'factor_diff' and gauge_col
-    rain_col :
+    target_gauge_col :
         Rain column
 
     Returns
@@ -622,7 +621,7 @@ def flag_monthly_factor_differences(monthly_factor: pl.DataFrame, rain_col: str)
         .when((pl.col("factor_diff") > 1 / 3) & (pl.col("factor_diff") < 1 / 2))
         .then(6)
         .otherwise(0)
-        .alias(f"factor_flags_{rain_col}")
+        .alias(f"factor_flags_{target_gauge_col}")
     )
 
 
@@ -812,14 +811,14 @@ def get_dry_spell_fraction_col(
         pl.col(target_gauge_col)
         .map_batches(
             lambda row: data_utils.calculate_dry_spell_fraction(
-                row, rain_col=target_gauge_col, dry_period_days=dry_period_days
+                row, target_gauge_col=target_gauge_col, dry_period_days=dry_period_days
             )
         )
         .alias(f"dry_spell_fraction_{target_gauge_col}"),
         pl.col(neighbouring_gauge_col)
         .map_batches(
             lambda row: data_utils.calculate_dry_spell_fraction(
-                row, rain_col=neighbouring_gauge_col, dry_period_days=dry_period_days
+                row, target_gauge_col=neighbouring_gauge_col, dry_period_days=dry_period_days
             )
         )
         .alias(f"dry_spell_fraction_{neighbouring_gauge_col}"),

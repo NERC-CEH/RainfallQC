@@ -74,23 +74,32 @@ def test_read_gpcc_metadata_from_zip():
 
 def test_read_gpcc_data_from_zip():
     result = data_readers.read_gpcc_data_from_zip(
-        data_path="./tests/data/GPCC/tw_310.zip", gpcc_file_name="tw_310.dat", rain_col="rain_mm", time_res="daily"
+        data_path="./tests/data/GPCC/tw_310.zip",
+        gpcc_file_name="tw_310.dat",
+        target_gauge_col="rain_mm",
+        time_res="daily",
     )
     assert result["rain_mm"][0] == 5.2
     result = data_readers.read_gpcc_data_from_zip(
-        data_path="./tests/data/GPCC/mw_310.zip", gpcc_file_name="mw_310.dat", rain_col="rain_mm", time_res="monthly"
+        data_path="./tests/data/GPCC/mw_310.zip",
+        gpcc_file_name="mw_310.dat",
+        target_gauge_col="rain_mm",
+        time_res="monthly",
     )
     assert result["rain_mm"][0] == 69.0
     with pytest.raises(AssertionError):
         data_readers.read_gpcc_data_from_zip(
-            data_path="./tests/data/GPCC/mw_310", gpcc_file_name="mw_310.dat", rain_col="rain_mm", time_res="monthly"
+            data_path="./tests/data/GPCC/mw_310",
+            gpcc_file_name="mw_310.dat",
+            target_gauge_col="rain_mm",
+            time_res="monthly",
         )
 
     with pytest.raises(ValueError):
         data_readers.read_gpcc_data_from_zip(
             data_path="./tests/data/GPCC/mw_310.zip",
             gpcc_file_name="mw_310.dat",
-            rain_col="rain_mm",
+            target_gauge_col="rain_mm",
             time_res="decadal",
         )
 
@@ -156,17 +165,16 @@ def test_gpcc_network_load_network_data():
     gpcc_obj = data_readers.GPCCNetworkReader(path_to_gpcc_dir="./tests/data/GPCC/", time_res="tw")
     result = gpcc_obj.load_network_data(
         data_paths=["./tests/data/GPCC/tw_310.zip", "./tests/data/GPCC/tw_480.zip", "./tests/data/GPCC/tw_6303.zip"],
-        rain_col=DEFAULT_RAIN_COL,
+        target_gauge_col=DEFAULT_RAIN_COL,
     )
-    print(result)
     assert len(result.columns) == 4
     assert result[-2]["rain_mm_tw_310"].item() == 0.9
     assert result[-2]["rain_mm_tw_480"].item() == 0.3
     assert result[-2]["rain_mm_tw_6303"].item() == 4.7
 
     gpcc_obj = data_readers.GPCCNetworkReader(path_to_gpcc_dir="./tests/data/GPCC/", time_res="mw")
-    gpcc_obj.load_network_data(data_paths=["./tests/data/GPCC/mw_310.zip"], rain_col=DEFAULT_RAIN_COL)
+    gpcc_obj.load_network_data(data_paths=["./tests/data/GPCC/mw_310.zip"], target_gauge_col=DEFAULT_RAIN_COL)
 
     with pytest.raises(AssertionError):
         gpcc_obj = data_readers.GPCCNetworkReader(path_to_gpcc_dir="./tests/data/GPCC/", time_res="tw")
-        gpcc_obj.load_network_data(data_paths=["./tests/data/GPCC/mw_310.zip"], rain_col=DEFAULT_RAIN_COL)
+        gpcc_obj.load_network_data(data_paths=["./tests/data/GPCC/mw_310.zip"], target_gauge_col=DEFAULT_RAIN_COL)

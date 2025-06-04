@@ -132,7 +132,7 @@ def read_gdsr_data_from_file(
     raw_data_time_res :
         Time resolution of data record i.e. 'hourly' or 'daily'
     rain_col_suffix :
-        Suffix for column name for rain_col (set by default)
+        Suffix for column name for target_gauge_col (set by default)
     gdsr_header_rows :
         Number of rows to skip in the header of the GSDR data (default=20)
 
@@ -160,7 +160,7 @@ def read_gdsr_data_from_file(
         gdsr_data, gdsr_metadata, multiplying_factor=MULTIPLYING_FACTORS[raw_data_time_res]
     )
     gdsr_data = data_utils.replace_missing_vals_with_nan(
-        gdsr_data, rain_col=rain_col_name, missing_val=int(gdsr_metadata["no_data_value"])
+        gdsr_data, target_gauge_col=rain_col_name, missing_val=int(gdsr_metadata["no_data_value"])
     )
 
     # 4. Select time and rain col
@@ -171,7 +171,7 @@ def read_gdsr_data_from_file(
 def read_gpcc_data_from_zip(
     data_path: str,
     gpcc_file_name: str,
-    rain_col: str,
+    target_gauge_col: str,
     time_res: str,
     hour_offset: int = GPCC_HOUR_OFFSET,
     missing_val: int | float = -999,
@@ -185,7 +185,7 @@ def read_gpcc_data_from_zip(
         path to GPCC zip file
     gpcc_file_name :
         Name of GPCC file within zip
-    rain_col :
+    target_gauge_col :
         Name of rainfall column
     time_res :
         'daily' or 'monthly'
@@ -213,7 +213,7 @@ def read_gpcc_data_from_zip(
             pl.datetime(pl.col("2"), pl.col("1"), pl.col("0"), hour_offset).alias("time")
         ).drop(["0", "1", "2"])
         # 3. rename and reorder
-        gpcc_data = gpcc_data.rename({"3": rain_col})
+        gpcc_data = gpcc_data.rename({"3": target_gauge_col})
     elif time_res == "monthly":
         # 1. drop unnecessary columns
         gpcc_data = gpcc_data.drop([str(i) for i in range(3, len(gpcc_data.columns))])
@@ -222,7 +222,7 @@ def read_gpcc_data_from_zip(
             ["0", "1"]
         )
         # 3. rename and reorder
-        gpcc_data = gpcc_data.rename({"2": rain_col})
+        gpcc_data = gpcc_data.rename({"2": target_gauge_col})
     else:
         raise ValueError(f"Time resolution={time_res} not recognized. Please use 'daily' or 'monthly'")
 
@@ -234,13 +234,15 @@ def read_gpcc_data_from_zip(
         print(f"Attempting to resample into {time_res}")
         gpcc_data = gpcc_data.group_by_dynamic(
             "time", every=data_utils.TEMPORAL_CONVERSIONS[time_res], offset=str(hour_offset) + "h"
-        ).agg(pl.col(rain_col).first())
+        ).agg(pl.col(target_gauge_col).first())
 
     # 5. Select time and rain col
-    gpcc_data = gpcc_data.select(["time", rain_col])  # Reorder (to look nice)
+    gpcc_data = gpcc_data.select(["time", target_gauge_col])  # Reorder (to look nice)
 
     # 6. Replace missing value
-    gpcc_data = data_utils.replace_missing_vals_with_nan(gpcc_data, rain_col=rain_col, missing_val=missing_val)
+    gpcc_data = data_utils.replace_missing_vals_with_nan(
+        gpcc_data, target_gauge_col=target_gauge_col, missing_val=missing_val
+    )
 
     return gpcc_data
 
@@ -358,13 +360,16 @@ def load_etccdi_data(etccdi_var: str, path_to_etccdi: str = None) -> xr.Dataset:
     if not path_to_etccdi:
         netcdf_file = f"RawData_HADEX2_{etccdi_var}_1951-2010_ANN_from-90to90_from-180to180.nc"
         path_to_etccdi_data = resources.files("rainfallqc.data.ETCCDI").joinpath(netcdf_file)
-        return xr.open_dataset(str(path_to_etccdi_data), decode_timedelta=True)
+        etccdi_data = xr.open_dataset(str(path_to_etccdi_data), decode_timedelta=True, engine="netcdf4")
     else:
         print(f"User defined path to ETCCDI being used: {path_to_etccdi}")
-        return xr.open_dataset(
+        etccdi_data = xr.open_dataset(
             f"{path_to_etccdi}RawData_HADEX2_{etccdi_var}_1951-2010_ANN_from-90to90_from-180to180.nc",
             decode_timedelta=True,
+            engine="netcdf4",
         )
+    etccdi_data.load()
+    return etccdi_data
 
 
 def load_gdsr_gauge_network_metadata(path_to_gdsr_dir: str, file_format: str = ".txt") -> pl.DataFrame:
@@ -665,7 +670,7 @@ class GPCCNetworkReader(GaugeNetworkReader):
         )
 
     def load_network_data(
-        self, data_paths: List[str] | np.ndarray[str], rain_col: str, missing_val: int | float = -999
+        self, data_paths: List[str] | np.ndarray[str], target_gauge_col: str, missing_val: int | float = -999
     ) -> pl.DataFrame:
         """
         Load GPCC network data based on file paths.
@@ -674,7 +679,7 @@ class GPCCNetworkReader(GaugeNetworkReader):
         ----------
         data_paths :
             Paths to load network data from.
-        rain_col :
+        target_gauge_col :
             Rainfall data column
         missing_val :
             Missing value (default: -999)
@@ -697,7 +702,7 @@ class GPCCNetworkReader(GaugeNetworkReader):
             # 2. Read in one gauge
             one_gauge = read_gpcc_data_from_zip(
                 data_path=zip_path,
-                rain_col=f"{rain_col}_{gpcc_file_name}",
+                target_gauge_col=f"{target_gauge_col}_{gpcc_file_name}",
                 gpcc_file_name=gpcc_unzipped_file_name,
                 time_res=GPCC_TIME_RES_CONVERSION[self.time_res],
                 missing_val=missing_val,

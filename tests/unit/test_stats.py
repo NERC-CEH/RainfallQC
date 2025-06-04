@@ -24,11 +24,11 @@ def test_pettitt_test_pl(example_array):
 
 
 def test_simple_precip_intensity_index(hourly_gdsr_data):
-    result = stats.simple_precip_intensity_index(hourly_gdsr_data, rain_col=DEFAULT_RAIN_COL, wet_threshold=1.0)
+    result = stats.simple_precip_intensity_index(hourly_gdsr_data, target_gauge_col=DEFAULT_RAIN_COL, wet_threshold=1.0)
     assert round(result, 1) == 8.5
-    result = stats.simple_precip_intensity_index(hourly_gdsr_data, rain_col=DEFAULT_RAIN_COL, wet_threshold=5.0)
+    result = stats.simple_precip_intensity_index(hourly_gdsr_data, target_gauge_col=DEFAULT_RAIN_COL, wet_threshold=5.0)
     assert round(result, 1) == 50.4
-    result = stats.simple_precip_intensity_index(hourly_gdsr_data, rain_col=DEFAULT_RAIN_COL, wet_threshold=0.5)
+    result = stats.simple_precip_intensity_index(hourly_gdsr_data, target_gauge_col=DEFAULT_RAIN_COL, wet_threshold=0.5)
     assert round(result, 1) == 5.6
 
 
@@ -51,9 +51,11 @@ def test_factor_diff(gauge_comparison_data):
 
 
 def test_dry_spell_fraction(hourly_gdsr_data):
-    hourly_gdsr_data_w_dry_spells = data_utils.get_dry_spells(hourly_gdsr_data, rain_col=DEFAULT_RAIN_COL)
-    result = stats.dry_spell_fraction(hourly_gdsr_data_w_dry_spells, rain_col=DEFAULT_RAIN_COL, dry_period_days=15)
+    hourly_gdsr_data_w_dry_spells = data_utils.get_dry_spells(hourly_gdsr_data, target_gauge_col=DEFAULT_RAIN_COL)
+    result = stats.dry_spell_fraction(
+        hourly_gdsr_data_w_dry_spells, target_gauge_col=DEFAULT_RAIN_COL, dry_period_days=15
+    )
     assert round(result[-1], 2) == 0.87
     assert result.max() == 1.0
     with pytest.raises(AssertionError):
-        stats.dry_spell_fraction(hourly_gdsr_data, rain_col=DEFAULT_RAIN_COL, dry_period_days=15)
+        stats.dry_spell_fraction(hourly_gdsr_data, target_gauge_col=DEFAULT_RAIN_COL, dry_period_days=15)

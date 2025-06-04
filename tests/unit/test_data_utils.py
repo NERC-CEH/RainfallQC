@@ -15,12 +15,14 @@ DEFAULT_RAIN_COL = "rain_mm"
 
 def test_calculate_dry_spell_fraction(daily_gdsr_data, daily_gpcc_data):
     result = data_utils.calculate_dry_spell_fraction(
-        daily_gdsr_data[DEFAULT_RAIN_COL], rain_col=DEFAULT_RAIN_COL, dry_period_days=15
+        daily_gdsr_data[DEFAULT_RAIN_COL], target_gauge_col=DEFAULT_RAIN_COL, dry_period_days=15
     )
     assert result.name == "dry_spell_fraction"
     assert result.max() == 1.0
     assert round(result.mean(), 2) == 0.43
-    result = data_utils.calculate_dry_spell_fraction(daily_gpcc_data, rain_col=DEFAULT_RAIN_COL, dry_period_days=15)
+    result = data_utils.calculate_dry_spell_fraction(
+        daily_gpcc_data, target_gauge_col=DEFAULT_RAIN_COL, dry_period_days=15
+    )
     assert result.max() == 1.0
 
 
@@ -69,7 +71,7 @@ def test_check_data_is_monthly(hourly_gdsr_data, monthly_gdsr_network, monthly_g
 
 
 def test_get_dry_spells(hourly_gdsr_data):
-    result = data_utils.get_dry_spells(hourly_gdsr_data, rain_col=DEFAULT_RAIN_COL)
+    result = data_utils.get_dry_spells(hourly_gdsr_data, target_gauge_col=DEFAULT_RAIN_COL)
     assert "is_dry" in result
 
 
