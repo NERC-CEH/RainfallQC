@@ -2,6 +2,11 @@
 History
 =======
 
+0.1.6 (2025-06-12)
+------------------
+*HOTFIX*
+* rename dry and wet spell flags so they include time resolution
+
 0.1.5 (2025-06-12)
 ------------------
 * Methods now return only the flags and time column
