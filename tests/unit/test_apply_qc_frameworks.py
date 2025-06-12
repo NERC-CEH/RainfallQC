@@ -7,6 +7,8 @@ import pytest
 
 from rainfallqc.qc_frameworks import apply_qc_framework
 
+TARGET_GAUGE_ID = "tw_2483"
+
 
 def test_apply_qc_frameworks(daily_gpcc_network, gpcc_metadata):
     qc_methods_to_run = [
@@ -36,7 +38,7 @@ def test_apply_qc_frameworks(daily_gpcc_network, gpcc_metadata):
         "QC24": {"averaging_method": "mean"},
         # Shared defaults applied to all
         "shared": {
-            "target_gauge_col": "rain_mm_tw_2483",
+            "target_gauge_col": f"rain_mm_{TARGET_GAUGE_ID}",
             "gauge_lat": gpcc_metadata["latitude"],
             "gauge_lon": gpcc_metadata["longitude"],
             "time_res": "daily",

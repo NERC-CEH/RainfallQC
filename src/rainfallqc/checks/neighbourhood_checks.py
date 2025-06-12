@@ -113,8 +113,14 @@ def check_wet_neighbours(
         hourly_neighbour_data_w_wet_flags = hourly_neighbour_data_w_wet_flags.with_columns(
             pl.col("majority_wet_flag").forward_fill(limit=23)  # hours
         )
-        return hourly_neighbour_data_w_wet_flags.select(["time", "majority_wet_flag"])
+        hourly_neighbour_data_w_wet_flags = hourly_neighbour_data_w_wet_flags.rename(
+            {"majority_wet_flag": f"wet_spell_flag_{time_res}"}
+        )
+        return hourly_neighbour_data_w_wet_flags.select(["time", f"wet_spell_flag_{time_res}"])
     else:
+        neighbour_data_w_wet_flags = neighbour_data_w_wet_flags.rename(
+            {"majority_wet_flag": f"wet_spell_flag_{time_res}"}
+        )
         return neighbour_data_w_wet_flags
 
 
@@ -234,8 +240,14 @@ def check_dry_neighbours(
         hourly_neighbour_data_w_dry_flags = hourly_neighbour_data_w_dry_flags.with_columns(
             pl.col("majority_dry_flag").forward_fill(limit=23)  # hours
         )
-        return hourly_neighbour_data_w_dry_flags.select(["time", "majority_dry_flag"])
+        hourly_neighbour_data_w_dry_flags = hourly_neighbour_data_w_dry_flags.rename(
+            {"majority_dry_flag": f"dry_spell_flag_{time_res}"}
+        )
+        return hourly_neighbour_data_w_dry_flags.select(["time", f"dry_spell_flag_{time_res}"])
     else:
+        neighbour_data_w_dry_flags = neighbour_data_w_dry_flags.rename(
+            {"majority_dry_flag": f"dry_spell_flag_{time_res}"}
+        )
         return neighbour_data_w_dry_flags
 
 
