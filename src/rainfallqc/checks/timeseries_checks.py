@@ -71,7 +71,7 @@ def check_dry_period_cdd(
     data_w_dry_spell_flags = data_w_dry_spell_flags.with_columns(pl.lit(data[target_gauge_col]).alias(target_gauge_col))
 
     # 9. Remove unnecessary columns
-    return data_w_dry_spell_flags.select(["time", target_gauge_col, "dry_spell_flag"])
+    return data_w_dry_spell_flags.select(["time", "dry_spell_flag"])
 
 
 def check_daily_accumulations(
@@ -135,7 +135,7 @@ def check_daily_accumulations(
     data = data.with_columns(daily_accumulation=pl.Series(da_flags))
 
     # 4. Remove unnecessary columns
-    return data.select(["time", target_gauge_col, "daily_accumulation"])
+    return data.select(["time", "daily_accumulation"])
 
 
 def check_monthly_accumulations(
@@ -215,10 +215,7 @@ def check_monthly_accumulations(
     )
 
     # 5. Remove unnecessary columns
-    gauge_data_monthly_accumulations = gauge_data_monthly_accumulations.select(
-        ["time", target_gauge_col, "monthly_accumulation"]
-    )
-    return gauge_data_monthly_accumulations
+    return gauge_data_monthly_accumulations.select(["time", "monthly_accumulation"])
 
 
 def check_streaks(
@@ -293,7 +290,7 @@ def check_streaks(
         streak_flag4=streak_flag4["streak_flag4"],
         streak_flag5=streak_flag5["streak_flag5"],
     )
-    return data_w_streak_flags
+    return data_w_streak_flags.select(["time", "streak_flag1", "streak_flag3", "streak_flag4", "streak_flag5"])
 
 
 def flag_streaks_of_zero_bounded_by_days(data: pl.DataFrame, target_gauge_col: str) -> pl.DataFrame:
