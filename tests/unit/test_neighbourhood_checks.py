@@ -25,7 +25,7 @@ def test_wet_neighbour_check_daily_gdsr(daily_gdsr_network):
         wet_threshold=0.5,
         min_n_neighbours=3,
     )
-    assert len(result.columns) == 12
+    assert len(result.columns) == 2
     assert result["majority_wet_flag"].max() == 2.0
     assert len(result.filter(pl.col("majority_wet_flag") == 1)) == 1
 
@@ -42,7 +42,7 @@ def test_check_wet_neighbour_daily_gpcc(daily_gpcc_network):
         wet_threshold=0.5,
         min_n_neighbours=3,
     )
-    assert len(result.columns) == 12
+    assert len(result.columns) == 2
     assert result["majority_wet_flag"].max() == 0
 
     result = neighbourhood_checks.check_wet_neighbours(
@@ -80,7 +80,7 @@ def test_check_wet_neighbour_hourly(hourly_gdsr_network):
         min_n_neighbours=3,
     )
     assert len(result) == 43824
-    assert len(result.columns) == 12
+    assert len(result.columns) == 2
     assert result["majority_wet_flag"].max() == 2.0
     assert len(result.filter(pl.col("majority_wet_flag") == 1)) == 24
 
@@ -96,7 +96,7 @@ def test_dry_neighbour_check_daily_gdsr(daily_gdsr_network):
         min_n_neighbours=5,
         dry_period_days=15,
     )
-    assert len(result.columns) == 12
+    assert len(result.columns) == 2
     assert result["majority_dry_flag"].max() == 3.0
     assert len(result.filter(pl.col("majority_dry_flag") == 3)) == 150
 
@@ -113,7 +113,7 @@ def test_check_dry_neighbour_daily_gpcc(daily_gpcc_network):
         dry_period_days=15,
         min_n_neighbours=5,
     )
-    assert len(result.columns) == 12
+    assert len(result.columns) == 2
     assert result["majority_dry_flag"].max() == 0
 
 
@@ -290,8 +290,8 @@ def test_check_monthly_factor(monthly_gdsr_network, monthly_gpcc_network):
         target_gauge_col=f"{DEFAULT_RAIN_COL}_DE_02483",
         neighbouring_gauge_col=f"{DEFAULT_RAIN_COL}_DE_00310",
     )
-    assert round(result[f"factor_flags_{DEFAULT_RAIN_COL}_DE_00310"].max(), 2) == 6
-    assert len(result.filter(pl.col(f"factor_flags_{DEFAULT_RAIN_COL}_DE_00310") > 0)) == 6
+    assert round(result["monthly_factor_flag"].max(), 2) == 6
+    assert len(result.filter(pl.col("monthly_factor_flag") > 0)) == 6
 
     result = neighbourhood_checks.check_monthly_factor(
         monthly_gpcc_network,
@@ -299,8 +299,8 @@ def test_check_monthly_factor(monthly_gdsr_network, monthly_gpcc_network):
         neighbouring_gauge_col=f"{DEFAULT_RAIN_COL}_mw_310",
     )
 
-    assert round(result[f"factor_flags_{DEFAULT_RAIN_COL}_mw_310"].max(), 2) == 3
-    assert len(result.filter(pl.col(f"factor_flags_{DEFAULT_RAIN_COL}_mw_310") > 0)) == 61
+    assert round(result["monthly_factor_flag"].max(), 2) == 3
+    assert len(result.filter(pl.col("monthly_factor_flag") > 0)) == 61
 
 
 def test_make_num_neighbours_online_col(hourly_gdsr_network):
