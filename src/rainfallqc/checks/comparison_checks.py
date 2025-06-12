@@ -125,10 +125,14 @@ def check_exceedance_of_rainfall_world_record(data: pl.DataFrame, target_gauge_c
         Rainfall data with exceedance of World Record (see `flag_exceedance_of_ref_val_as_col` function)
 
     """
+    # 1. Get rainfall world records
     rainfall_world_records = stats.get_rainfall_world_records()
-    return flag_exceedance_of_ref_val_as_col(
+
+    # 2. Flag exceedance of world record value
+    data_w_flags = flag_exceedance_of_ref_val_as_col(
         data, target_gauge_col, ref_val=rainfall_world_records[time_res], new_col_name="world_record_check"
     )
+    return data_w_flags.select(["time", "world_record_check"])
 
 
 def check_annual_exceedance_etccdi_rx1day(
@@ -168,9 +172,10 @@ def check_annual_exceedance_etccdi_rx1day(
     max_nearby_etccdi_rx1day = np.max(nearby_etccdi_rx1day["Rx1day"])
 
     # 4. Flag exceedance of max ETCCDI value
-    return flag_exceedance_of_ref_val_as_col(
+    data_w_flags = flag_exceedance_of_ref_val_as_col(
         data, target_gauge_col, ref_val=max_nearby_etccdi_rx1day, new_col_name="rx1day_check"
     )
+    return data_w_flags.select(["time", "rx1day_check"])
 
 
 def get_sum_rainfall_above_percentile_per_year(

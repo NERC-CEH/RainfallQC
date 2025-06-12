@@ -101,9 +101,7 @@ def check_wet_neighbours(
     )
 
     # 5. Clean up data for return
-    neighbour_data_w_wet_flags = neighbour_data_w_wet_flags.select(
-        ["time", target_gauge_col] + neighbouring_gauge_cols + ["majority_wet_flag"]
-    )
+    neighbour_data_w_wet_flags = neighbour_data_w_wet_flags.select(["time", "majority_wet_flag"])
 
     # 6. If hourly data join back and forward flood fill
     if time_res == "hourly":
@@ -115,7 +113,7 @@ def check_wet_neighbours(
         hourly_neighbour_data_w_wet_flags = hourly_neighbour_data_w_wet_flags.with_columns(
             pl.col("majority_wet_flag").forward_fill(limit=23)  # hours
         )
-        return hourly_neighbour_data_w_wet_flags
+        return hourly_neighbour_data_w_wet_flags.select(["time", "majority_wet_flag"])
     else:
         return neighbour_data_w_wet_flags
 
@@ -220,9 +218,7 @@ def check_dry_neighbours(
     )
 
     # 6. Clean up data for return
-    neighbour_data_w_dry_flags = neighbour_data_w_dry_flags.select(
-        ["time", target_gauge_col] + neighbouring_gauge_cols + ["majority_dry_flag"]
-    )
+    neighbour_data_w_dry_flags = neighbour_data_w_dry_flags.select(["time", "majority_dry_flag"])
     # 7. Backwards propagate dry flags into dry period
     neighbour_data_w_dry_flags = data_utils.back_propagate_daily_data_flags(
         neighbour_data_w_dry_flags, flag_column="majority_dry_flag", num_days=(dry_period_days - 1)
@@ -238,7 +234,7 @@ def check_dry_neighbours(
         hourly_neighbour_data_w_dry_flags = hourly_neighbour_data_w_dry_flags.with_columns(
             pl.col("majority_dry_flag").forward_fill(limit=23)  # hours
         )
-        return hourly_neighbour_data_w_dry_flags
+        return hourly_neighbour_data_w_dry_flags.select(["time", "majority_dry_flag"])
     else:
         return neighbour_data_w_dry_flags
 
@@ -334,9 +330,7 @@ def check_monthly_neighbours(
         monthly_neighbour_data_w_flags, target_gauge_col, min_n_neighbours
     )
 
-    return monthly_neighbour_data_w_flags.select(
-        ["time", target_gauge_col, *neighbouring_gauge_cols, "majority_monthly_flag"]
-    )
+    return monthly_neighbour_data_w_flags.select(["time", "majority_monthly_flag"])
 
 
 def check_timing_offset(
@@ -577,7 +571,7 @@ def check_monthly_factor(
 
     # 2. Flag factor difference
     monthly_factor_flags = flag_monthly_factor_differences(monthly_factor, target_gauge_col=neighbouring_gauge_col)
-    return monthly_factor_flags
+    return monthly_factor_flags.select(["time", "monthly_factor_flag"])
 
 
 def flag_monthly_factor_differences(monthly_factor: pl.DataFrame, target_gauge_col: str) -> pl.DataFrame:
@@ -621,7 +615,7 @@ def flag_monthly_factor_differences(monthly_factor: pl.DataFrame, target_gauge_c
         .when((pl.col("factor_diff") > 1 / 3) & (pl.col("factor_diff") < 1 / 2))
         .then(6)
         .otherwise(0)
-        .alias(f"factor_flags_{target_gauge_col}")
+        .alias("monthly_factor_flag")
     )
 
 
