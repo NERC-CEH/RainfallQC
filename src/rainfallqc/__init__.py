@@ -2,7 +2,7 @@
 
 __author__ = """Tom Keel"""
 __email__ = "tomkee@ceh.ac.uk"
-__version__ = "0.1.5-beta"
+__version__ = "0.1.5"
 
 from rainfallqc.checks import (
     comparison_checks,
