@@ -186,9 +186,11 @@ def check_monthly_accumulations(
 
     """
     # 0. Check time step of data
-    data_utils.check_data_is_specific_time_res(data, time_res=["1h", "1d"])
+    data_utils.check_data_is_specific_time_res(data, time_res=["15m", "1h", "1d"])
     time_step = data_utils.get_data_timestep_as_str(data)
-    if time_step == "1h":
+    if time_step == "15m":
+        min_dry_spell_duration = 2880  # roughly 2880 15-minutes in month
+    elif time_step == "1h":
         min_dry_spell_duration = 720  # roughly 720 hours in month
     else:
         min_dry_spell_duration = 30  # roughly 30 days in month
