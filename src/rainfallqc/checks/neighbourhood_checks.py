@@ -23,6 +23,7 @@ def check_wet_neighbours(
     wet_threshold: int | float,
     min_n_neighbours: int,
     n_neighbours_ignored: int = 0,
+    hour_offset: int = 0,
 ) -> pl.DataFrame:
     """
     Identify suspicious large values by comparison to neighbour for hourly or daily data.
@@ -51,6 +52,8 @@ def check_wet_neighbours(
         Minimum number of neighbours needed to be checked for flag
     n_neighbours_ignored :
         Number of zero flags allowed for majority voting (default: 0)
+    hour_offset :
+        Time offset of hourly data in hours (i.e. if 7am-7am, then set this to 7) (default: 0)
 
     Returns
     -------
@@ -70,7 +73,9 @@ def check_wet_neighbours(
     if time_res == "hourly":
         rain_cols = neighbour_data.columns[1:]  # get rain columns
         original_hourly_neighbour_data = neighbour_data.clone()
-        neighbour_data = data_readers.convert_gdsr_hourly_to_daily(neighbour_data, rain_cols=rain_cols)
+        neighbour_data = data_readers.convert_data_hourly_to_daily(
+            neighbour_data, rain_cols=rain_cols, hour_offset=hour_offset
+        )
 
     # 2. Loop through each neighbour and get wet_flags
     for neighbouring_gauge_col in neighbouring_gauge_cols_new:
@@ -132,6 +137,7 @@ def check_dry_neighbours(
     min_n_neighbours: int,
     dry_period_days: int = 15,
     n_neighbours_ignored: int = 0,
+    hour_offset: int = 0,
 ) -> pl.DataFrame:
     """
     Identify suspicious dry periods by comparison to neighbour for hourly or daily data.
@@ -160,6 +166,8 @@ def check_dry_neighbours(
         Length for of a "dry_spell" (default: 15 days)
     n_neighbours_ignored :
         Number of zero flags allowed for majority voting (default: 0)
+    hour_offset :
+        Time offset of hourly data in hours (i.e. if 7am-7am, then set this to 7) (default: 0)
 
     Returns
     -------
@@ -182,7 +190,9 @@ def check_dry_neighbours(
     if time_res == "hourly":
         rain_cols = neighbour_data.columns[1:]  # get rain columns
         original_hourly_neighbour_data = neighbour_data.clone()
-        neighbour_data = data_readers.convert_gdsr_hourly_to_daily(neighbour_data, rain_cols=rain_cols)
+        neighbour_data = data_readers.convert_data_hourly_to_daily(
+            neighbour_data, rain_cols=rain_cols, hour_offset=hour_offset
+        )
 
     # 3. Loop through each neighbour and get wet_flags
     for neighbouring_gauge_col in neighbouring_gauge_cols_new:

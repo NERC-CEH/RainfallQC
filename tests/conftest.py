@@ -20,7 +20,7 @@ def random() -> np.random.Generator:
     return np.random.default_rng(seed=list(map(ord, "𝕽𝔞𝖓𝔡𝖔𝔪")))
 
 
-def get_gpcc_data(time_res: str, gauge_id: str = "2483") -> pl.DataFrame:
+def get_gpcc_data(time_res: str, gauge_id: str = "2483"):
     # TODO: maybe randomise this with every call? Or use parameterise
     gpcc_zip_path = f"./tests/data/GPCC/{time_res}_{gauge_id}.zip"
     gpcc_file_name = f"{time_res}_{gauge_id}.dat"
@@ -78,7 +78,7 @@ def daily_gdsr_data() -> pl.DataFrame:
     data_path = "./tests/data/GDSR/DE_02483.txt"
     gdsr_data = data_readers.read_gdsr_data_from_file(data_path, raw_data_time_res="hourly")
     # convert to daily
-    gdsr_data_daily = data_readers.convert_gdsr_hourly_to_daily(
+    gdsr_data_daily = data_readers.convert_data_hourly_to_daily(
         gdsr_data, rain_cols=[DEFAULT_RAIN_COL], hour_offset=DEFAULT_GDSR_OFFSET
     )
     return gdsr_data_daily
@@ -152,7 +152,7 @@ def daily_gdsr_network() -> pl.DataFrame:
     gdsr_network = get_hourly_gdsr_network(path_to_gdsr_dir="./tests/data/GDSR/", target_id="DE_00310")
 
     # convert to daily
-    daily_gdsr_network = data_readers.convert_gdsr_hourly_to_daily(
+    daily_gdsr_network = data_readers.convert_data_hourly_to_daily(
         gdsr_network, rain_cols=gdsr_network.columns[1:], hour_offset=DEFAULT_GDSR_OFFSET
     )
     return daily_gdsr_network
@@ -163,7 +163,7 @@ def monthly_gdsr_network() -> pl.DataFrame:
     gdsr_network = get_hourly_gdsr_network(path_to_gdsr_dir="./tests/data/GDSR/", target_id="DE_00310")
 
     # convert to daily
-    daily_gdsr_network = data_readers.convert_gdsr_hourly_to_daily(
+    daily_gdsr_network = data_readers.convert_data_hourly_to_daily(
         gdsr_network, rain_cols=gdsr_network.columns[1:], hour_offset=DEFAULT_GDSR_OFFSET
     )
 
