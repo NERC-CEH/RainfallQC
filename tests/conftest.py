@@ -135,6 +135,9 @@ def monthly_gpcc_network() -> pl.DataFrame:
 def mins15_gdsr_network() -> pl.DataFrame:
     hourly_gdsr_network = get_hourly_gdsr_network(path_to_gdsr_dir="./tests/data/GDSR/", target_id="DE_00310")
     mins15_gdsr_network = hourly_gdsr_network.upsample("time", every="15m")
+    mins15_gdsr_network = mins15_gdsr_network.with_columns(
+        [pl.col(col).forward_fill(limit=3) for col in mins15_gdsr_network.columns[1:]]  # hours
+    )
     mins15_gdsr_network = mins15_gdsr_network[50000:]
     return mins15_gdsr_network
 
