@@ -5,11 +5,11 @@ History
 0.1.6 (2025-06-13)
 ------------------
 * rename dry and wet spell flags so they include time resolution
-* fix list comprehension so it iterates over copy of neighbouring cols
+* fix list comprehension so it iterates over copy of neighbouring cols for QC16-QC19
 * rename QC11 from 'check_annual_exceedance_etccdi_rx1day' to 'check_hourly_exceedance_etccdi_rx1day'
-* Add hourly qc framework check
 * Add 15min support for QC11 and QC14
 * Remove daily support for QC13 and QC15 (only works on hourly)
+* Add hourly qc framework fixture for unit tests
 
 0.1.5 (2025-06-12)
 ------------------

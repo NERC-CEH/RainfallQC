@@ -186,3 +186,17 @@ def test_flag_streaks_exceeding_wet_day_rainfall_threshold(hourly_gdsr_data, gds
         accumulation_threshold=6,
     )
     assert len(result.filter(pl.col("streak_flag1") > 0)) == 71
+
+
+def test_flag_n_hours_accumulation_based_on_threshold(hourly_gdsr_data):
+    test_data = pl.Series([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 200])
+    result = timeseries_checks.flag_n_hours_accumulation_based_on_threshold(
+        period_rain_vals=test_data, accumulation_threshold=11.0, n_hours=24
+    )
+    assert result == 1
+
+    none_data = pl.Series([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, None, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 200])
+    result = timeseries_checks.flag_n_hours_accumulation_based_on_threshold(
+        period_rain_vals=none_data, accumulation_threshold=11.0, n_hours=24
+    )
+    assert result == 0
