@@ -62,6 +62,8 @@ def check_wet_neighbours(
     data_utils.check_data_is_specific_time_res(neighbour_data, time_res)
     if target_gauge_col in neighbouring_gauge_cols:
         neighbouring_gauge_cols.remove(target_gauge_col)  # so target col is not included as a neighbour of itself.
+    if len(neighbouring_gauge_cols) == 0:
+        raise ValueError("No neighbouring gauge columns found, please make sure that there is at least 1.")
     assert target_gauge_col in neighbour_data.columns, (
         f"Target column: '{target_gauge_col}' needs to column be in data."
     )

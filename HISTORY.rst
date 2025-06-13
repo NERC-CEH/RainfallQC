@@ -2,7 +2,7 @@
 History
 =======
 
-0.1.6 (2025-06-12)
+0.1.6 (2025-06-13)
 ------------------
 *HOTFIX*
 * rename dry and wet spell flags so they include time resolution
@@ -15,7 +15,7 @@ History
 ------------------
 * Rename 'rain_col' to 'target_gauge_col'
 * fix scipy problem with loading in xarray data ('ScipyArrayWrapper' object has no attribute 'oindex')
-* fix 'None > int' probelm in method: flag_n_hours_accumulation_based_on_threshold
+* fix 'None > int' problem in method: flag_n_hours_accumulation_based_on_threshold
 * remove print statements
 
 0.1.3 (2025-05-29)

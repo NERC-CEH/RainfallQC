@@ -66,6 +66,26 @@ def test_check_wet_neighbour_daily_gpcc(daily_gpcc_network):
             min_n_neighbours=5,
         )
 
+    with pytest.raises(ValueError):
+        neighbourhood_checks.check_wet_neighbours(
+            daily_gpcc_network,
+            target_gauge_col=f"{DEFAULT_RAIN_COL}_tw_2483",
+            neighbouring_gauge_cols=[f"{DEFAULT_RAIN_COL}_tw_2483"],
+            time_res="daily",
+            wet_threshold=1.0,
+            min_n_neighbours=5,
+        )
+
+    with pytest.raises(ValueError):
+        neighbourhood_checks.check_wet_neighbours(
+            daily_gpcc_network,
+            target_gauge_col=f"{DEFAULT_RAIN_COL}_tw_2483",
+            neighbouring_gauge_cols=[],
+            time_res="daily",
+            wet_threshold=1.0,
+            min_n_neighbours=5,
+        )
+
 
 def test_check_wet_neighbour_hourly(hourly_gdsr_network):
     assert len(hourly_gdsr_network) == 43824
