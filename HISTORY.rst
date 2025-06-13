@@ -4,8 +4,8 @@ History
 
 0.1.6 (2025-06-13)
 ------------------
-*HOTFIX*
 * rename dry and wet spell flags so they include time resolution
+* fix list comprehension so it iterates over copy of neighbouring cols
 
 0.1.5 (2025-06-12)
 ------------------

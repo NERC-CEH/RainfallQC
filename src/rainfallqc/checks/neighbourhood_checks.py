@@ -60,9 +60,11 @@ def check_wet_neighbours(
     """
     # 0. Initial checks
     data_utils.check_data_is_specific_time_res(neighbour_data, time_res)
-    if target_gauge_col in neighbouring_gauge_cols:
-        neighbouring_gauge_cols.remove(target_gauge_col)  # so target col is not included as a neighbour of itself.
-    check_neighbouring_gauge_columns(neighbour_data, target_gauge_col, neighbouring_gauge_cols, time_res)
+    neighbouring_gauge_cols_new = neighbouring_gauge_cols.copy()  # make copy
+    if target_gauge_col in neighbouring_gauge_cols_new:
+        # Remove target col from list so it is not included as a neighbour of itself.
+        neighbouring_gauge_cols_new.remove(target_gauge_col)
+    check_neighbouring_gauge_columns(neighbour_data, target_gauge_col, neighbouring_gauge_cols_new)
 
     # 1. Resample to daily
     if time_res == "hourly":
@@ -71,7 +73,7 @@ def check_wet_neighbours(
         neighbour_data = data_readers.convert_gdsr_hourly_to_daily(neighbour_data, rain_cols=rain_cols)
 
     # 2. Loop through each neighbour and get wet_flags
-    for neighbouring_gauge_col in neighbouring_gauge_cols:
+    for neighbouring_gauge_col in neighbouring_gauge_cols_new:
         # 2.1 Flag data based on comparison of wet values in neighbours
         one_neighbour_data_wet_flags = flag_wet_day_errors_based_on_neighbours(
             neighbour_data, target_gauge_col, neighbouring_gauge_col, wet_threshold
@@ -85,12 +87,12 @@ def check_wet_neighbours(
         )
 
     # 3. Get number of neighbours 'online' for each time step
-    neighbour_data = make_num_neighbours_online_col(neighbour_data, neighbouring_gauge_cols)
+    neighbour_data = make_num_neighbours_online_col(neighbour_data, neighbouring_gauge_cols_new)
 
     # 4. Neighbour majority voting where the flag is the highest flag in all neighbours
     neighbour_data_w_wet_flags = get_majority_voting_flag(
         neighbour_data,
-        neighbouring_gauge_cols,
+        neighbouring_gauge_cols_new,
         min_n_neighbours,
         n_zeros_allowed=n_neighbours_ignored,
         flag_col_prefix="wet_flag_",
@@ -167,9 +169,11 @@ def check_dry_neighbours(
     """
     # 0. Initial checks
     data_utils.check_data_is_specific_time_res(neighbour_data, time_res)
-    if target_gauge_col in neighbouring_gauge_cols:
-        neighbouring_gauge_cols.remove(target_gauge_col)  # so target col is not included as a neighbour of itself.
-    check_neighbouring_gauge_columns(neighbour_data, target_gauge_col, neighbouring_gauge_cols, time_res)
+    neighbouring_gauge_cols_new = neighbouring_gauge_cols.copy()  # make copy
+    if target_gauge_col in neighbouring_gauge_cols_new:
+        # Remove target col from list so it is not included as a neighbour of itself.
+        neighbouring_gauge_cols_new.remove(target_gauge_col)
+    check_neighbouring_gauge_columns(neighbour_data, target_gauge_col, neighbouring_gauge_cols_new)
 
     # 1. Get proportions of dry period required to be flagged 1, 2, or 3
     dry_period_proportions = data_utils.get_dry_period_proportions(dry_period_days)
@@ -181,7 +185,7 @@ def check_dry_neighbours(
         neighbour_data = data_readers.convert_gdsr_hourly_to_daily(neighbour_data, rain_cols=rain_cols)
 
     # 3. Loop through each neighbour and get wet_flags
-    for neighbouring_gauge_col in neighbouring_gauge_cols:
+    for neighbouring_gauge_col in neighbouring_gauge_cols_new:
         # 3.1 Convert to dry spell fraction
         one_neighbour_data = get_dry_spell_fraction_col(
             neighbour_data,
@@ -206,12 +210,12 @@ def check_dry_neighbours(
         )
 
     # 4. Get number of neighbours 'online' for each time step
-    neighbour_data = make_num_neighbours_online_col(neighbour_data, neighbouring_gauge_cols)
+    neighbour_data = make_num_neighbours_online_col(neighbour_data, neighbouring_gauge_cols_new)
 
     # 5. Neighbour majority voting where the flag is the highest flag in all neighbours
     neighbour_data_w_dry_flags = get_majority_voting_flag(
         neighbour_data,
-        neighbouring_gauge_cols,
+        neighbouring_gauge_cols_new,
         min_n_neighbours,
         n_zeros_allowed=n_neighbours_ignored,
         flag_col_prefix="dry_flag_",
@@ -294,14 +298,14 @@ def check_monthly_neighbours(
     """
     # 0. Initial checks
     data_utils.check_data_is_monthly(monthly_neighbour_data)
-    if target_gauge_col in neighbouring_gauge_cols:
-        neighbouring_gauge_cols.remove(target_gauge_col)  # so target col is not included as a neighbour of itself.
-    assert target_gauge_col in monthly_neighbour_data.columns, (
-        f"Target column: '{target_gauge_col}' needs to column be in data."
-    )
+    neighbouring_gauge_cols_new = neighbouring_gauge_cols.copy()  # make copy
+    if target_gauge_col in neighbouring_gauge_cols_new:
+        # Remove target col from list so it is not included as a neighbour of itself.
+        neighbouring_gauge_cols_new.remove(target_gauge_col)
+    check_neighbouring_gauge_columns(monthly_neighbour_data, target_gauge_col, neighbouring_gauge_cols_new)
 
     # 2. Loop through each neighbour and get percentage diff flags
-    for neighbouring_gauge_col in neighbouring_gauge_cols:
+    for neighbouring_gauge_col in neighbouring_gauge_cols_new:
         # 2.1. Calculate percentage difference between target and neighbour
         one_neighbour_data_perc_diff = monthly_neighbour_data.select(
             ["time", stats.percentage_diff(pl.col(target_gauge_col), pl.col(neighbouring_gauge_col)).alias("perc_diff")]
@@ -323,14 +327,14 @@ def check_monthly_neighbours(
     # i.e. get minimum positive flag, when positive, and maximum negative flag when negative
     monthly_neighbour_data_w_flags = get_majority_positive_or_negative_flags(
         monthly_neighbour_data,
-        neighbouring_gauge_cols=neighbouring_gauge_cols,
+        neighbouring_gauge_cols=neighbouring_gauge_cols_new,
         min_n_neighbours=min_n_neighbours,
         n_neighbours_ignored=n_neighbours_ignored,
     )
 
     # 4. Calculate neighbour monthly max column
     monthly_neighbour_data_w_flags = make_neighbour_monthly_max_climatology(
-        monthly_neighbour_data_w_flags, neighbouring_gauge_cols
+        monthly_neighbour_data_w_flags, neighbouring_gauge_cols_new
     )
 
     # 5. Upgrade extreme wet flags to 4 or 5 based on excess of neighbour monthly max climatology
@@ -1195,7 +1199,7 @@ def normalised_diff_between_target_neighbours(
 
 
 def check_neighbouring_gauge_columns(
-    neighbour_data: pl.DataFrame, target_gauge_col: str, neighbouring_gauge_cols: list, time_res: str
+    neighbour_data: pl.DataFrame, target_gauge_col: str, neighbouring_gauge_cols: list
 ) -> None:
     """
     Run checks of neighbouring gauge columns to check if there are any columns and if the target gauge is there.
@@ -1208,8 +1212,6 @@ def check_neighbouring_gauge_columns(
         Target gauge column
     neighbouring_gauge_cols:
         List of columns with neighbouring gauges
-    time_res :
-        Time resolution of data
 
     Raises
     ------
