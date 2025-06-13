@@ -132,6 +132,14 @@ def monthly_gpcc_network() -> pl.DataFrame:
 
 
 @pytest.fixture()
+def mins15_gdsr_network() -> pl.DataFrame:
+    hourly_gdsr_network = get_hourly_gdsr_network(path_to_gdsr_dir="./tests/data/GDSR/", target_id="DE_00310")
+    mins15_gdsr_network = hourly_gdsr_network.upsample("time", every="15m")
+    mins15_gdsr_network = mins15_gdsr_network[50000:]
+    return mins15_gdsr_network
+
+
+@pytest.fixture()
 def hourly_gdsr_network() -> pl.DataFrame:
     return get_hourly_gdsr_network(path_to_gdsr_dir="./tests/data/GDSR/", target_id="DE_00310")
 
