@@ -23,7 +23,6 @@ from rainfallqc.utils import data_utils, neighbourhood_utils
 MULTIPLYING_FACTORS = {"hourly": 24, "daily": 1}  # compared to daily reference
 GDSR_TIME_RES_CONVERSION = {"1hr": "hourly", "1d": "daily", "1mo": "monthly"}
 GPCC_TIME_RES_CONVERSION = {"tw": "daily", "mw": "monthly"}
-GDSR_HOUR_OFFSET = 7  # Apparently the data runs from 7am to 7am
 GPCC_HOUR_OFFSET = 7  # Apparently the GDSR data runs from 7am to 7am, so this converts it for comparison
 
 
@@ -308,9 +307,7 @@ def add_datetime_to_gdsr_data(
     return gdsr_data
 
 
-def convert_gdsr_hourly_to_daily(
-    hourly_data: pl.DataFrame, rain_cols: List[str], hour_offset: int = GDSR_HOUR_OFFSET
-) -> pl.DataFrame:
+def convert_data_hourly_to_daily(hourly_data: pl.DataFrame, rain_cols: List[str], hour_offset: int) -> pl.DataFrame:
     """
     Group hourly data into daily and check for at least 24 daily time steps per day.
 
@@ -321,7 +318,7 @@ def convert_gdsr_hourly_to_daily(
     rain_cols :
         List of column with rainfall data
     hour_offset :
-        Time offset in hours (default is 7)
+        Time offset in hours
 
     Returns
     -------

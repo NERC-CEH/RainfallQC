@@ -98,6 +98,7 @@ def test_check_wet_neighbour_hourly(hourly_gdsr_network):
         time_res="hourly",
         wet_threshold=0.5,
         min_n_neighbours=3,
+        hour_offset=7,
     )
     assert len(result) == 43824
     assert len(result.columns) == 2
@@ -147,6 +148,7 @@ def test_check_dry_neighbour_hourly(hourly_gdsr_network):
         time_res="hourly",
         min_n_neighbours=3,
         dry_period_days=15,
+        hour_offset=7,
     )
     assert result["dry_spell_flag_hourly"].max() == 3.0
     assert len(result.filter(pl.col("dry_spell_flag_hourly") == 3)) == 150 * 24
