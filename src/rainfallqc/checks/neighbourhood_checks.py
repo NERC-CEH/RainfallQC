@@ -62,11 +62,7 @@ def check_wet_neighbours(
     data_utils.check_data_is_specific_time_res(neighbour_data, time_res)
     if target_gauge_col in neighbouring_gauge_cols:
         neighbouring_gauge_cols.remove(target_gauge_col)  # so target col is not included as a neighbour of itself.
-    if len(neighbouring_gauge_cols) == 0:
-        raise ValueError("No neighbouring gauge columns found, please make sure that there is at least 1.")
-    assert target_gauge_col in neighbour_data.columns, (
-        f"Target column: '{target_gauge_col}' needs to column be in data."
-    )
+    check_neighbouring_gauge_columns(neighbour_data, target_gauge_col, neighbouring_gauge_cols, time_res)
 
     # 1. Resample to daily
     if time_res == "hourly":
@@ -173,9 +169,7 @@ def check_dry_neighbours(
     data_utils.check_data_is_specific_time_res(neighbour_data, time_res)
     if target_gauge_col in neighbouring_gauge_cols:
         neighbouring_gauge_cols.remove(target_gauge_col)  # so target col is not included as a neighbour of itself.
-    assert target_gauge_col in neighbour_data.columns, (
-        f"Target column: '{target_gauge_col}' needs to column be in data."
-    )
+    check_neighbouring_gauge_columns(neighbour_data, target_gauge_col, neighbouring_gauge_cols, time_res)
 
     # 1. Get proportions of dry period required to be flagged 1, 2, or 3
     dry_period_proportions = data_utils.get_dry_period_proportions(dry_period_days)
@@ -1197,4 +1191,36 @@ def normalised_diff_between_target_neighbours(
             data_utils.normalise_data(pl.col(target_gauge_col))
             - data_utils.normalise_data(pl.col(neighbouring_gauge_col))
         ).alias(f"diff_{neighbouring_gauge_col}")
+    )
+
+
+def check_neighbouring_gauge_columns(
+    neighbour_data: pl.DataFrame, target_gauge_col: str, neighbouring_gauge_cols: list, time_res: str
+) -> None:
+    """
+    Run checks of neighbouring gauge columns to check if there are any columns and if the target gauge is there.
+
+    Parameters
+    ----------
+    neighbour_data :
+        Rainfall data of all neighbouring gauges with time col
+    target_gauge_col :
+        Target gauge column
+    neighbouring_gauge_cols:
+        List of columns with neighbouring gauges
+    time_res :
+        Time resolution of data
+
+    Raises
+    ------
+    ValueError :
+        If there are no neighbouring gauges in the 'neighbouring_gauge_cols' list
+    AssertionError :
+        If 'target_gauge_col' not in neighbour_data
+
+    """
+    if len(neighbouring_gauge_cols) == 0:
+        raise ValueError("No neighbouring gauge columns found, please make sure that there is at least 1.")
+    assert target_gauge_col in neighbour_data.columns, (
+        f"Target column: '{target_gauge_col}' needs to column be in data."
     )
