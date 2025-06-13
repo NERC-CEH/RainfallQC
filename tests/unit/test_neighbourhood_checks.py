@@ -26,8 +26,8 @@ def test_wet_neighbour_check_daily_gdsr(daily_gdsr_network):
         min_n_neighbours=3,
     )
     assert len(result.columns) == 2
-    assert result["majority_wet_flag"].max() == 2.0
-    assert len(result.filter(pl.col("majority_wet_flag") == 1)) == 1
+    assert result["wet_spell_flag_daily"].max() == 2.0
+    assert len(result.filter(pl.col("wet_spell_flag_daily") == 1)) == 1
 
 
 def test_check_wet_neighbour_daily_gpcc(daily_gpcc_network):
@@ -43,7 +43,7 @@ def test_check_wet_neighbour_daily_gpcc(daily_gpcc_network):
         min_n_neighbours=3,
     )
     assert len(result.columns) == 2
-    assert result["majority_wet_flag"].max() == 0
+    assert result["wet_spell_flag_daily"].max() == 0
 
     result = neighbourhood_checks.check_wet_neighbours(
         daily_gpcc_network,
@@ -54,13 +54,33 @@ def test_check_wet_neighbour_daily_gpcc(daily_gpcc_network):
         min_n_neighbours=5,
         n_neighbours_ignored=4,
     )
-    assert result["majority_wet_flag"].max() == 1
+    assert result["wet_spell_flag_daily"].max() == 1
 
     with pytest.raises(AssertionError):
         neighbourhood_checks.check_wet_neighbours(
             daily_gpcc_network,
             target_gauge_col="wrong",
             neighbouring_gauge_cols=all_neighbour_cols,
+            time_res="daily",
+            wet_threshold=1.0,
+            min_n_neighbours=5,
+        )
+
+    with pytest.raises(ValueError):
+        neighbourhood_checks.check_wet_neighbours(
+            daily_gpcc_network,
+            target_gauge_col=f"{DEFAULT_RAIN_COL}_tw_2483",
+            neighbouring_gauge_cols=[f"{DEFAULT_RAIN_COL}_tw_2483"],
+            time_res="daily",
+            wet_threshold=1.0,
+            min_n_neighbours=5,
+        )
+
+    with pytest.raises(ValueError):
+        neighbourhood_checks.check_wet_neighbours(
+            daily_gpcc_network,
+            target_gauge_col=f"{DEFAULT_RAIN_COL}_tw_2483",
+            neighbouring_gauge_cols=[],
             time_res="daily",
             wet_threshold=1.0,
             min_n_neighbours=5,
@@ -81,8 +101,8 @@ def test_check_wet_neighbour_hourly(hourly_gdsr_network):
     )
     assert len(result) == 43824
     assert len(result.columns) == 2
-    assert result["majority_wet_flag"].max() == 2.0
-    assert len(result.filter(pl.col("majority_wet_flag") == 1)) == 24
+    assert result["wet_spell_flag_hourly"].max() == 2.0
+    assert len(result.filter(pl.col("wet_spell_flag_hourly") == 1)) == 24
 
 
 def test_dry_neighbour_check_daily_gdsr(daily_gdsr_network):
@@ -97,8 +117,8 @@ def test_dry_neighbour_check_daily_gdsr(daily_gdsr_network):
         dry_period_days=15,
     )
     assert len(result.columns) == 2
-    assert result["majority_dry_flag"].max() == 3.0
-    assert len(result.filter(pl.col("majority_dry_flag") == 3)) == 150
+    assert result["dry_spell_flag_daily"].max() == 3.0
+    assert len(result.filter(pl.col("dry_spell_flag_daily") == 3)) == 150
 
 
 def test_check_dry_neighbour_daily_gpcc(daily_gpcc_network):
@@ -114,7 +134,7 @@ def test_check_dry_neighbour_daily_gpcc(daily_gpcc_network):
         min_n_neighbours=5,
     )
     assert len(result.columns) == 2
-    assert result["majority_dry_flag"].max() == 0
+    assert result["dry_spell_flag_daily"].max() == 0
 
 
 def test_check_dry_neighbour_hourly(hourly_gdsr_network):
@@ -128,8 +148,8 @@ def test_check_dry_neighbour_hourly(hourly_gdsr_network):
         min_n_neighbours=3,
         dry_period_days=15,
     )
-    assert result["majority_dry_flag"].max() == 3.0
-    assert len(result.filter(pl.col("majority_dry_flag") == 3)) == 150 * 24
+    assert result["dry_spell_flag_hourly"].max() == 3.0
+    assert len(result.filter(pl.col("dry_spell_flag_hourly") == 3)) == 150 * 24
 
 
 def test_check_monthly_neighbours(monthly_gdsr_network):

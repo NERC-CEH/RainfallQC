@@ -13,7 +13,7 @@ import xarray as xr
 
 from rainfallqc.utils import data_readers, data_utils, neighbourhood_utils, spatial_utils, stats
 
-DAILY_DIVIDING_FACTOR = {"hourly": 24, "daily": 1}
+DAILY_DIVIDING_FACTOR = {"15m": 96, "hourly": 24, "daily": 1}
 
 
 def check_dry_period_cdd(
@@ -31,7 +31,7 @@ def check_dry_period_cdd(
     target_gauge_col :
         Column with rainfall data
     time_res :
-        Temporal resolution of the time series either 'daily' or 'hourly'
+        Temporal resolution of the time series either '15m', 'daily' or 'hourly'
     gauge_lat :
         latitude of the rain gauge
     gauge_lon :
@@ -43,7 +43,7 @@ def check_dry_period_cdd(
         Data with dry spell flags
 
     """
-    if time_res != "daily" and time_res != "hourly":
+    if time_res != "15m" and time_res != "daily" and time_res != "hourly":
         raise ValueError("time_res must be 'daily' or 'hourly'")
 
     # 1. Load CDD data
@@ -120,6 +120,9 @@ def check_daily_accumulations(
     IntenseQC. This decision was taken as the IntenseQC python package only returns 0 and 1 flags.
 
     """
+    # 0. Check data is hourly
+    data_utils.check_data_is_specific_time_res(data, time_res=["1h"])
+
     # 1. Get accumulation threshold from ETCCDI SDII value, if not given
     if not accumulation_threshold:
         accumulation_threshold = get_accumulation_threshold_from_etccdi(
@@ -161,7 +164,7 @@ def check_monthly_accumulations(
     Parameters
     ----------
     data :
-        Daily or Hourly rainfall data
+        Daily or Hourly or 15 min rainfall data
     target_gauge_col :
         Column with rainfall data
     gauge_lat :
@@ -186,9 +189,11 @@ def check_monthly_accumulations(
 
     """
     # 0. Check time step of data
-    data_utils.check_data_is_specific_time_res(data, time_res=["1h", "1d"])
+    data_utils.check_data_is_specific_time_res(data, time_res=["15m", "1h", "1d"])
     time_step = data_utils.get_data_timestep_as_str(data)
-    if time_step == "1h":
+    if time_step == "15m":
+        min_dry_spell_duration = 2880  # roughly 2880 15-minutes in month
+    elif time_step == "1h":
         min_dry_spell_duration = 720  # roughly 720 hours in month
     else:
         min_dry_spell_duration = 30  # roughly 30 days in month
@@ -258,6 +263,9 @@ def check_streaks(
         Data with streak flags.
 
     """
+    # 0. Check data is hourly
+    data_utils.check_data_is_specific_time_res(data, time_res=["1h"])
+
     # 1. Get accumulation threshold from ETCCDI SDII value, if not given
     if not accumulation_threshold:
         accumulation_threshold = get_accumulation_threshold_from_etccdi(

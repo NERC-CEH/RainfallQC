@@ -14,7 +14,7 @@ INTENSE_QC = {
     "QC8": {"function": comparison_checks.check_annual_exceedance_etccdi_r99p},
     "QC9": {"function": comparison_checks.check_annual_exceedance_etccdi_prcptot},
     "QC10": {"function": comparison_checks.check_exceedance_of_rainfall_world_record},
-    "QC11": {"function": comparison_checks.check_annual_exceedance_etccdi_rx1day},
+    "QC11": {"function": comparison_checks.check_hourly_exceedance_etccdi_rx1day},
     "QC12": {"function": timeseries_checks.check_dry_period_cdd},
     "QC13": {"function": timeseries_checks.check_daily_accumulations},
     "QC14": {"function": timeseries_checks.check_monthly_accumulations},
