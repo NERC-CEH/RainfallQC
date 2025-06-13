@@ -11,7 +11,7 @@ import numpy as np
 import polars as pl
 import xarray as xr
 
-from rainfallqc.utils import data_readers, neighbourhood_utils, stats
+from rainfallqc.utils import data_readers, data_utils, neighbourhood_utils, stats
 
 
 def check_annual_exceedance_etccdi_r99p(
@@ -135,13 +135,11 @@ def check_exceedance_of_rainfall_world_record(data: pl.DataFrame, target_gauge_c
     return data_w_flags.select(["time", "world_record_check"])
 
 
-def check_annual_exceedance_etccdi_rx1day(
+def check_hourly_exceedance_etccdi_rx1day(
     data: pl.DataFrame, target_gauge_col: str, gauge_lat: int | float, gauge_lon: int | float
 ) -> pl.DataFrame:
     """
-    Check exceedance of rainfall world record.
-
-    See Also `utils/stats.py` from world record sources.
+    Check exceedance of hourly day rainfall 1-day record.
 
     This is QC11 from the IntenseQC framework.
 
@@ -162,19 +160,37 @@ def check_annual_exceedance_etccdi_rx1day(
         Rainfall data with exceedance of Rx1day Record (see `flag_exceedance_of_ref_val_as_col` function)
 
     """
-    # 1. Load Rx1day data
+    # 0. Check data can be resampled to hourly
+    data_utils.check_data_is_specific_time_res(data, time_res=["15m", "1h"])
+
+    # 1. Resample into hourly
+    data_hourly = data
+    time_step = data_utils.get_data_timestep_as_str(data)
+    if time_step == "15m":
+        data_hourly = data_hourly.group_by_dynamic("time", every="1h").agg(pl.col(target_gauge_col).sum())
+
+    # 2. Load Rx1day data
     etccdi_rx1day = data_readers.load_etccdi_data(etccdi_var="Rx1day")
 
-    # 2. Get nearest local Rx1day value to the gauge coordinates
+    # 3. Get nearest local Rx1day value to the gauge coordinates
     nearby_etccdi_rx1day = neighbourhood_utils.get_nearest_etccdi_val_to_gauge(etccdi_rx1day, gauge_lat, gauge_lon)
 
-    # 3. Get local maximum ETCCDI value
+    # 4. Get local maximum ETCCDI value
     max_nearby_etccdi_rx1day = np.max(nearby_etccdi_rx1day["Rx1day"])
 
-    # 4. Flag exceedance of max ETCCDI value
+    # 5. Flag exceedance of max ETCCDI value
     data_w_flags = flag_exceedance_of_ref_val_as_col(
-        data, target_gauge_col, ref_val=max_nearby_etccdi_rx1day, new_col_name="rx1day_check"
+        data_hourly, target_gauge_col, ref_val=max_nearby_etccdi_rx1day, new_col_name="rx1day_check"
     )
+    # 6. Return data (forward fill if 15 min resolution)
+    if time_step == "15m":
+        # 6.1 Join flags back to original hourly data
+        data_w_flags = data.join(data_w_flags[["time", "rx1day_check"]], on="time", how="left")
+        # 6.2 Forward flood-fill data to convert the flags back to 15 mins
+        data_w_flags = data_w_flags.with_columns(
+            pl.col("rx1day_check").forward_fill(limit=3)  # 15 min groups
+        )
+
     return data_w_flags.select(["time", "rx1day_check"])
 
 
