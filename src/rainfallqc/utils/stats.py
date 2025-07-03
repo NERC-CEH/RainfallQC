@@ -34,8 +34,10 @@ def affinity_index(data: pl.DataFrame, binary_col: str, return_match_and_diff: b
         Affinity index.
 
     """
-    match = data[binary_col].value_counts().filter(pl.col(binary_col) == 1)["count"].item()
-    diff = data[binary_col].value_counts().filter(pl.col(binary_col) == 0)["count"].item()
+    match = data[binary_col].value_counts().filter(pl.col(binary_col) == 1)["count"]
+    match = match.item() if match.len() == 1 else 0
+    diff = data[binary_col].value_counts().filter(pl.col(binary_col) == 0)["count"]
+    diff = diff.item() if diff.len() == 1 else 0
     affinity = match / (match + diff)
     if return_match_and_diff:
         return match, diff, affinity
