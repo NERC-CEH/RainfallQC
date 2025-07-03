@@ -2,6 +2,11 @@
 History
 =======
 
+0.1.7 (2025-07-03)
+------------------
+* Add hour offset to neighbour methods to prevent incorrect aggregation from hourly to daily
+* affinity_index method now checks for length of binary columns
+
 0.1.6 (2025-06-13)
 ------------------
 * rename dry and wet spell flags so they include time resolution
