@@ -135,34 +135,72 @@ def check_intermittency(
         List of years with intermittency issues.
 
     """
-    # 1. Identify missing values
-    data = data_utils.replace_missing_vals_with_nan(data, target_gauge_col)  # drops None by default
-    missing_vals_mask = data[target_gauge_col].is_nan()
-    data = data.with_columns(missing_vals_mask.alias("is_missing"))
+    # 1. Replace missing values with NaN
+    data = data_utils.replace_missing_vals_with_nan(data, target_gauge_col)
 
-    # 2. Identify group numbers for consecutive nulls
-    gauge_data_missing_groups = data.with_columns(
-        (pl.when(data["is_missing"]).then((~data["is_missing"]).cum_sum()).otherwise(None)).alias("group")
+    # --- Step 2: Mark missing values ---
+    data = data.with_columns(pl.col(target_gauge_col).is_nan().alias("is_missing"))
+
+    # 3. Assign group numbers to consecutive missing values
+    grouped = data.with_columns(
+        pl.when(pl.col("is_missing"))
+        .then((~pl.col("is_missing")).cum_sum())  # Only number missing stretches
+        .otherwise(None)
+        .alias("group")
+    )
+    # 4. Count size of each missing group
+    group_counts = (
+        grouped.filter(pl.col("is_missing"))
+        .group_by("group")
+        .agg(pl.len().alias("count"))
+        .filter(pl.col("count") >= no_data_threshold)
     )
 
-    # 3. Get length of groups of missing data
-    gauge_data_missing_group_counts = gauge_data_missing_groups.group_by("group").agg(
-        pl.col("is_missing").sum().alias("count")
+    # 5. Keep only valid groups
+    valid_missing_groups = group_counts["group"].to_list()
+    valid_missing = grouped.filter(pl.col("group").is_in(valid_missing_groups))
+
+    # 6. Get first and last time for each group
+    first_last = (
+        valid_missing.sort("time")
+        .group_by("group")
+        .agg([pl.first("time").alias("start_time"), pl.last("time").alias("end_time")])
     )
 
-    # 4. Get groups with missing values above or at the `no_data_threshold`
-    no_data_period_groups = gauge_data_missing_group_counts.filter(pl.col("count") >= no_data_threshold)["group"]
+    # 7. Add stable row index to full sorted data
+    df_sorted = data.sort("time").with_row_index("row_idx")
 
-    # 5. Select rows belonging to 'no data periods'
-    gauge_data_no_data_periods = gauge_data_missing_groups.filter(
-        pl.col("group").is_in(no_data_period_groups.to_list())
+    # 8. Lookup row indices of group bounds
+    first_last_with_idx = (
+        first_last.join(df_sorted.select(["time", "row_idx"]), left_on="start_time", right_on="time")
+        .rename({"row_idx": "start_idx"})
+        .join(df_sorted.select(["time", "row_idx"]), left_on="end_time", right_on="time")
+        .rename({"row_idx": "end_idx"})
     )
 
-    # 6. Get annual counts of no data periods
-    gauge_data_year_counts = gauge_data_no_data_periods.select(pl.col("time").dt.year()).to_series().value_counts()
+    # 9. Compute prev/next indices and fetch values
+    row_lookup = df_sorted.select([pl.col("row_idx"), pl.col(target_gauge_col)])
 
-    # 7. Filter out years above or at the threshold of `annual_count_threshold`
-    years_w_intermittency = gauge_data_year_counts.filter(pl.col("count") >= annual_count_threshold)["time"].to_list()
+    first_last_with_vals = (
+        first_last_with_idx.with_columns(
+            [(pl.col("start_idx") - 1).alias("prev_idx"), (pl.col("end_idx") + 1).alias("next_idx")]
+        )
+        .join(row_lookup.rename({target_gauge_col: "prev_val"}), left_on="prev_idx", right_on="row_idx")
+        .join(row_lookup.rename({target_gauge_col: "next_val"}), left_on="next_idx", right_on="row_idx")
+    )
+
+    # 10. Filter to groups bounded by zero
+    bounded_by_zero = first_last_with_vals.filter((pl.col("prev_val") == 0) & (pl.col("next_val") == 0))
+
+    # 11. Extract year from each bounded group's start time
+    bounded_years = bounded_by_zero.select(pl.col("start_time").dt.year().alias("year"))
+
+    # 12. Count how many bounded groups occur per year
+    year_counts = bounded_years.group_by("year").len()
+
+    # 13. Get years exceeding threshold
+    years_w_intermittency = year_counts.filter(pl.col("len") >= annual_count_threshold)["year"].to_list()
+
     return years_w_intermittency
 
 

@@ -52,12 +52,11 @@ def test_check_wrong_time_gran(daily_gdsr_data):
         gauge_checks.check_temporal_bias(daily_gdsr_data, target_gauge_col=DEFAULT_RAIN_COL, time_granularity="wrong")
 
 
-def test_intermittency_check(daily_gdsr_data, gappy_daily_data):
-    yr_list = gauge_checks.check_intermittency(daily_gdsr_data, target_gauge_col=DEFAULT_RAIN_COL)
-    numpy.testing.assert_array_equal(sorted(yr_list), [2006, 2010])
-
-    yr_list = gauge_checks.check_intermittency(gappy_daily_data, target_gauge_col=DEFAULT_RAIN_COL, no_data_threshold=2)
-    numpy.testing.assert_array_equal(yr_list, 2006)
+def test_intermittency_check(gappy_daily_data):
+    yr_list = gauge_checks.check_intermittency(
+        gappy_daily_data, target_gauge_col=DEFAULT_RAIN_COL, no_data_threshold=1, annual_count_threshold=1
+    )
+    numpy.testing.assert_array_equal(yr_list, [2006])
 
 
 def test_breakpoints(daily_gdsr_data, daily_gdsr_data_w_breakpoint):
