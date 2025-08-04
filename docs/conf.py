@@ -17,12 +17,14 @@
 # relative to the documentation root, use os.path.abspath to make it
 # absolute, like shown here.
 #
-import rainfallqc
 
+import datetime
 import os
 import sys
 
 sys.path.insert(0, os.path.abspath(".."))
+
+import rainfallqc
 
 
 # -- General configuration ---------------------------------------------
@@ -48,8 +50,8 @@ source_suffix = ".rst"
 master_doc = "index"
 
 # General information about the project.
-project = "rainfallqc"
-copyright = "2025, Tom Keel"
+project = "RainfallQC"
+copyright = f"{datetime.datetime.now().year}, Tom Keel"
 author = "Tom Keel"
 
 # The version info for the project you're documenting, acts as replacement
@@ -72,6 +74,13 @@ language = None
 # directories to ignore when looking for source files.
 # This patterns also effect to html_static_path and html_extra_path
 exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
+
+exclude_patterns += [
+    "modules.rst",
+    "rainfallqc.core.rst",
+    "rainfallqc.data.rst",
+    "rainfallqc.data.ETCCDI.rst",
+]
 
 # The name of the Pygments (syntax highlighting) style to use.
 pygments_style = "sphinx"
