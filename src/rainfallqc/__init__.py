@@ -18,5 +18,4 @@ __all__ = [
     "gauge_checks",
     "neighbourhood_checks",
     "timeseries_checks",
-    "apply_qc_framework",
 ]
