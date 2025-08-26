@@ -108,4 +108,3 @@ ENV/
 .vscode/
 .idea/
 .editorconfig
-uv.lock
