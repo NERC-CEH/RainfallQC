@@ -1,6 +1,8 @@
 Welcome to RainfallQC's documentation!
 ======================================
 
+    RainfallQC is a package for running quality control (QC) on rain gauge data in a flexible, user-driven way.
+
 .. toctree::
    :maxdepth: 2
    :caption: Getting Started
