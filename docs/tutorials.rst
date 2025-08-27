@@ -2,10 +2,6 @@
 Tutorials
 =========
 
-Also see example Jupyter Notebooks here: https://github.com/Thomasjkeel/RainfallQC-notebooks/tree/main
-
-
-
 Example 1. - Individual quality checks on single rain gauge
 ===========================================================
 
@@ -97,3 +93,5 @@ Example 3. - Applying a framework of QC methods (e.g. IntenseQC)
             daily_gpcc_network, qc_framework=qc_framework, qc_methods_to_run=qc_methods_to_run, qc_kwargs=qc_kwargs
         )
 
+
+Also see example Jupyter Notebooks here: https://github.com/Thomasjkeel/RainfallQC-notebooks/tree/main
