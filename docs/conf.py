@@ -35,7 +35,13 @@ import rainfallqc
 
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom ones.
-extensions = ["sphinx.ext.autodoc", "sphinx.ext.viewcode"]
+extensions = [
+    "sphinx.ext.autodoc",
+    "sphinx.ext.viewcode",
+    "numpydoc",
+    "sphinx.ext.autosummary",
+    "sphinx.ext.autosectionlabel",
+]
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ["_templates"]
@@ -68,7 +74,9 @@ release = rainfallqc.__version__
 #
 # This is also used if you do content translation via gettext catalogs.
 # Usually you set "language" from the command line for these cases.
-language = None
+language = "en"
+
+autosummary_generate = False
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
@@ -77,6 +85,7 @@ exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 
 exclude_patterns += [
     "modules.rst",
+    "rainfallqc.rst",
     "rainfallqc.core.rst",
     "rainfallqc.data.rst",
     "rainfallqc.data.ETCCDI.rst",
@@ -94,13 +103,23 @@ todo_include_todos = False
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-html_theme = "alabaster"
+html_theme = "sphinx_rtd_theme"
 
+numfig = True
 # Theme options are theme-specific and customize the look and feel of a
 # theme further.  For a list of options available for each theme, see the
 # documentation.
 #
-# html_theme_options = {}
+html_theme_options = {
+    "logo_only": True,
+    "style_external_links": True,
+    "navigation_depth": 4,
+    "titles_only": False,
+    "style_nav_header_background": "#9aa7e3",
+}
+# The name of an image file (relative to this directory) to place at the top
+# of the sidebar.
+html_logo = "logos/rainfallQC_logo.png"
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
