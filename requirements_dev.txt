@@ -10,4 +10,6 @@ bump-my-version
 # Documentation and examples
 matplotlib
 sphinx
+numpydoc
+sphinx_rtd_theme
 rainfallqc
