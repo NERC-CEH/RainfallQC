@@ -85,6 +85,7 @@ exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 
 exclude_patterns += [
     "modules.rst",
+    "rainfallqc.rst",
     "rainfallqc.core.rst",
     "rainfallqc.data.rst",
     "rainfallqc.data.ETCCDI.rst",
