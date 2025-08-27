@@ -1,33 +1,6 @@
-===============================================
-RainfallQC - Quality control for rainfall data
-===============================================
-
-.. image:: https://img.shields.io/pypi/v/rainfallqc.svg
-        :target: https://pypi.python.org/pypi/rainfallqc
-
-..
-    image:: https://readthedocs.org/projects/rainfallqc/badge/?version=latest
-        :target: https://rainfallqc.readthedocs.io/en/latest/?version=latest
-        :alt: Documentation Status
-
-
-Provides methods for running rainfall quality control.
-
-**NOTEBOOK DEMO AVAILABLE** `HERE <https://github.com/Thomasjkeel/RainfallQC-notebooks/blob/main/notebooks/demo/rainfallQC_demo.ipynb>`_
-
-Please email tomkee@ceh.ac.uk if you have any questions.
-
-Installation
-------------
-RainfallQC can be installed from PyPi:
-
-.. code-block:: bash
-
-    pip install rainfallqc
-
-
-Example use
------------
+=========
+Tutorials
+=========
 
 Example 1. - Individual quality checks on single rain gauge
 ===========================================================
@@ -121,28 +94,4 @@ Example 3. - Applying a framework of QC methods (e.g. IntenseQC)
         )
 
 
-Other examples
-===================
 Also see example Jupyter Notebooks here: https://github.com/Thomasjkeel/RainfallQC-notebooks/tree/main
-
-Documents
----------
-* Free software: GNU General Public License v3
-* Documentation: https://rainfallqc.readthedocs.io.
-
-
-Features
---------
-
-- 25 rainfall QC methods (all from IntenseQC)
-- editable parameters so you can tweak thresholds, streak or accumulation lengths, and distances to neighbouring gauges
-
-Credits
--------
-Based on the IntenseQC: https://github.com/nclwater/intense-qc/tree/master
-
-
-This package was created with Cookiecutter_ and the `audreyr/cookiecutter-pypackage`_ project template.
-
-.. _Cookiecutter: https://github.com/audreyr/cookiecutter
-.. _`audreyr/cookiecutter-pypackage`: https://github.com/audreyr/cookiecutter-pypackage

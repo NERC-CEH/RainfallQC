@@ -2,6 +2,10 @@
 History
 =======
 
+0.2.0 (2025-08-27)
+------------------
+* Add basic documentation
+
 0.1.8 (2025-07-30)
 ------------------
 * Update intermittency check to whether intermitent period is followed by zeros.

@@ -17,12 +17,14 @@
 # relative to the documentation root, use os.path.abspath to make it
 # absolute, like shown here.
 #
-import rainfallqc
 
+import datetime
 import os
 import sys
 
 sys.path.insert(0, os.path.abspath(".."))
+
+import rainfallqc
 
 
 # -- General configuration ---------------------------------------------
@@ -33,7 +35,13 @@ sys.path.insert(0, os.path.abspath(".."))
 
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom ones.
-extensions = ["sphinx.ext.autodoc", "sphinx.ext.viewcode"]
+extensions = [
+    "sphinx.ext.autodoc",
+    "sphinx.ext.viewcode",
+    "numpydoc",
+    "sphinx.ext.autosummary",
+    "sphinx.ext.autosectionlabel",
+]
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ["_templates"]
@@ -48,8 +56,8 @@ source_suffix = ".rst"
 master_doc = "index"
 
 # General information about the project.
-project = "rainfallqc"
-copyright = "2025, Tom Keel"
+project = "RainfallQC"
+copyright = f"{datetime.datetime.now().year}, Tom Keel"
 author = "Tom Keel"
 
 # The version info for the project you're documenting, acts as replacement
@@ -66,12 +74,22 @@ release = rainfallqc.__version__
 #
 # This is also used if you do content translation via gettext catalogs.
 # Usually you set "language" from the command line for these cases.
-language = None
+language = "en"
+
+autosummary_generate = False
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
 # This patterns also effect to html_static_path and html_extra_path
 exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
+
+exclude_patterns += [
+    "modules.rst",
+    "rainfallqc.rst",
+    "rainfallqc.core.rst",
+    "rainfallqc.data.rst",
+    "rainfallqc.data.ETCCDI.rst",
+]
 
 # The name of the Pygments (syntax highlighting) style to use.
 pygments_style = "sphinx"
@@ -85,13 +103,23 @@ todo_include_todos = False
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-html_theme = "alabaster"
+html_theme = "sphinx_rtd_theme"
 
+numfig = True
 # Theme options are theme-specific and customize the look and feel of a
 # theme further.  For a list of options available for each theme, see the
 # documentation.
 #
-# html_theme_options = {}
+html_theme_options = {
+    "logo_only": True,
+    "style_external_links": True,
+    "navigation_depth": 4,
+    "titles_only": False,
+    "style_nav_header_background": "#9aa7e3",
+}
+# The name of an image file (relative to this directory) to place at the top
+# of the sidebar.
+html_logo = "logos/rainfallQC_logo.png"
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,

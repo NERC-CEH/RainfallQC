@@ -2,7 +2,7 @@
 
 __author__ = """Tom Keel"""
 __email__ = "tomkee@ceh.ac.uk"
-__version__ = "0.1.8"
+__version__ = "0.2.0"
 
 from rainfallqc.checks import (
     comparison_checks,
@@ -18,5 +18,4 @@ __all__ = [
     "gauge_checks",
     "neighbourhood_checks",
     "timeseries_checks",
-    "apply_qc_framework",
 ]
