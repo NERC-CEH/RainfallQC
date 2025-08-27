@@ -3,7 +3,7 @@
 ============
 Quick Start
 ============
-The easiest way to start using the package is to install it using `pip install rainfallqc`.
+The easiest way to start using the package is to install it using :code:`pip install rainfallqc`.
 You can then use RainfallQC in a project::
 
     import rainfallqc
