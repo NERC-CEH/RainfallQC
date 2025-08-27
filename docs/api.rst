@@ -1,4 +1,4 @@
-rainfallqc
+API
 ==========
 
 .. toctree::
