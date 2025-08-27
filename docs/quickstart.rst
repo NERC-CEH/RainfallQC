@@ -8,5 +8,5 @@ You can then use RainfallQC in a project::
 
     import rainfallqc
 
-Some easy-to-follow example in a Jupyter Notebooks format is available here: https://github.com/Thomasjkeel/RainfallQC-notebooks/blob/main/notebooks/demo/rainfallQC_demo.ipynb
+You can find a jupyter notebook with an easy-to-follow example here: https://github.com/Thomasjkeel/RainfallQC-notebooks/blob/main/notebooks/demo/rainfallQC_demo.ipynb
 
