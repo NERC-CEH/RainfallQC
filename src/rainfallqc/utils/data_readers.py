@@ -117,7 +117,11 @@ def read_gpcc_metadata_from_zip(data_path: str, time_res: str, gpcc_file_format:
 
 
 def read_gdsr_data_from_file(
-    data_path: str, raw_data_time_res: str, rain_col_suffix: str = None, gdsr_header_rows: int = 20
+    data_path: str,
+    raw_data_time_res: str,
+    rain_col_prefix: str = None,
+    rain_col_suffix: str = None,
+    gdsr_header_rows: int = 20,
 ) -> pl.DataFrame:
     """
     Read GDSR data from file.
@@ -130,8 +134,10 @@ def read_gdsr_data_from_file(
         Path to GDSR data file
     raw_data_time_res :
         Time resolution of data record i.e. 'hourly' or 'daily'
+    rain_col_prefix :
+        Prefix for column for target_gauge_col (set as None by default)
     rain_col_suffix :
-        Suffix for column name for target_gauge_col (set by default)
+        Suffix for column name for target_gauge_col (set as None by default)
     gdsr_header_rows :
         Number of rows to skip in the header of the GSDR data (default=20)
 
@@ -143,7 +149,9 @@ def read_gdsr_data_from_file(
     """
     # 1. read in metadata of gauge
     gdsr_metadata = read_gdsr_metadata(data_path)
-    rain_col_name = f"rain_{gdsr_metadata['original_units']}"
+    rain_col_name = f"{gdsr_metadata['original_units']}"
+    if rain_col_prefix:
+        rain_col_name = f"{rain_col_prefix}_" + rain_col_name
     if rain_col_suffix:
         rain_col_name += f"_{rain_col_suffix}"
 
@@ -605,6 +613,7 @@ class GDSRNetworkReader(GaugeNetworkReader):
             one_gauge = read_gdsr_data_from_file(
                 data_path=path,
                 raw_data_time_res=GDSR_TIME_RES_CONVERSION[self.time_res],
+                rain_col_prefix="rain",
                 rain_col_suffix=gdsr_name,
                 gdsr_header_rows=gdsr_header_rows,
             )
