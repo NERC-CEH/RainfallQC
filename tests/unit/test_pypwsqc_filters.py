@@ -4,6 +4,8 @@
 
 from rainfallqc.checks import pypwsqc_filters
 
+DEFAULT_RAIN_COL = "rain_mm"
+
 
 def test_run_bias_correction(hourly_gdsr_network):
     pass
@@ -13,7 +15,9 @@ def test_run_event_based_filter(hourly_gdsr_network):
     pass
 
 
-def test_check_faulty_zeros(hourly_gdsr_network):
+def test_check_faulty_zeros(hourly_gdsr_network, gdsr_gauge_network):
+    all_neighbour_cols = hourly_gdsr_network.columns[1:]  # exclude time
+    assert len(all_neighbour_cols) == 10
     result = pypwsqc_filters.check_faulty_zeros(hourly_gdsr_network)
     assert result
 
