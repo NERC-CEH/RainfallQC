@@ -34,6 +34,7 @@ def get_hourly_gdsr_network(
     path_to_gdsr_dir: str,
     target_id: str,
     rain_col_prefix: str = "rain",
+    suffix_only: bool = False,
     distance_threshold: int = 50,
     n_closest: int = 10,
     min_overlap_days: int = 500,
@@ -49,7 +50,9 @@ def get_hourly_gdsr_network(
     )
     nearby_ids.append(target_id)
     nearby_data_paths = gdsr_obj.metadata.filter(pl.col("station_id").is_in(nearby_ids))["path"]
-    gdsr_network = gdsr_obj.load_network_data(data_paths=nearby_data_paths, rain_col_prefix=rain_col_prefix)
+    gdsr_network = gdsr_obj.load_network_data(
+        data_paths=nearby_data_paths, rain_col_prefix=rain_col_prefix, suffix_only=suffix_only
+    )
     return gdsr_network
 
 
@@ -150,7 +153,9 @@ def hourly_gdsr_network() -> pl.DataFrame:
 
 @pytest.fixture()
 def hourly_gdsr_network_no_prefix() -> pl.DataFrame:
-    return get_hourly_gdsr_network(path_to_gdsr_dir="./tests/data/GDSR/", target_id="DE_00310", rain_col_prefix=None)
+    return get_hourly_gdsr_network(
+        path_to_gdsr_dir="./tests/data/GDSR/", target_id="DE_00310", rain_col_prefix=None, suffix_only=True
+    )
 
 
 @pytest.fixture()

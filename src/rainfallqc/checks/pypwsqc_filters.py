@@ -129,10 +129,15 @@ def check_faulty_zeros(
     # 0. Initial checks
     data_utils.check_data_is_specific_time_res(neighbour_data, time_res)
     for gauge_id in neighbouring_gauge_ids:
-        assert gauge_id in neighbour_metadata["station_id"], f"ID: '{gauge_id}' needs to be a value in the metadata."
+        assert gauge_id in neighbour_metadata[neighbour_metadata_gauge_id_col], (
+            f"ID: '{gauge_id}' needs to be a value in the metadata."
+        )
         assert gauge_id in neighbour_data.columns, f"ID: '{gauge_id}' needs to be a column be in data."
 
     # 1. filter metadata to only be nearby
+    neighbour_metadata = neighbour_metadata.filter(
+        pl.col(neighbour_metadata_gauge_id_col).is_in(neighbouring_gauge_ids)
+    )
 
     # 2. convert to xarray
     neighbour_data_ds = neighbour_data.to_pandas().set_index("time").to_xarray().to_array(dim="id")
