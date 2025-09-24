@@ -33,6 +33,7 @@ def get_gpcc_data(time_res: str, gauge_id: str = "2483"):
 def get_hourly_gdsr_network(
     path_to_gdsr_dir: str,
     target_id: str,
+    rain_col_prefix: str = "rain",
     distance_threshold: int = 50,
     n_closest: int = 10,
     min_overlap_days: int = 500,
@@ -48,7 +49,7 @@ def get_hourly_gdsr_network(
     )
     nearby_ids.append(target_id)
     nearby_data_paths = gdsr_obj.metadata.filter(pl.col("station_id").is_in(nearby_ids))["path"]
-    gdsr_network = gdsr_obj.load_network_data(data_paths=nearby_data_paths)
+    gdsr_network = gdsr_obj.load_network_data(data_paths=nearby_data_paths, rain_col_prefix=rain_col_prefix)
     return gdsr_network
 
 
@@ -145,6 +146,11 @@ def mins15_gdsr_network() -> pl.DataFrame:
 @pytest.fixture()
 def hourly_gdsr_network() -> pl.DataFrame:
     return get_hourly_gdsr_network(path_to_gdsr_dir="./tests/data/GDSR/", target_id="DE_00310")
+
+
+@pytest.fixture()
+def hourly_gdsr_network_no_prefix() -> pl.DataFrame:
+    return get_hourly_gdsr_network(path_to_gdsr_dir="./tests/data/GDSR/", target_id="DE_00310", rain_col_prefix=None)
 
 
 @pytest.fixture()

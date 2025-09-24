@@ -121,12 +121,13 @@ def read_gdsr_data_from_file(
     raw_data_time_res: str,
     rain_col_prefix: str = None,
     rain_col_suffix: str = None,
+    suffix_only: bool = False,
     gdsr_header_rows: int = 20,
 ) -> pl.DataFrame:
     """
     Read GDSR data from file.
 
-    Note: this was developed on the GDSR data available from IntenseQC. So please number of header rows in data.
+    Note: this was developed on the GDSR data available from IntenseQC. So it needs a number of header rows in data.
 
     Parameters
     ----------
@@ -138,6 +139,8 @@ def read_gdsr_data_from_file(
         Prefix for column for target_gauge_col (set as None by default)
     rain_col_suffix :
         Suffix for column name for target_gauge_col (set as None by default)
+    suffix_only :
+        Override to only include the suffix e.g. if the column name is the ID)
     gdsr_header_rows :
         Number of rows to skip in the header of the GSDR data (default=20)
 
@@ -149,11 +152,14 @@ def read_gdsr_data_from_file(
     """
     # 1. read in metadata of gauge
     gdsr_metadata = read_gdsr_metadata(data_path)
-    rain_col_name = f"{gdsr_metadata['original_units']}"
-    if rain_col_prefix:
-        rain_col_name = f"{rain_col_prefix}_" + rain_col_name
-    if rain_col_suffix:
-        rain_col_name += f"_{rain_col_suffix}"
+    if suffix_only:
+        rain_col_name = f"{rain_col_suffix}"
+    else:
+        rain_col_name = f"{gdsr_metadata['original_units']}"
+        if rain_col_prefix:
+            rain_col_name = f"{rain_col_prefix}_" + rain_col_name
+        if rain_col_suffix:
+            rain_col_name += f"_{rain_col_suffix}"
 
     # 2. read in gauge data
     gdsr_data = pl.read_csv(
@@ -587,7 +593,9 @@ class GDSRNetworkReader(GaugeNetworkReader):
             pl.col("station_id").map_elements(self.data_paths.get, return_dtype=pl.Utf8).alias("path")
         )
 
-    def load_network_data(self, data_paths: List[str] | np.ndarray[str], gdsr_header_rows: int = 20) -> pl.DataFrame:
+    def load_network_data(
+        self, rain_col_prefix: str, data_paths: List[str] | np.ndarray[str], gdsr_header_rows: int = 20
+    ) -> pl.DataFrame:
         """
         Load GDSR network data based on file paths.
 
@@ -595,6 +603,8 @@ class GDSRNetworkReader(GaugeNetworkReader):
         ----------
         data_paths :
             Paths to load network data from.
+        rain_col_prefix :
+            Prefix for rain column name (default is 'rain')
         gdsr_header_rows :
             Number of rows to skip in the header of the GSDR data (default=20)
 
@@ -613,7 +623,7 @@ class GDSRNetworkReader(GaugeNetworkReader):
             one_gauge = read_gdsr_data_from_file(
                 data_path=path,
                 raw_data_time_res=GDSR_TIME_RES_CONVERSION[self.time_res],
-                rain_col_prefix="rain",
+                rain_col_prefix=rain_col_prefix,
                 rain_col_suffix=gdsr_name,
                 gdsr_header_rows=gdsr_header_rows,
             )

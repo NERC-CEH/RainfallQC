@@ -16,11 +16,11 @@ import poligrain as plg
 import pypwsqc.flagging
 import xarray as xr
 
-from rainfallqc.checks import neighbourhood_checks
 from rainfallqc.utils import data_utils
 
 MAX_DISTANCE_M = 10e3
 
+DEFAULT_TIME_UNITS = "seconds since 1970-01-01 00:00:00"
 DEFAULT_RAINFALL_ATTRIBUTES = {
     "name": "rainfall",
     "long_name": "rainfall amount per time unit",
@@ -70,16 +70,17 @@ def run_event_based_filter(neighbour_data: pl.DataFrame) -> None:
 def check_faulty_zeros(
     neighbour_data: pl.DataFrame,
     neighbour_metadata: pl.DataFrame,
-    target_gauge_col: str,
-    neighbouring_gauge_cols: List[str],
+    neighbouring_gauge_ids: List[str],
+    neighbour_metadata_gauge_id_col: str,
     time_res: str,
-    time_units: str,
     projection: str,
-    max_distance_for_neighbours: int | float,
     nint: int,
     n_stat: int,
+    max_distance_for_neighbours: int | float = MAX_DISTANCE_M,
+    time_units: str = DEFAULT_TIME_UNITS,
     rainfall_attributes: dict = DEFAULT_RAINFALL_ATTRIBUTES,
     lat_lon_attributes: dict = DEFAULT_LAT_LON_ATTRIBUTES,
+    global_attributes: dict = None,
 ) -> xr.Dataset:
     """
     Will flag ...
@@ -90,26 +91,30 @@ def check_faulty_zeros(
         Rainfall data of neighbouring gauges with time col
     neighbour_metadata :
         Metadata for the rainfall data with 'latitude' and 'longitude'
+    neighbour_metadata_gauge_id_col :
+        Column with the gauge ID
     target_gauge_col :
         Target gauge column
-    neighbouring_gauge_cols:
-        List of columns with neighbouring gauges
+    neighbouring_gauge_ids:
+        List of ids with neighbouring gauges
     time_res :
         Time resolution of data
-    time_units :
-        Units and encoding of the 'time' column
     projection :
         cartesian/metric coordinate system
-    max_distance_for_neighbours :
-        Maximum distance to consider for neighbours
     nint :
         nint
     n_stat :
         n_stat
+    max_distance_for_neighbours :
+        Maximum distance to consider for neighbours
+    time_units :
+        Units and encoding of the 'time' column
     rainfall_attributes :
         Attributes for rainfall in the xarray Dataset
     lat_lon_attributes :
         Attributes for lat and lon in the xarray Dataset
+    global_attributes :
+        Global attributes for xarray Dataset
 
     Returns
     -------
@@ -123,11 +128,9 @@ def check_faulty_zeros(
     """
     # 0. Initial checks
     data_utils.check_data_is_specific_time_res(neighbour_data, time_res)
-    neighbouring_gauge_cols_new = neighbouring_gauge_cols.copy()  # make copy
-    if target_gauge_col in neighbouring_gauge_cols_new:
-        # Remove target col from list so it is not included as a neighbour of itself.
-        neighbouring_gauge_cols_new.remove(target_gauge_col)
-    neighbourhood_checks.check_neighbouring_gauge_columns(neighbour_data, target_gauge_col, neighbouring_gauge_cols_new)
+    for gauge_id in neighbouring_gauge_ids:
+        assert gauge_id in neighbour_metadata["station_id"], f"ID: '{gauge_id}' needs to be a value in the metadata."
+        assert gauge_id in neighbour_data.columns, f"ID: '{gauge_id}' needs to be a column be in data."
 
     # 1. filter metadata to only be nearby
 
@@ -147,21 +150,24 @@ def check_faulty_zeros(
     # coordiante attributes
     neighbour_data_ds["time"] = neighbour_data_ds["time"].assign_attrs({"unit": time_units})
 
-    # 5. Assign attributes
+    # 5. Assign variable attributes
     neighbour_data_ds["rainfall"] = neighbour_data_ds["rainfall"].assign_attrs(rainfall_attributes)
     neighbour_data_ds["longitude"] = neighbour_data_ds["longitude"].assign_attrs(lat_lon_attributes)
     neighbour_data_ds["latitude"] = neighbour_data_ds["latitude"].assign_attrs(lat_lon_attributes)
 
-    # 6. reproject xarray
+    # 6. Assign global attributes
+    neighbour_data_ds = neighbour_data_ds.assign_attrs(global_attributes)
+
+    # 7. reproject xarray
     neighbour_data_ds.coords["x"], neighbour_data_ds.coords["y"] = plg.spatial.project_point_coordinates(
         x=neighbour_data_ds.longitude, y=neighbour_data_ds.latitude, target_projection=projection
     )
 
-    # 7. compute distance matrix (if not already exists)
+    # 8. compute distance matrix (if not already exists)
     distance_matrix = plg.spatial.calc_point_to_point_distances(neighbour_data_ds, neighbour_data_ds)
     distance_matrix.load()
 
-    # 8. select nearest neighbours with max_distance buffer
+    # 9. select nearest neighbours with max_distance buffer
     nbrs_not_nan = []
     reference = []
 
@@ -179,7 +185,7 @@ def check_faulty_zeros(
     neighbour_data_ds["nbrs_not_nan"] = xr.concat(nbrs_not_nan, dim="id")
     neighbour_data_ds["reference"] = xr.concat(reference, dim="id")
 
-    # 9. run FZ filter
+    # 10. run FZ filter
     neighbour_data_ds_filtered = pypwsqc.flagging.fz_filter(neighbour_data_ds, nint=nint, n_stat=n_stat)
 
     return neighbour_data_ds_filtered
