@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """In-built QC frameworks to apply to rainfall data to create quality controlled data."""
 
-from rainfallqc.checks import comparison_checks, gauge_checks, neighbourhood_checks, timeseries_checks
+from rainfallqc.checks import comparison_checks, gauge_checks, neighbourhood_checks, pypwsqc_filters, timeseries_checks
 
 INTENSE_QC = {
     "QC1": {"function": gauge_checks.check_years_where_nth_percentile_is_zero},
@@ -31,4 +31,14 @@ INTENSE_QC = {
     "QC25": {"function": neighbourhood_checks.check_monthly_factor},
 }
 
-INBUILT_QC_FRAMEWORKS = {"IntenseQC": INTENSE_QC}
+PYPWSQC = {
+    "BC": {"function": pypwsqc_filters.run_bias_correction},
+    "EBF": {"function": pypwsqc_filters.run_event_based_filter},
+    "IC": {"function": pypwsqc_filters.run_indicator_correlation},
+    "FZ": {"function": pypwsqc_filters.check_faulty_zeros},
+    "HI": {"function": pypwsqc_filters.check_high_influx_filter},
+    "PRF": {"function": pypwsqc_filters.run_peak_removal},
+    "SO": {"function": pypwsqc_filters.check_station_outlier},
+}
+
+INBUILT_QC_FRAMEWORKS = {"IntenseQC": INTENSE_QC, "pypwsqc": PYPWSQC}
