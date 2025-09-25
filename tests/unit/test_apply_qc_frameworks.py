@@ -2,6 +2,7 @@
 
 """Tests for applying QC frameworks."""
 
+import numpy as np
 import polars as pl
 import pytest
 
@@ -144,3 +145,37 @@ def test_apply_qc_frameworks_15min(mins15_gdsr_network, gdsr_metadata):
     assert result["QC21"] == 0  # timing offset
     assert round(result["QC22"], 2) == 0.8  # affinity index
     assert round(result["QC23"], 2) == 0.31  # correlation
+
+
+def test_apply_pypwsqc_framework(hourly_gdsr_network_no_prefix, gdsr_gauge_network):
+    all_neighbour_cols = hourly_gdsr_network_no_prefix.columns[1:]  # exclude time
+    assert len(all_neighbour_cols) == 10
+    qc_methods_to_run = [
+        "FZ",
+        "SO",
+    ]
+    qc_kwargs = {
+        "FZ": {"nint": 24},
+        "SO": {"evaluation_period": 8064, "mmatch": 200, "gamma": 0.15},
+        # Shared defaults applied to all
+        "shared": {
+            "neighbour_metadata": gdsr_gauge_network,
+            "neighbouring_gauge_ids": all_neighbour_cols,
+            "neighbour_metadata_gauge_id_col": "station_id",
+            "time_res": "hourly",
+            "projection": "EPSG:25832",
+            "n_stat": 5,
+            "max_distance_for_neighbours": 50000,
+            "global_attributes": {"title": "GSDR", "year": "2025"},
+        },
+    }
+    result = apply_qc_framework.run_qc_framework(
+        hourly_gdsr_network_no_prefix, qc_framework="pypwsqc", qc_methods_to_run=qc_methods_to_run, qc_kwargs=qc_kwargs
+    )
+    assert len(result.keys()) == 2
+    _, fz_counts = np.unique(result["FZ"]["fz_flag"], return_counts=True)
+    _, so_counts = np.unique(result["SO"]["so_flag"], return_counts=True)
+    print("FZ: ", fz_counts)
+    print("SO: ", so_counts)
+    assert all([a == b for a, b in zip(fz_counts, [19208, 418223, 809], strict=False)])
+    assert all([a == b for a, b in zip(so_counts, [98112, 329181, 10947], strict=False)])

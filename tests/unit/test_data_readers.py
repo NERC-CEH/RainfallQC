@@ -138,11 +138,12 @@ def test_gdsr_network_nearest_neighbours():
 def test_gdsr_network_load_network_data():
     gdsr_obj = data_readers.GDSRNetworkReader(path_to_gdsr_dir="./tests/data/GDSR/")
     result = gdsr_obj.load_network_data(
+        rain_col_prefix="rain",
         data_paths=[
             "./tests/data/GDSR/DE_06303.txt",
             "./tests/data/GDSR/DE_00310.txt",
             "./tests/data/GDSR/DE_02483.txt",
-        ]
+        ],
     )
     assert len(result.columns) == 4
 

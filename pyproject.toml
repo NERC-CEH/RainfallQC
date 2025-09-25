@@ -30,10 +30,13 @@ dependencies = [
   "numpy",
   "polars>=1.30",
   "pandas",
+  "pyarrow",
   "xarray",
   "netCDF4",
   "bottleneck",
-  "geopy"
+  "geopy",
+  "poligrain",
+  "pypwsqc",
 ]
 
 [project.optional-dependencies]
@@ -65,7 +68,7 @@ homepage = "https://github.com/thomasjkeel/RainfallQC"
 target-version = ["py310", "py311", "py312", "py313"]
 
 [tool.bumpversion]
-current_version = "0.2.0"
+current_version = "0.2.1"
 commit = true
 message = "Bump version: {current_version} → {new_version}"
 commit_args = ""
@@ -146,8 +149,10 @@ case-sensitive = true
 
 [tool.ruff.lint.per-file-ignores]
 "tests/*.py" = [
-  "ANN001", "ANN201", "ANN202", # Missing type annotation
-  "D103" # Missing docstring in public function
+  "ANN001",
+  "ANN201",
+  "ANN202", # Missing type annotation
+  "D103",   # Missing docstring in public function
 ]
 
 [tool.mypy]

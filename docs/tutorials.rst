@@ -9,6 +9,9 @@ RainfallQC contains four modules:
 3. ``timeseries_checks`` - For detecting abnormalities in patterns of the data record.
 4. ``neighbourhood_checks`` - For detecting abnormalities based on measurements in neighbouring gauges.
 
+and then additional support to work with `pyPWSQC package <https://pypwsqc.readthedocs.io/en/latest/index.html>`
+5. ``pypwsqc_filters`` - For applying quality assurance protocols and filters for rainfall data.
+
 
 Each one of these modules contains individual QC check methods, which begin with the syntax ``check_``.
 For example to run a streaks check you can run: ``rainfallqc.timeseries_checks.check_streaks(data, **kwargs)``
@@ -50,6 +53,8 @@ These are the quality control checks currently implemented in the package:
    `Pre-QC pearson correlation <rainfallqc.checks.html#rainfallqc.checks.neighbourhood_checks.check_neighbour_correlation>`_  Neighbourhood checks  IntenseQC                                                                             QC23
    `Daily factor <rainfallqc.checks.html#rainfallqc.checks.neighbourhood_checks.check_daily_factor>`_                         Neighbourhood checks  IntenseQC                                                                             QC24
    `Monthly factor <rainfallqc.checks.html#rainfallqc.checks.neighbourhood_checks.check_monly_factor>`_                       Neighbourhood checks  IntenseQC                                                                             QC25
+   `Faulty Zeros <rainfallqc.checks.html#rainfallqc.checks.pypwsqc_filters.check_faulty_zeros>`_                              pyPWSQC filters       pyPWSQC                                                                               FZ
+   `Station Outliers <rainfallqc.checks.html#rainfallqc.checks.pypwsqc_filters.check_station_outlier>`_                       pyPWSQC filters       pyPWSQC                                                                               SO
    =========================================================================================================================  ====================  ====================================================================================  ===============
 
 
