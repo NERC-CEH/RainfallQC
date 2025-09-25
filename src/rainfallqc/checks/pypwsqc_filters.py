@@ -437,6 +437,8 @@ def subset_distance_matrix(
     """
     Compute a distance matrix.
 
+    TODO: check for poligrain functionality.
+
     Parameters
     ----------
     neighbour_data_ds :
