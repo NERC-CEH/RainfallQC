@@ -30,6 +30,7 @@ dependencies = [
   "numpy",
   "polars>=1.30",
   "pandas",
+  "pyarrow",
   "xarray",
   "netCDF4",
   "bottleneck",
