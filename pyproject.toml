@@ -33,7 +33,9 @@ dependencies = [
   "xarray",
   "netCDF4",
   "bottleneck",
-  "geopy"
+  "geopy",
+  "poligrain",
+  "pypwsqc",
 ]
 
 [project.optional-dependencies]
@@ -146,8 +148,10 @@ case-sensitive = true
 
 [tool.ruff.lint.per-file-ignores]
 "tests/*.py" = [
-  "ANN001", "ANN201", "ANN202", # Missing type annotation
-  "D103" # Missing docstring in public function
+  "ANN001",
+  "ANN201",
+  "ANN202", # Missing type annotation
+  "D103",   # Missing docstring in public function
 ]
 
 [tool.mypy]
