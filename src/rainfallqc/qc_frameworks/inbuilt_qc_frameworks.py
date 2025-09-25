@@ -34,7 +34,7 @@ INTENSE_QC = {
 PYPWSQC = {
     "BC": {"function": pypwsqc_filters.run_bias_correction},
     "EBF": {"function": pypwsqc_filters.run_event_based_filter},
-    "IC": {"function": pypwsqc_filters.run_indicatior_correlation},
+    "IC": {"function": pypwsqc_filters.run_indicator_correlation},
     "FZ": {"function": pypwsqc_filters.check_faulty_zeros},
     "HI": {"function": pypwsqc_filters.check_high_influx_filter},
     "PRF": {"function": pypwsqc_filters.run_peak_removal},
