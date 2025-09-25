@@ -2,6 +2,10 @@
 History
 =======
 
+0.2.1 (2025-08-27)
+------------------
+* Add converter functions for 'Faulty_zeros' and 'Station Outliers' from pyPWSQC
+
 0.2.0 (2025-08-27)
 ------------------
 * Add basic documentation
