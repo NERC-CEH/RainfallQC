@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 """Registry of all the QC checks in RainfallQC."""
 
+import functools
+
 import polars as pl
 
 from rainfallqc.utils import data_utils
@@ -32,6 +34,7 @@ def qc_check(name: str, require_non_negative: bool = False) -> callable:
     """
 
     def decorator(func: callable) -> callable:
+        @functools.wraps(func)
         def wrapper(df: pl.DataFrame, *args, **kwargs) -> list:
             # Determine which column the user wants checked
             target_gauge_col = kwargs.get("target_gauge_col")

@@ -10,7 +10,7 @@ Classes and functions ordered by appearance in IntenseQC framework.
 import polars as pl
 import scipy.stats
 
-from rainfallqc.decorators import qc_check
+from rainfallqc.core.all_qc_checks import qc_check
 from rainfallqc.utils import data_utils, stats
 
 
@@ -40,6 +40,7 @@ def check_years_where_nth_percentile_is_zero(data: pl.DataFrame, target_gauge_co
     return nth_perc.filter(pl.col(target_gauge_col) == 0)["time"].dt.year().to_list()
 
 
+@qc_check("check_years_where_annual_mean_k_top_rows_are_zero", require_non_negative=True)
 def check_years_where_annual_mean_k_top_rows_are_zero(data: pl.DataFrame, target_gauge_col: str, k: int) -> list:
     """
     Return year list where the annual mean top-K rows are zero.
@@ -65,6 +66,7 @@ def check_years_where_annual_mean_k_top_rows_are_zero(data: pl.DataFrame, target
     return data_top_k.filter(pl.col(target_gauge_col) == 0)["time"].dt.year().to_list()
 
 
+@qc_check("check_temporal_bias", require_non_negative=True)
 def check_temporal_bias(
     data: pl.DataFrame,
     target_gauge_col: str,
@@ -111,6 +113,7 @@ def check_temporal_bias(
     return int(p_val < p_threshold)
 
 
+@qc_check("check_intermittency", require_non_negative=True)
 def check_intermittency(
     data: pl.DataFrame, target_gauge_col: str, no_data_threshold: int = 2, annual_count_threshold: int = 5
 ) -> list:
@@ -210,6 +213,7 @@ def check_intermittency(
     return years_w_intermittency
 
 
+@qc_check("check_breakpoints", require_non_negative=True)
 def check_breakpoints(
     data: pl.DataFrame,
     target_gauge_col: str,
@@ -246,6 +250,7 @@ def check_breakpoints(
         return 0
 
 
+@qc_check("check_min_val_change", require_non_negative=True)
 def check_min_val_change(data: pl.DataFrame, target_gauge_col: str, expected_min_val: float) -> list:
     """
     Return years when the minimum recorded value changes.
