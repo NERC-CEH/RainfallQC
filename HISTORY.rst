@@ -4,6 +4,7 @@ History
 
 0.2.2 (2025-10-07)
 ------------------
+* Add decorator to all QC checks to optionally check for negative values
 * Fix bug in intermittency check to check for inconistent time steps
 
 0.2.1 (2025-08-27)

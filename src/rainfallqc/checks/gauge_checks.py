@@ -10,9 +10,11 @@ Classes and functions ordered by appearance in IntenseQC framework.
 import polars as pl
 import scipy.stats
 
+from rainfallqc.decorators import qc_check
 from rainfallqc.utils import data_utils, stats
 
 
+@qc_check("check_years_where_nth_percentile_is_zero", require_non_negative=True)
 def check_years_where_nth_percentile_is_zero(data: pl.DataFrame, target_gauge_col: str, quantile: float) -> list:
     """
     Return years where the n-th percentiles is zero.
