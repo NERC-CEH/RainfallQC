@@ -107,7 +107,10 @@ def check_data_has_consistent_time_step(data: pl.DataFrame) -> None:
     unique_timesteps = get_data_timesteps(data)
     if unique_timesteps.len() != 1:
         timestep_strings = [format_timedelta_duration(td) for td in unique_timesteps]
-        raise ValueError(f"Data has a inconsistent time step. Data has following time steps: {timestep_strings}")
+        raise ValueError(
+            f"""Data has a inconsistent time step. Data has following time steps: {timestep_strings}.
+            One potential fix is to resample the data using: 'data.upsample(\"time\", every=\"[insert_timestep]\")'"""
+        )
 
 
 def check_data_is_monthly(data: pl.DataFrame) -> None:

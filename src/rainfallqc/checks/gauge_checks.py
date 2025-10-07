@@ -135,10 +135,13 @@ def check_intermittency(
         List of years with intermittency issues.
 
     """
+    # 1. Check data has consistent time step
+    data = data_utils.check_data_has_consistent_time_step(data)
+
     # 1. Replace missing values with NaN
     data = data_utils.replace_missing_vals_with_nan(data, target_gauge_col)
 
-    # --- Step 2: Mark missing values ---
+    # 2. Mark missing values
     data = data.with_columns(pl.col(target_gauge_col).is_nan().alias("is_missing"))
 
     # 3. Assign group numbers to consecutive missing values
