@@ -138,20 +138,21 @@ def check_intermittency(
     # 1. Check data has consistent time step
     data = data_utils.check_data_has_consistent_time_step(data)
 
-    # 1. Replace missing values with NaN
+    # 2. Replace missing values with NaN
     data = data_utils.replace_missing_vals_with_nan(data, target_gauge_col)
 
-    # 2. Mark missing values
+    # 3. Mark missing values
     data = data.with_columns(pl.col(target_gauge_col).is_nan().alias("is_missing"))
 
-    # 3. Assign group numbers to consecutive missing values
+    # 4. Assign group numbers to consecutive missing values
     grouped = data.with_columns(
         pl.when(pl.col("is_missing"))
         .then((~pl.col("is_missing")).cum_sum())  # Only number missing stretches
         .otherwise(None)
         .alias("group")
     )
-    # 4. Count size of each missing group
+
+    # 5. Count size of each missing group
     group_counts = (
         grouped.filter(pl.col("is_missing"))
         .group_by("group")
@@ -159,21 +160,21 @@ def check_intermittency(
         .filter(pl.col("count") >= no_data_threshold)
     )
 
-    # 5. Keep only valid groups
+    # 6. Keep only valid groups
     valid_missing_groups = group_counts["group"].to_list()
     valid_missing = grouped.filter(pl.col("group").is_in(valid_missing_groups))
 
-    # 6. Get first and last time for each group
+    # 7. Get first and last time for each group
     first_last = (
         valid_missing.sort("time")
         .group_by("group")
         .agg([pl.first("time").alias("start_time"), pl.last("time").alias("end_time")])
     )
 
-    # 7. Add stable row index to full sorted data
+    # 8. Add stable row index to full sorted data
     df_sorted = data.sort("time").with_row_index("row_idx")
 
-    # 8. Lookup row indices of group bounds
+    # 9. Lookup row indices of group bounds
     first_last_with_idx = (
         first_last.join(df_sorted.select(["time", "row_idx"]), left_on="start_time", right_on="time")
         .rename({"row_idx": "start_idx"})
@@ -181,7 +182,7 @@ def check_intermittency(
         .rename({"row_idx": "end_idx"})
     )
 
-    # 9. Compute prev/next indices and fetch values
+    # 10. Compute prev/next indices and fetch values
     row_lookup = df_sorted.select([pl.col("row_idx"), pl.col(target_gauge_col)])
 
     first_last_with_vals = (
@@ -192,16 +193,16 @@ def check_intermittency(
         .join(row_lookup.rename({target_gauge_col: "next_val"}), left_on="next_idx", right_on="row_idx")
     )
 
-    # 10. Filter to groups bounded by zero
+    # 11. Filter to groups bounded by zero
     bounded_by_zero = first_last_with_vals.filter((pl.col("prev_val") == 0) & (pl.col("next_val") == 0))
 
-    # 11. Extract year from each bounded group's start time
+    # 12. Extract year from each bounded group's start time
     bounded_years = bounded_by_zero.select(pl.col("start_time").dt.year().alias("year"))
 
-    # 12. Count how many bounded groups occur per year
+    # 13. Count how many bounded groups occur per year
     year_counts = bounded_years.group_by("year").len()
 
-    # 13. Get years exceeding threshold
+    # 14. Get years exceeding threshold
     years_w_intermittency = year_counts.filter(pl.col("len") >= annual_count_threshold)["year"].to_list()
 
     return years_w_intermittency
