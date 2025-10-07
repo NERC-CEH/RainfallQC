@@ -2,6 +2,10 @@
 History
 =======
 
+0.2.2 (2025-10-07)
+------------------
+* Fix bug in intermittency check to check for inconistent time steps
+
 0.2.1 (2025-08-27)
 ------------------
 * Add converter functions for 'Faulty_zeros' and 'Station Outliers' from pyPWSQC

@@ -136,7 +136,7 @@ def check_intermittency(
 
     """
     # 1. Check data has consistent time step
-    data = data_utils.check_data_has_consistent_time_step(data)
+    data_utils.check_data_has_consistent_time_step(data)
 
     # 2. Replace missing values with NaN
     data = data_utils.replace_missing_vals_with_nan(data, target_gauge_col)
