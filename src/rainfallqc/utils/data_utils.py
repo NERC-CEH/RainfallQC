@@ -178,6 +178,26 @@ def check_data_is_specific_time_res(data: pl.DataFrame, time_res: str | list) ->
         raise ValueError(f"Invalid time step. Expected one of {allowed_res}, but data has time-step(s): {time_step}")
 
 
+def check_for_negative_values(df: pl.DataFrame, target_gauge_col: str) -> bool:
+    """
+    Check if the target column contains any negative values.
+
+    Parameters
+    ----------
+    df :
+        DataFrame to check.
+    target_gauge_col :
+        Column to check for negative values.
+
+    Raises
+    ------
+    ValueError
+        If negative values are found in the target column.
+
+    """
+    return (df[target_gauge_col] < 0).any()
+
+
 def convert_datarray_seconds_to_days(series_seconds: xr.DataArray) -> np.ndarray:
     """
     Convert xarray series from seconds to days. For some reason the CDD data from ETCCDI is in seconds.
