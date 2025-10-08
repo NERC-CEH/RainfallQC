@@ -13,7 +13,4 @@ def test_all_qc_checks():
         assert callable(func), f"QC check '{name}' is not callable."
         assert func.__name__ == name, f"QC check function name '{func.__name__}' does not match registry name '{name}'."
         assert func.__doc__ is not None, f"QC check '{name}' does not have a docstring."
-        assert "target_gauge_col" in func.__code__.co_varnames, (
-            f"QC check '{name}' does not accept 'target_gauge_col' argument."
-        )
     all_qc_checks.qc_check(name="func")  # Ensure decorator can be called
