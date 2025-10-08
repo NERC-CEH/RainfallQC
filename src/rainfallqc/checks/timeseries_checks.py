@@ -55,7 +55,9 @@ def check_dry_period_cdd(
     etccdi_cdd_days = compute_dry_spell_days(etccdi_cdd)
 
     # 3. Get nearest local CDD value to the gauge coordinates
-    nearby_etccdi_cdd_days = neighbourhood_utils.get_nearest_etccdi_val_to_gauge(etccdi_cdd_days, gauge_lat, gauge_lon)
+    nearby_etccdi_cdd_days = neighbourhood_utils.get_nearest_non_nan_etccdi_val_to_gauge(
+        etccdi_cdd_days, etccdi_name="CDD", gauge_lat=gauge_lat, gauge_lon=gauge_lon
+    )
 
     # 4. Get local maximum CDD_days value
     max_etccdi_cdd_days = np.max(nearby_etccdi_cdd_days["CDD_days"])
@@ -686,7 +688,9 @@ def get_local_etccdi_sdii_mean(gauge_lat: int | float, gauge_lon: int | float) -
     # 2. Compute spatial mean
     etccdi_sdii = spatial_utils.compute_spatial_mean_xr(etccdi_sdii, var_name="SDII")
     # 3. Get nearest local CDD value to the gauge coordinates
-    nearby_etccdi_sdii = neighbourhood_utils.get_nearest_etccdi_val_to_gauge(etccdi_sdii, gauge_lat, gauge_lon)
+    nearby_etccdi_sdii = neighbourhood_utils.get_nearest_non_nan_etccdi_val_to_gauge(
+        etccdi_sdii, etccdi_name="SDII", gauge_lat=gauge_lat, gauge_lon=gauge_lon
+    )
     # 4. Get local maximum CDD_days value
     nearby_etccdi_sdii_mean = np.max(nearby_etccdi_sdii["SDII_mean"])
     return nearby_etccdi_sdii_mean

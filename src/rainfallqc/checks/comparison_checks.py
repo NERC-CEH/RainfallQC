@@ -45,7 +45,9 @@ def check_annual_exceedance_etccdi_r99p(
     etccdi_r99p = data_readers.load_etccdi_data(etccdi_var="R99p")
 
     # 2. Get nearest local R99p value to the gauge coordinates
-    nearby_etccdi_r99p = neighbourhood_utils.get_nearest_etccdi_val_to_gauge(etccdi_r99p, gauge_lat, gauge_lon)
+    nearby_etccdi_r99p = neighbourhood_utils.get_nearest_non_nan_etccdi_val_to_gauge(
+        etccdi_r99p, etccdi_name="R99p", gauge_lat=gauge_lat, gauge_lon=gauge_lon
+    )
 
     # 3. Get sum of rainfall above the 99th percentile per year
     sum_rainfall_above_99percentile_per_year = get_sum_rainfall_above_percentile_per_year(
@@ -90,7 +92,9 @@ def check_annual_exceedance_etccdi_prcptot(
     etccdi_prcptot = data_readers.load_etccdi_data(etccdi_var="PRCPTOT")
 
     # 2. Get nearest local PRCPTOT value to the gauge coordinates
-    nearby_etccdi_prcptot = neighbourhood_utils.get_nearest_etccdi_val_to_gauge(etccdi_prcptot, gauge_lat, gauge_lon)
+    nearby_etccdi_prcptot = neighbourhood_utils.get_nearest_non_nan_etccdi_val_to_gauge(
+        etccdi_prcptot, etccdi_name="PRCPTOT", gauge_lat=gauge_lat, gauge_lon=gauge_lon
+    )
 
     # 3. Get sum of rainfall above the 99th percentile per year
     sum_rainfall_above_99percentile_per_year = get_sum_rainfall_above_percentile_per_year(
@@ -178,7 +182,9 @@ def check_hourly_exceedance_etccdi_rx1day(
     etccdi_rx1day = data_readers.load_etccdi_data(etccdi_var="Rx1day")
 
     # 3. Get nearest local Rx1day value to the gauge coordinates
-    nearby_etccdi_rx1day = neighbourhood_utils.get_nearest_etccdi_val_to_gauge(etccdi_rx1day, gauge_lat, gauge_lon)
+    nearby_etccdi_rx1day = neighbourhood_utils.get_nearest_non_nan_etccdi_val_to_gauge(
+        etccdi_rx1day, etccdi_name="Rx1day", gauge_lat=gauge_lat, gauge_lon=gauge_lon
+    )
 
     # 4. Get local maximum ETCCDI value
     max_nearby_etccdi_rx1day = np.max(nearby_etccdi_rx1day["Rx1day"])

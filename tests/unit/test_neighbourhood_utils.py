@@ -5,8 +5,9 @@
 import datetime
 
 import polars as pl
+import pytest
 
-from rainfallqc.utils import neighbourhood_utils
+from rainfallqc.utils import data_readers, neighbourhood_utils
 
 
 def test_compute_distance_from_target_id(gdsr_gauge_network):
@@ -110,3 +111,16 @@ def test_make_rain_not_minima_column_target_or_neighbour(gauge_comparison_data):
         gauge_comparison_data, target_col="gauge1", other_col="gauge2", data_minima=2.0
     )
     assert result["rain_not_minima"].value_counts().filter(pl.col("rain_not_minima") == 1)["count"].item() == 1
+
+
+def test_get_nearest_non_nan_etccdi_val_to_gauge():
+    etccdi_r99p = data_readers.load_etccdi_data(etccdi_var="R99p")
+
+    result = neighbourhood_utils.get_nearest_non_nan_etccdi_val_to_gauge(
+        etccdi_r99p, etccdi_name="R99p", gauge_lat=50.0, gauge_lon=10.0
+    )
+    assert round(float(result["R99p"].max()), 2) == 91.68
+    with pytest.raises(ValueError):
+        neighbourhood_utils.get_nearest_non_nan_etccdi_val_to_gauge(
+            etccdi_r99p, etccdi_name="R99p", gauge_lat=90.0, gauge_lon=10.0
+        )
