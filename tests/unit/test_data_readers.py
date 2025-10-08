@@ -8,8 +8,6 @@ from rainfallqc.utils import data_readers
 
 DEFAULT_RAIN_COL = "rain_mm"
 
-# TODO: test when start_datetime not found
-
 
 def test_load_cdd_etccdi_data():
     data_readers.load_etccdi_data(etccdi_var="CDD")
