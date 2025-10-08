@@ -56,7 +56,6 @@ def qc_check(name: str, require_non_negative: bool = False) -> callable:
 
             # Optional non-negative pre-check
             for col in columns_to_check:
-                print(col)
                 if require_non_negative and data_utils.check_for_negative_values(df, col):
                     raise ValueError(f"{name} failed: column '{col}' contains negative values.")
 
