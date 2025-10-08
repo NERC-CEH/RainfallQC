@@ -12,9 +12,11 @@ from typing import Iterable, List
 import numpy as np
 import polars as pl
 
+from rainfallqc.core.all_qc_checks import qc_check
 from rainfallqc.utils import data_readers, data_utils, neighbourhood_utils, stats
 
 
+@qc_check("check_wet_neighbours", require_non_negative=True)
 def check_wet_neighbours(
     neighbour_data: pl.DataFrame,
     target_gauge_col: str,
@@ -129,6 +131,7 @@ def check_wet_neighbours(
         return neighbour_data_w_wet_flags
 
 
+@qc_check("check_dry_neighbours", require_non_negative=True)
 def check_dry_neighbours(
     neighbour_data: pl.DataFrame,
     target_gauge_col: str,
@@ -261,6 +264,7 @@ def check_dry_neighbours(
         return neighbour_data_w_dry_flags
 
 
+@qc_check("check_monthly_neighbours", require_non_negative=True)
 def check_monthly_neighbours(
     monthly_neighbour_data: pl.DataFrame,
     target_gauge_col: str,
@@ -355,6 +359,7 @@ def check_monthly_neighbours(
     return monthly_neighbour_data_w_flags.select(["time", "majority_monthly_flag"])
 
 
+@qc_check("check_timing_offset", require_non_negative=True)
 def check_timing_offset(
     neighbour_data: pl.DataFrame,
     target_gauge_col: str,
@@ -436,6 +441,7 @@ def check_timing_offset(
     return offset_flag
 
 
+@qc_check("check_neighbour_affinity_index", require_non_negative=True)
 def check_neighbour_affinity_index(
     neighbour_data: pl.DataFrame, target_gauge_col: str, neighbouring_gauge_col: str
 ) -> float:
@@ -471,6 +477,7 @@ def check_neighbour_affinity_index(
     return stats.affinity_index(neighbour_data, binary_col="rain_not_minima")
 
 
+@qc_check("check_neighbour_correlation", require_non_negative=True)
 def check_neighbour_correlation(
     neighbour_data: pl.DataFrame, target_gauge_col: str, neighbouring_gauge_col: str
 ) -> float:
@@ -501,6 +508,7 @@ def check_neighbour_correlation(
     return stats.gauge_correlation(neighbour_data, target_col=target_gauge_col, other_col=neighbouring_gauge_col)
 
 
+@qc_check("check_daily_factor", require_non_negative=True)
 def check_daily_factor(
     neighbour_data: pl.DataFrame, target_gauge_col: str, neighbouring_gauge_col: str, averaging_method: str = "mean"
 ) -> float:
@@ -553,6 +561,7 @@ def check_daily_factor(
         raise ValueError(f"{averaging_method} not recognised, please use 'mean' or 'median'")
 
 
+@qc_check("check_monthly_factor", require_non_negative=True)
 def check_monthly_factor(
     neighbour_data: pl.DataFrame, target_gauge_col: str, neighbouring_gauge_col: str
 ) -> pl.DataFrame:

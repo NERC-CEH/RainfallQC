@@ -11,11 +11,13 @@ import numpy as np
 import polars as pl
 import xarray as xr
 
+from rainfallqc.core.all_qc_checks import qc_check
 from rainfallqc.utils import data_readers, data_utils, neighbourhood_utils, spatial_utils, stats
 
 DAILY_DIVIDING_FACTOR = {"15m": 96, "hourly": 24, "daily": 1}
 
 
+@qc_check("check_dry_period_cdd", require_non_negative=True)
 def check_dry_period_cdd(
     data: pl.DataFrame, target_gauge_col: str, time_res: str, gauge_lat: int | float, gauge_lon: int | float
 ) -> pl.DataFrame:
@@ -53,7 +55,9 @@ def check_dry_period_cdd(
     etccdi_cdd_days = compute_dry_spell_days(etccdi_cdd)
 
     # 3. Get nearest local CDD value to the gauge coordinates
-    nearby_etccdi_cdd_days = neighbourhood_utils.get_nearest_etccdi_val_to_gauge(etccdi_cdd_days, gauge_lat, gauge_lon)
+    nearby_etccdi_cdd_days = neighbourhood_utils.get_nearest_non_nan_etccdi_val_to_gauge(
+        etccdi_cdd_days, etccdi_name="CDD", gauge_lat=gauge_lat, gauge_lon=gauge_lon
+    )
 
     # 4. Get local maximum CDD_days value
     max_etccdi_cdd_days = np.max(nearby_etccdi_cdd_days["CDD_days"])
@@ -74,6 +78,7 @@ def check_dry_period_cdd(
     return data_w_dry_spell_flags.select(["time", "dry_spell_flag"])
 
 
+@qc_check("check_daily_accumulations", require_non_negative=True)
 def check_daily_accumulations(
     data: pl.DataFrame,
     target_gauge_col: str,
@@ -141,6 +146,7 @@ def check_daily_accumulations(
     return data.select(["time", "daily_accumulation"])
 
 
+@qc_check("check_monthly_accumulations", require_non_negative=True)
 def check_monthly_accumulations(
     data: pl.DataFrame,
     target_gauge_col: str,
@@ -223,6 +229,7 @@ def check_monthly_accumulations(
     return gauge_data_monthly_accumulations.select(["time", "monthly_accumulation"])
 
 
+@qc_check("check_streaks", require_non_negative=True)
 def check_streaks(
     data: pl.DataFrame,
     target_gauge_col: str,
@@ -681,7 +688,9 @@ def get_local_etccdi_sdii_mean(gauge_lat: int | float, gauge_lon: int | float) -
     # 2. Compute spatial mean
     etccdi_sdii = spatial_utils.compute_spatial_mean_xr(etccdi_sdii, var_name="SDII")
     # 3. Get nearest local CDD value to the gauge coordinates
-    nearby_etccdi_sdii = neighbourhood_utils.get_nearest_etccdi_val_to_gauge(etccdi_sdii, gauge_lat, gauge_lon)
+    nearby_etccdi_sdii = neighbourhood_utils.get_nearest_non_nan_etccdi_val_to_gauge(
+        etccdi_sdii, etccdi_name="SDII", gauge_lat=gauge_lat, gauge_lon=gauge_lon
+    )
     # 4. Get local maximum CDD_days value
     nearby_etccdi_sdii_mean = np.max(nearby_etccdi_sdii["SDII_mean"])
     return nearby_etccdi_sdii_mean
