@@ -107,7 +107,10 @@ def check_data_has_consistent_time_step(data: pl.DataFrame) -> None:
     unique_timesteps = get_data_timesteps(data)
     if unique_timesteps.len() != 1:
         timestep_strings = [format_timedelta_duration(td) for td in unique_timesteps]
-        raise ValueError(f"Data has a inconsistent time step. Data has following time steps: {timestep_strings}")
+        raise ValueError(
+            f"""Data has a inconsistent time step. Data has following time steps: {timestep_strings}.
+            One potential fix is to resample the data using: 'data.upsample(\"time\", every=\"[insert_timestep]\")'"""
+        )
 
 
 def check_data_is_monthly(data: pl.DataFrame) -> None:
@@ -173,6 +176,26 @@ def check_data_is_specific_time_res(data: pl.DataFrame, time_res: str | list) ->
     time_step = get_data_timestep_as_str(data)
     if time_step not in allowed_res:
         raise ValueError(f"Invalid time step. Expected one of {allowed_res}, but data has time-step(s): {time_step}")
+
+
+def check_for_negative_values(df: pl.DataFrame, target_gauge_col: str) -> bool:
+    """
+    Check if the target column contains any negative values.
+
+    Parameters
+    ----------
+    df :
+        DataFrame to check.
+    target_gauge_col :
+        Column to check for negative values.
+
+    Raises
+    ------
+    ValueError
+        If negative values are found in the target column.
+
+    """
+    return (df[target_gauge_col] < 0).any()
 
 
 def convert_datarray_seconds_to_days(series_seconds: xr.DataArray) -> np.ndarray:

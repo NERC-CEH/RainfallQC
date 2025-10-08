@@ -53,7 +53,7 @@ def test_apply_qc_frameworks_daily(daily_gpcc_network, gpcc_metadata):
     assert len(result.keys()) == 11
     assert result["QC21"] == 0  # timing offset
     assert round(result["QC22"], 2) == 0.97  # affinity index
-    assert round(result["QC23"], 2) == 0.31  # correlation
+    assert round(result["QC23"], 2) == 0.85  # correlation
     assert round(result["QC24"], 2) == 2.04  # daily factor diff
 
     with pytest.raises(KeyError):

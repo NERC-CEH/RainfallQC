@@ -11,9 +11,11 @@ import numpy as np
 import polars as pl
 import xarray as xr
 
+from rainfallqc.core.all_qc_checks import qc_check
 from rainfallqc.utils import data_readers, data_utils, neighbourhood_utils, stats
 
 
+@qc_check("check_annual_exceedance_etccdi_r99p", require_non_negative=True)
 def check_annual_exceedance_etccdi_r99p(
     data: pl.DataFrame, target_gauge_col: str, gauge_lat: int | float, gauge_lon: int | float
 ) -> list:
@@ -58,6 +60,7 @@ def check_annual_exceedance_etccdi_r99p(
     return exceedance_flags
 
 
+@qc_check("check_annual_exceedance_etccdi_prcptot", require_non_negative=True)
 def check_annual_exceedance_etccdi_prcptot(
     data: pl.DataFrame, target_gauge_col: str, gauge_lat: int | float, gauge_lon: int | float
 ) -> list:
@@ -102,6 +105,7 @@ def check_annual_exceedance_etccdi_prcptot(
     return exceedance_flags
 
 
+@qc_check("check_exceedance_of_rainfall_world_record", require_non_negative=True)
 def check_exceedance_of_rainfall_world_record(data: pl.DataFrame, target_gauge_col: str, time_res: str) -> pl.DataFrame:
     """
     Check exceedance of rainfall world record.
@@ -135,6 +139,7 @@ def check_exceedance_of_rainfall_world_record(data: pl.DataFrame, target_gauge_c
     return data_w_flags.select(["time", "world_record_check"])
 
 
+@qc_check("check_hourly_exceedance_etccdi_rx1day", require_non_negative=True)
 def check_hourly_exceedance_etccdi_rx1day(
     data: pl.DataFrame, target_gauge_col: str, gauge_lat: int | float, gauge_lon: int | float
 ) -> pl.DataFrame:

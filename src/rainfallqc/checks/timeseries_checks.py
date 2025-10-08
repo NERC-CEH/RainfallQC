@@ -11,11 +11,13 @@ import numpy as np
 import polars as pl
 import xarray as xr
 
+from rainfallqc.core.all_qc_checks import qc_check
 from rainfallqc.utils import data_readers, data_utils, neighbourhood_utils, spatial_utils, stats
 
 DAILY_DIVIDING_FACTOR = {"15m": 96, "hourly": 24, "daily": 1}
 
 
+@qc_check("check_dry_period_cdd", require_non_negative=True)
 def check_dry_period_cdd(
     data: pl.DataFrame, target_gauge_col: str, time_res: str, gauge_lat: int | float, gauge_lon: int | float
 ) -> pl.DataFrame:
@@ -74,6 +76,7 @@ def check_dry_period_cdd(
     return data_w_dry_spell_flags.select(["time", "dry_spell_flag"])
 
 
+@qc_check("check_daily_accumulations", require_non_negative=True)
 def check_daily_accumulations(
     data: pl.DataFrame,
     target_gauge_col: str,
@@ -141,6 +144,7 @@ def check_daily_accumulations(
     return data.select(["time", "daily_accumulation"])
 
 
+@qc_check("check_monthly_accumulations", require_non_negative=True)
 def check_monthly_accumulations(
     data: pl.DataFrame,
     target_gauge_col: str,
@@ -223,6 +227,7 @@ def check_monthly_accumulations(
     return gauge_data_monthly_accumulations.select(["time", "monthly_accumulation"])
 
 
+@qc_check("check_streaks", require_non_negative=True)
 def check_streaks(
     data: pl.DataFrame,
     target_gauge_col: str,

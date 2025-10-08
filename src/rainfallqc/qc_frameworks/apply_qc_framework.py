@@ -57,7 +57,6 @@ def run_qc_framework(
             for k, v in combined_kwargs.items()
             if k in accepted_keys or any(p.kind == inspect.Parameter.VAR_KEYWORD for p in sig.parameters.values())
         }
-
         qc_results[qc_method] = qc_func(data, **filtered_kwargs)
 
     return qc_results
