@@ -8,6 +8,8 @@ import numpy as np
 import polars as pl
 import xarray as xr
 
+from rainfallqc.utils import spatial_utils
+
 STATION_ID_COL = "station_id"
 START_DATETIME_COL = "start_datetime"
 END_DATETIME_COL = "end_datetime"
@@ -393,31 +395,57 @@ def get_n_closest_neighbours(
         return sorted_close_neighbours.filter(pl.col("distance") <= nth_distance)
 
 
-def get_nearest_etccdi_val_to_gauge(
-    etccdi_data: xr.Dataset, gauge_lat: int | float, gauge_lon: int | float
+def get_nearest_non_nan_etccdi_val_to_gauge(
+    etccdi_data: xr.Dataset,
+    etccdi_name: str,
+    gauge_lat: int | float,
+    gauge_lon: int | float,
+    max_distance_km: int | float = 500,
 ) -> xr.Dataset:
     """
-    Get the value at the nearest ETCCDI grid cell to the gauge coordinates.
+    Get the value at the nearest non-nan ETCCDI grid cell to the gauge coordinates.
 
     Parameters
     ----------
     etccdi_data
         ETCCDI data with given variable to check
+    etccdi_name :
+        ETCCDI variable name to check
     gauge_lat :
         latitude of the rain gauge
     gauge_lon :
         longitude of the rain gauge
+    max_distance_km :
+        Maximum distance in km to search for a non-nan value (default 500 km)
 
     Returns
     -------
     nearby_etccdi_data :
-        ETCCDI data at the nearest grid cell
+        ETCCDI data at the nearest grid cell with non-nan values
 
     """
-    # 1. Get local data
-    nearby_etccdi_data = etccdi_data.sel(
-        lon=gauge_lon,
-        lat=gauge_lat,
-        method="nearest",
+    # 1. Stack lat/lon into a single dimension
+    stacked = etccdi_data.stack(points=("lat", "lon"))
+
+    # 2. Compute haversine distance to each point
+    dists = spatial_utils.haversine(stacked["lon"], stacked["lat"], gauge_lon, gauge_lat)
+
+    # 3. Sort by distance
+    sorted_idx = dists.argsort()
+
+    # Loop through points in ascending distance order
+    for idx in sorted_idx.values:
+        dist_km = dists.isel(points=idx).item()
+        if dist_km <= max_distance_km:
+            if not np.isnan(stacked[etccdi_name].isel(points=idx)).all():
+                sel_lon = stacked["lon"].isel(points=idx).item()
+                sel_lat = stacked["lat"].isel(points=idx).item()
+                return etccdi_data.sel(lon=sel_lon, lat=sel_lat)
+        else:
+            # Because sorted by distance, if we've exceeded max distance, we can break early
+            break
+
+    raise ValueError(
+        f"""No non-NaN point found within {max_distance_km} km of ({gauge_lat}, {gauge_lon}).
+        Assuming EPSG:4326 coordinates."""
     )
-    return nearby_etccdi_data

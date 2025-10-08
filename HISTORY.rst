@@ -8,6 +8,7 @@ History
 * Fix bug in intermittency check to check for inconistent time steps
 * Fix bug of missing values in GPCC loader (now -999.9 are treated as missing values)
 * Allow users to set station id, start_ and end_datetime column names in neighbourhood utility functions
+* Add Haversine distance function to spatial utils
 
 0.2.1 (2025-08-27)
 ------------------
