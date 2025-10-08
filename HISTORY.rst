@@ -7,7 +7,7 @@ History
 * Add decorator to all QC checks to optionally check for negative values in the rainfall columns
 * Fix bug in intermittency check to check for inconistent time steps
 * Fix bug of missing values in GPCC loader (now -999.9 are treated as missing values)
-* Allow users to set station id, so this update exposes a station_id_col argument to neighbourhood utility functions
+* Allow users to set station id, start_ and end_datetime column names in neighbourhood utility functions
 
 0.2.1 (2025-08-27)
 ------------------
