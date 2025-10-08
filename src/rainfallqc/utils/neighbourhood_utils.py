@@ -126,6 +126,8 @@ def get_ids_of_n_nearest_overlapping_neighbouring_gauges(
     n_closest: int,
     min_overlap_days: int,
     station_id_col: str = STATION_ID_COL,
+    start_datetime_col: str = START_DATETIME_COL,
+    end_datetime_col: str = END_DATETIME_COL,
 ) -> set:
     """
     Get gauge IDs of nearest n time-overlapping neighbouring gauges.
@@ -144,6 +146,10 @@ def get_ids_of_n_nearest_overlapping_neighbouring_gauges(
         Minimum overlap between target and neighbouring gauges
     station_id_col :
         Column name for station ID in gauge_network_metadata (default 'station_id')
+    start_datetime_col  :
+        Column name for start datetime in gauge_network_metadata (default 'start_datetime')
+    end_datetime_col  :
+        Column name for end datetime in gauge_network_metadata (default 'end_datetime')
 
     Returns
     -------
@@ -158,7 +164,11 @@ def get_ids_of_n_nearest_overlapping_neighbouring_gauges(
 
     # 2. Compute overlapping days between neighbours and target
     neighbour_overlap_days_df = compute_temporal_overlap_days_from_target_id(
-        gauge_network_metadata, target_id=target_id, station_id_col=station_id_col
+        gauge_network_metadata,
+        target_id=target_id,
+        station_id_col=station_id_col,
+        start_datetime_col=start_datetime_col,
+        end_datetime_col=end_datetime_col,
     )
 
     # 3. Subset n_closest based on distance threshold
@@ -212,7 +222,11 @@ def compute_temporal_overlap_days(
 
 
 def compute_temporal_overlap_days_from_target_id(
-    gauge_network_metadata: pl.DataFrame, target_id: str, station_id_col: str
+    gauge_network_metadata: pl.DataFrame,
+    target_id: str,
+    station_id_col: str,
+    start_datetime_col: str,
+    end_datetime_col: str,
 ) -> pl.DataFrame:
     """
     Compute overlap in days between target gauges and its neighbours.
@@ -227,6 +241,10 @@ def compute_temporal_overlap_days_from_target_id(
         Target gauge to compare against.
     station_id_col :
         Column name for station ID in gauge_network_metadata
+    start_datetime_col  :
+        Column name for start datetime in gauge_network_metadata
+    end_datetime_col  :
+        Column name for end datetime in gauge_network_metadata
 
     Returns
     -------
@@ -237,14 +255,14 @@ def compute_temporal_overlap_days_from_target_id(
     # 1. Get target station and start and end date
     target_station = gauge_network_metadata.filter(pl.col(station_id_col) == target_id)
     start_1, end_1 = (
-        target_station["start_datetime"].item(),
-        target_station["end_datetime"].item(),
+        target_station[start_datetime_col].item(),
+        target_station[end_datetime_col].item(),
     )
 
     # 2. Compute overlap days between target station to other start and end date
     neighbour_overlap_days = {}
     for other_station_id, start_2, end_2 in gauge_network_metadata[
-        [station_id_col, "start_datetime", "end_datetime"]
+        [station_id_col, start_datetime_col, end_datetime_col]
     ].rows():
         if target_id == other_station_id:
             continue
