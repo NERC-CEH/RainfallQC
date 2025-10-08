@@ -693,7 +693,7 @@ class GPCCNetworkReader(GaugeNetworkReader):
         )
 
     def load_network_data(
-        self, data_paths: List[str] | np.ndarray[str], target_gauge_col: str, missing_val: int | float = -999
+        self, data_paths: List[str] | np.ndarray[str], target_gauge_col: str, missing_val: int | float = -999.9
     ) -> pl.DataFrame:
         """
         Load GPCC network data based on file paths.

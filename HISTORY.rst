@@ -4,8 +4,9 @@ History
 
 0.2.2 (2025-10-07)
 ------------------
-* Add decorator to all QC checks to optionally check for negative values
+* Add decorator to all QC checks to optionally check for negative values in the rainfall columns
 * Fix bug in intermittency check to check for inconistent time steps
+* Fix bug of missing values in GPCC loader (now -999.9 are treated as missing values)
 
 0.2.1 (2025-08-27)
 ------------------

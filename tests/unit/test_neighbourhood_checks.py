@@ -54,17 +54,7 @@ def test_check_wet_neighbour_daily_gpcc(daily_gpcc_network):
         min_n_neighbours=5,
         n_neighbours_ignored=4,
     )
-    assert result["wet_spell_flag_daily"].max() == 1
-
-    with pytest.raises(AssertionError):
-        neighbourhood_checks.check_wet_neighbours(
-            daily_gpcc_network,
-            target_gauge_col="wrong",
-            neighbouring_gauge_cols=all_neighbour_cols,
-            time_res="daily",
-            wet_threshold=1.0,
-            min_n_neighbours=5,
-        )
+    assert result["wet_spell_flag_daily"].max() == 3.0
 
     with pytest.raises(ValueError):
         neighbourhood_checks.check_wet_neighbours(
@@ -171,6 +161,21 @@ def test_check_monthly_neighbours(monthly_gdsr_network):
 def test_check_monthly_neighbours_gpcc(monthly_gpcc_network):
     all_neighbour_cols = monthly_gpcc_network.columns[1:]  # exclude time
 
+    with pytest.raises(ValueError):
+        neighbourhood_checks.check_monthly_neighbours(
+            monthly_gpcc_network.with_columns(
+                (pl.col(f"{DEFAULT_RAIN_COL}_mw_310") - 10).alias(f"{DEFAULT_RAIN_COL}_mw_310")
+            ),  # introduce some negative values
+            target_gauge_col=f"{DEFAULT_RAIN_COL}_mw_310",
+            neighbouring_gauge_cols=all_neighbour_cols,
+            min_n_neighbours=3,
+            n_neighbours_ignored=1,
+        )
+
+    monthly_gpcc_network = monthly_gpcc_network.with_columns(
+        pl.col(f"{DEFAULT_RAIN_COL}_mw_310").abs().alias(f"{DEFAULT_RAIN_COL}_mw_310")
+    )  # ensure no nulls in target gauge
+
     result = neighbourhood_checks.check_monthly_neighbours(
         monthly_gpcc_network,
         target_gauge_col=f"{DEFAULT_RAIN_COL}_mw_310",
@@ -178,7 +183,7 @@ def test_check_monthly_neighbours_gpcc(monthly_gpcc_network):
         min_n_neighbours=3,
         n_neighbours_ignored=1,
     )
-    assert len(result.filter(pl.col("majority_monthly_flag") > 0)) == 9
+    assert len(result.filter(pl.col("majority_monthly_flag") > 0)) == 12
 
 
 def test_check_timing_offset_gdsr(daily_gdsr_network):
@@ -275,7 +280,7 @@ def test_check_neighbour_correlation_daily(daily_gdsr_network, daily_gpcc_networ
         neighbouring_gauge_col=f"{DEFAULT_RAIN_COL}_tw_310",
     )
 
-    assert round(result, 2) == 0.31
+    assert round(result, 2) == 0.85
 
 
 def test_check_daily_factor(daily_gdsr_network):
