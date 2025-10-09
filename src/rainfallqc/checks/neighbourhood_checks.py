@@ -89,7 +89,7 @@ def check_wet_neighbours(
             )
         except ValueError as ve:
             neighbouring_gauge_cols_new.remove(neighbouring_gauge_col)
-            print(f"Warning: {ve}. Removing {neighbouring_gauge_col} from neighbouring_gauge_cols.")
+            print(f"Warning: removing '{neighbouring_gauge_col}' from neighbouring_gauge_cols because: {ve}")
             continue
 
         # 2.2 Join to all data
