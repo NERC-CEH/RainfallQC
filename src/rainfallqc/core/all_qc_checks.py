@@ -2,6 +2,7 @@
 """Registry of all the QC checks in RainfallQC."""
 
 import functools
+import inspect
 import itertools
 
 import polars as pl
@@ -37,16 +38,20 @@ def qc_check(name: str, require_non_negative: bool = False) -> callable:
     def decorator(func: callable) -> callable:
         @functools.wraps(func)
         def wrapper(df: pl.DataFrame, *args, **kwargs) -> list:
-            # Determine which column the user wants checked
+            # Bind args/kwargs to signature to include defaults
+            bound = inspect.signature(func).bind_partial(df, *args, **kwargs)
+            bound.apply_defaults()
+            full_kwargs = bound.arguments  # dict including defaults
+
             columns_to_check = []
             columns_to_check = get_columns_in_kwargs(
-                kwargs, kwarg_name="target_gauge_col", column_list=columns_to_check, name=name
+                full_kwargs, kwarg_name="target_gauge_col", column_list=columns_to_check, name=name
             )
 
             for kwarg_name in ["neighbouring_gauge_col", "neighbouring_gauge_cols"]:
-                if kwarg_name in kwargs:
+                if kwarg_name in full_kwargs:
                     columns_to_check = get_columns_in_kwargs(
-                        kwargs, kwarg_name=kwarg_name, column_list=columns_to_check, name=name
+                        full_kwargs, kwarg_name=kwarg_name, column_list=columns_to_check, name=name
                     )
 
             # flatten column list for neighbouring_gauge_cols
@@ -93,6 +98,6 @@ def get_columns_in_kwargs(kwargs: dict, kwarg_name: str, column_list: list, name
     col_name = kwargs.get(kwarg_name)  # user defined column name for that kwarg
 
     if col_name is None:
-        raise ValueError(f"{name} requires '{kwarg_name}' to be provided.")
+        raise ValueError(f"The QC check '{name}' requires the '{kwarg_name}' to be set.")
     column_list.append(col_name)
     return column_list
