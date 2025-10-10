@@ -80,11 +80,17 @@ def check_wet_neighbours(
         )
 
     # 2. Loop through each neighbour and get wet_flags
-    for neighbouring_gauge_col in neighbouring_gauge_cols_new:
+    neighbouring_gauge_cols_iterable = neighbouring_gauge_cols_new.copy()  # make copy again to allow removal in loop
+    for neighbouring_gauge_col in neighbouring_gauge_cols_iterable:
         # 2.1 Flag data based on comparison of wet values in neighbours
-        one_neighbour_data_wet_flags = flag_wet_day_errors_based_on_neighbours(
-            neighbour_data, target_gauge_col, neighbouring_gauge_col, wet_threshold
-        )
+        try:
+            one_neighbour_data_wet_flags = flag_wet_day_errors_based_on_neighbours(
+                neighbour_data, target_gauge_col, neighbouring_gauge_col, wet_threshold
+            )
+        except ValueError as ve:
+            neighbouring_gauge_cols_new.remove(neighbouring_gauge_col)
+            print(f"Warning: removing '{neighbouring_gauge_col}' from neighbouring_gauge_cols because: {ve}")
+            continue
 
         # 2.2 Join to all data
         neighbour_data = neighbour_data.join(
@@ -197,15 +203,21 @@ def check_dry_neighbours(
             neighbour_data, rain_cols=rain_cols, hour_offset=hour_offset
         )
 
-    # 3. Loop through each neighbour and get wet_flags
-    for neighbouring_gauge_col in neighbouring_gauge_cols_new:
+    # 3. Loop through each neighbour and get dry_flags
+    neighbouring_gauge_cols_iterable = neighbouring_gauge_cols_new.copy()  # make copy again to allow removal in loop
+    for neighbouring_gauge_col in neighbouring_gauge_cols_iterable:
         # 3.1 Convert to dry spell fraction
-        one_neighbour_data = get_dry_spell_fraction_col(
-            neighbour_data,
-            target_gauge_col=target_gauge_col,
-            dry_period_days=dry_period_days,
-            neighbouring_gauge_col=neighbouring_gauge_col,
-        )
+        try:
+            one_neighbour_data = get_dry_spell_fraction_col(
+                neighbour_data,
+                target_gauge_col=target_gauge_col,
+                dry_period_days=dry_period_days,
+                neighbouring_gauge_col=neighbouring_gauge_col,
+            )
+        except ValueError as ve:
+            neighbouring_gauge_cols_new.remove(neighbouring_gauge_col)
+            print(f"Warning: {ve}. Removing {neighbouring_gauge_col} from neighbouring_gauge_cols.")
+            continue
 
         # 3.2 Flag dry spell fractions
         one_neighbour_data_dry_flags = flag_dry_spell_fractions(
@@ -1092,6 +1104,7 @@ def flag_wet_day_errors_based_on_neighbours(
     expon_percentiles = stats.fit_expon_and_get_percentile(
         neighbour_data_filtered_diff[f"diff_{neighbouring_gauge_col}"], percentiles=[0.95, 0.99, 0.999]
     )
+
     # 5. Assign flags
     all_neighbour_data_wet_flags = add_wet_flags_to_data(
         neighbour_data_diff, target_gauge_col, neighbouring_gauge_col, expon_percentiles, wet_threshold

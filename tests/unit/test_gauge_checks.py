@@ -11,9 +11,7 @@ DEFAULT_RAIN_COL = "rain_mm"
 
 
 def test_get_years_where_nth_percentile_is_zero(daily_gdsr_data):
-    years_95th = gauge_checks.check_years_where_nth_percentile_is_zero(
-        daily_gdsr_data, target_gauge_col=DEFAULT_RAIN_COL, quantile=0.95
-    )
+    years_95th = gauge_checks.check_years_where_nth_percentile_is_zero(daily_gdsr_data, DEFAULT_RAIN_COL, quantile=0.95)
     years_35th = gauge_checks.check_years_where_nth_percentile_is_zero(
         daily_gdsr_data, target_gauge_col=DEFAULT_RAIN_COL, quantile=0.35
     )

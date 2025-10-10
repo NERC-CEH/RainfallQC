@@ -2,6 +2,11 @@
 History
 =======
 
+0.2.3 (2025-10-09)
+------------------
+* Fix bug in all_qc_checks decorator so that args are bound when checking for target_gauge_col and neighbouring_gauge_col(s)
+* automatically remove columns with non-finite values when running neighbourhood checks
+
 0.2.2 (2025-10-07)
 ------------------
 * Add decorator to all QC checks to optionally check for negative values in the rainfall columns
