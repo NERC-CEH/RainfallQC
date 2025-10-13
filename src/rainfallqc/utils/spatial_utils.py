@@ -42,19 +42,19 @@ def compute_spatial_mean_xr(data: xr.Dataset, var_name: str) -> xr.Dataset:
     return data
 
 
-def haversine(lon1: float, lat1: float, lon2: float, lat2: float) -> float:
+def haversine(lon1: xr.DataArray, lat1: xr.DataArray, lon2: np.ndarray | float, lat2: np.ndarray | float) -> float:
     """
     Great circle distance (km) between two points on Earth.
 
     Parameters
     ----------
-    lon1 : float
+    lon1 : xr.DataArray
         Longitude of point 1
-    lat1 : float
+    lat1 : xr.DataArray
         Latitude of point 1
-    lon2 : float
+    lon2 : np.ndarray | float
         Longitude of point 2
-    lat2 : float
+    lat2 : np.ndarray | float
         Latitude of point 2
 
     Returns
@@ -63,10 +63,13 @@ def haversine(lon1: float, lat1: float, lon2: float, lat2: float) -> float:
         Distance between the two points in km
 
     """
-    R = EARTH_RADIUS_KM
-    lon1, lat1, lon2, lat2 = map(np.radians, [lon1, lat1, float(lon2), float(lat2)])
+    # convert lat2 and lon2 to numpy arrays for safety
+    lon2 = np.asarray(lon2, dtype=np.float64)
+    lat2 = np.asarray(lat2, dtype=np.float64)
+
+    lon1, lat1, lon2, lat2 = map(np.radians, [lon1, lat1, lon2, lat2])
     dlon = lon2 - lon1
     dlat = lat2 - lat1
     a = np.sin(dlat / 2) ** 2 + np.cos(lat1) * np.cos(lat2) * np.sin(dlon / 2) ** 2
     c = 2 * np.arcsin(np.sqrt(a))
-    return R * c
+    return EARTH_RADIUS_KM * c
