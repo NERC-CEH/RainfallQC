@@ -2,6 +2,10 @@
 History
 =======
 
+0.2.4 (2025-10-13)
+------------------
+* Fix haversine function so inputs are cast to np.ndarray
+
 0.2.3 (2025-10-09)
 ------------------
 * Fix bug in all_qc_checks decorator so that args are bound when checking for target_gauge_col and neighbouring_gauge_col(s)
