@@ -30,7 +30,7 @@ RainfallQC can be installed from PyPi:
 
 Example use
 -----------
-`**Demo notebook** <https://github.com/Thomasjkeel/RainfallQC-notebooks/blob/main/notebooks/demo/rainfallQC_demo.ipynb>`_
+`**Demo notebook**<https://github.com/Thomasjkeel/RainfallQC-notebooks/blob/main/notebooks/demo/rainfallQC_demo.ipynb>`_
 
 Example 1. - Individual quality checks on single rain gauge
 ===========================================================
