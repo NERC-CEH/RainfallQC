@@ -8,7 +8,7 @@ RainfallQC contains four modules:
 2. ``comparison_checks`` - For detecting abnormalities by comparing to benchmark data.
 3. ``timeseries_checks`` - For detecting abnormalities in patterns of the data record.
 4. ``neighbourhood_checks`` - For detecting abnormalities based on measurements in neighbouring gauges.
-5. ``pypwsqc_filters`` - For applying quality assurance protocols and filters for rainfall data from `pyPWSQC package <https://pypwsqc.readthedocs.io/en/latest/index.html>`
+5. ``pypwsqc_filters`` - For applying quality assurance protocols and filters for rainfall data from `pyPWSQC <https://pypwsqc.readthedocs.io/en/latest/index.html>`_
 
 
 Each one of these modules contains individual QC check methods, which begin with the syntax ``check_``.
@@ -19,31 +19,50 @@ Example overview
 ================
 How you use RainfallQC will depend on the format of your data. The table below outlines a few potential formats and how to use RainfallQC with them.
 
-+--------------------------------------+-----------------------------------------------+--------------------------------------------------------------+
-| Data format                         | Description                                   | Example usage                                                |
-+======================================+===============================================+==============================================================+
-| Single rain gauge data              | Data from a single rain gauge in a tabular    |
-|                                      | format (e.g. CSV) with a timestamp column     | See Example 1 below                                          |
-|                                      | and a rainfall measurement column.            |                                                              |
-+--------------------------------------+-----------------------------------------------+--------------------------------------------------------------+
-| Rain gauge network data (one large CSV)             | Data from multiple rain gauges in a tabular   | See Example 2 below                                          |
-|                                      | format (e.g. CSV) with a timestamp column     |
-|                                      | and multiple rainfall measurement columns.    |                                                              |
-+--------------------------------------+-----------------------------------------------+--------------------------------------------------------------+
-| Rain gauge network data (multiple paths)          | Data from multiple rain gauges stored in      | See Example 2 below                                          |
-|                                      | separate files (e.g. CSVs) with a timestamp   |
-|                                      | column and a rainfall measurement column.     |                                                              |
-+--------------------------------------+-----------------------------------------------+--------------------------------------------------------------+
-| Data in xarray format                | Data stored in xarray format, e.g. from       | See Example 3 below                                          |
-|                                      | NetCDF files or OpenDAP sources.              |                                                              |
-+--------------------------------------+-----------------------------------------------+--------------------------------------------------------------+
++--------------------------------------------+--------------------------------------------------------------+
+| Data format                                | Example usage                                                |
++============================================+==============================================================+
+| Single rain gauge (e.g. 1 CSV)             | See Example 1 below.                                         |
++--------------------------------------------+--------------------------------------------------------------+
+| Rain gauge network data (e.g. 1 CSV        | You will need to define which of those gauges are considered |
+| with multiple columns)                     | to be neighbouring to a target gauge. Therefore you also     |
+|                                            | need metadata with gauge locations. See Example 2 below.     |
++--------------------------------------------+--------------------------------------------------------------+
+| Rain gauge network data (multiple file     | Load in metadata with gauge locations, then read in only     |
+| paths)                                     | nearby gauges to a given target. See Example 3 below.        |
+|                                            |                                                              |
++--------------------------------------------+--------------------------------------------------------------+
+| Rain gauge data in netCDF format           | Be careful as you will lose metadata. See Example 4 below.   |
++--------------------------------------------+--------------------------------------------------------------+
+| Tablular data you want to convert to       | Required if you want to run pyPWSQC methods, but your data   |
+| xarray for pyPWSQC                         | is CSVs. Sets your data's time format and projection using   |
+|                                            | deafults to create metadata. See Example 5 below.            |
++--------------------------------------------+--------------------------------------------------------------+
+
+
+Scenarios for running RainfallQC
+--------------------------------
+
+For running RainfallQC as part of a data processing pipeline, see some example scenarios:
+
++---------------------------------------------------+--------------------------------------------------------------+
+| Scenario                                          | Example                                                      |
++===================================================+==============================================================+
+| Running a single QC check                         | See Examples 1-4 below.                                      |
++---------------------------------------------------+--------------------------------------------------------------+
+| Running multiple QC checks on a single gauge      | Use the `.apply_qc_framework()` method. See Example 6 below. |
++---------------------------------------------------+--------------------------------------------------------------+
+| Running multiple QC checks on a network of gauges | Use the `.apply_qc_framework()` method in a loop and store   |
+|                                                   | a summary. See Example 7 below.                              |
++---------------------------------------------------+--------------------------------------------------------------+
+| Running a sensitivity analysis                    | You will need to create your own qc_framework specs. See     |
+|                                                   | Example 8 below.                                             |
++---------------------------------------------------+--------------------------------------------------------------+
 
 
 
-
-
-Example 1. - Individual quality checks on single rain gauge
-===========================================================
+Example 1. - Individual quality checks on a single rain gauge
+=============================================================
 
 .. code-block:: python
 
@@ -54,7 +73,7 @@ Example 1. - Individual quality checks on single rain gauge
         intermittency_flag = gauge_checks.check_intermittency(data, target_gauge_col="rain_mm")
 
 
-Example 2. - Neighbourhood quality checks for the global sub-daily rain gauge network (GSDR)
+Example X. - Neighbourhood quality checks for the global sub-daily rain gauge network (GSDR)
 ============================================================================================
 
 .. code-block:: python
