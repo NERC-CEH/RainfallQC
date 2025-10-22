@@ -15,29 +15,31 @@ Each one of these modules contains individual QC check methods, which begin with
 For example to run a streaks check you can run: ``rainfallqc.timeseries_checks.check_streaks(data, **kwargs)``
 
 
-Example overview
+Using RainfallQC
 ================
 How you use RainfallQC will depend on the format of your data. The table below outlines a few potential formats and how to use RainfallQC with them.
 
-+--------------------------------------------+--------------------------------------------------------------+
-| Data format                                | Example usage                                                |
-+============================================+==============================================================+
-| Single rain gauge (e.g. 1 CSV)             | See Example 1 below.                                         |
-+--------------------------------------------+--------------------------------------------------------------+
-| Rain gauge network data (e.g. 1 CSV        | You will need to define which of those gauges are considered |
-| with multiple columns)                     | to be neighbouring to a target gauge. Therefore you also     |
-|                                            | need metadata with gauge locations. See Example 2 below.     |
-+--------------------------------------------+--------------------------------------------------------------+
-| Rain gauge network data (multiple file     | Load in metadata with gauge locations, then read in only     |
-| paths)                                     | nearby gauges to a given target. See Example 3 below.        |
-|                                            |                                                              |
-+--------------------------------------------+--------------------------------------------------------------+
-| Rain gauge data in netCDF format           | Be careful as you will lose metadata. See Example 4 below.   |
-+--------------------------------------------+--------------------------------------------------------------+
-| Tablular data you want to convert to       | Required if you want to run pyPWSQC methods, but your data   |
-| xarray for pyPWSQC                         | is CSVs. Sets your data's time format and projection using   |
-|                                            | deafults to create metadata. See Example 5 below.            |
-+--------------------------------------------+--------------------------------------------------------------+
+What's the format of your data?
+-------------------------------
+
++--------------------------------------------+--------------+--------------------------------------------------------------+
+| Data format                                | See...       | Notes                                                        |
++============================================+==============+==============================================================+
+| Single rain gauge (e.g. 1 CSV)             | Example 1    |                                                              |
++--------------------------------------------+--------------+--------------------------------------------------------------+
+| Rain gauge network data (e.g. 1 CSV        | Example 2    | You will need to define which of those gauges are considered |
+| with multiple columns)                     |              | to be neighbouring to a target gauge. Therefore you also     |
+|                                            |              | need metadata with gauge locations.                          |
++--------------------------------------------+--------------+--------------------------------------------------------------+
+| Rain gauge network data (multiple file     | Example 3    | Load in metadata with gauge locations, then read in only     |
+| paths)                                     |              | nearby gauges to a given target.                             |
++--------------------------------------------+--------------+--------------------------------------------------------------+
+| Rain gauge data in netCDF format           | Example 4    | Be careful as you will lose metadata.                        |
++--------------------------------------------+--------------+--------------------------------------------------------------+
+| Tablular data you want to convert to       | Example 5    | Required if you want to run pyPWSQC methods, but your data   |
+| xarray for pyPWSQC                         |              | is CSVs. Sets your data's time format and projection using   |
+|                                            |              | deafults to create metadata.                                 |
++--------------------------------------------+--------------+--------------------------------------------------------------+
 
 
 Scenarios for running RainfallQC
@@ -46,7 +48,7 @@ Scenarios for running RainfallQC
 For running RainfallQC as part of a data processing pipeline, see some example scenarios:
 
 +---------------------------------------------------+--------------------------------------------------------------+
-| Scenario                                          | Example                                                      |
+| Scenario                                          | Advice                                                       |
 +===================================================+==============================================================+
 | Running a single QC check                         | See Examples 1-4 below.                                      |
 +---------------------------------------------------+--------------------------------------------------------------+
@@ -60,21 +62,106 @@ For running RainfallQC as part of a data processing pipeline, see some example s
 +---------------------------------------------------+--------------------------------------------------------------+
 
 
+Examples
+========
 
-Example 1. - Individual quality checks on a single rain gauge
-=============================================================
+Example 1. - Running individual checks on a single rain gauge
+-------------------------------------------------------------
+Let's say you have data for a single rain gauge stored in "hourly_rain_gauge_data.csv" which looks like this:
+
+.. code-block:: csv
+
+        time,rain_mm
+        2020-01-01 00:00,0.0
+        2020-01-01 01:00,0.1
+        2020-01-01 02:00,0.0
+        2020-01-01 03:00,1.0
+        2020-01-01 04:00,0.6
+        ...
+
+For the majority of the checks in RainfallQC, you can load in your data using `polars <https://pola-rs.github.io/polars-book/>`_ and run the checks directly.
+Below, we run a check from the ``gauge_checks`` and ``comparison_checks`` modules.
 
 .. code-block:: python
 
         import polars as pl
-        from rainfallqc import gauge_checks, comparison_checks
+        from rainfallqc import gauge_checks, timeseries_checks
 
-        data = pl.read_csv("rain_gauge_data.csv")
-        intermittency_flag = gauge_checks.check_intermittency(data, target_gauge_col="rain_mm")
+        data = pl.read_csv("hourly_rain_gauge_data.csv")
+
+        intermittency_flags = gauge_checks.check_intermittency(data, target_gauge_col="rain_mm")
+
+        daily_accumulation_flags = timeseries_checks.check_daily_accumulations(
+            data,
+            target_gauge_col="rain_mm",
+            gauge_lat=50.0,
+            gauge_lon=8.0,
+            data_resolution=0.1,
+        )
+
+
+Example 2. - Run individual checks on rain gauge network data (single source)
+-----------------------------------------------------------------------------
+Let's say you have data for a multiple rain gauge stored in "hourly_rain_gauge_network.csv" which looks like this:
+
+.. code-block:: csv
+
+        time,rain_mm_gauge_1,rain_mm_gauge_2,rain_mm_gauge_3
+        2020-01-01 00:00,0.0,0.5,0.0
+        2020-01-01 01:00,0.5,0.0,1.0
+        2020-01-01 02:00,0.0,1.0,0.0
+        2020-01-01 03:00,1.0,0.0,0.5
+        2020-01-01 04:00,0.0,0.5,0.0
+        ...
+
+.. code-block:: python
+
+        import polars as pl
+        from rainfallqc import neighbourhood_checks
+
+        data = pl.read_csv("hourly_rain_gauge_network.csv")
+
+        wet_neighbour_flags = neighbourhood_checks.check_wet_neighbours(
+            data,
+            target_gauge_col="rain_mm_gauge_1",
+            neighbouring_gauge_cols=["rain_mm_gauge_2", "rain_mm_gauge_3"],
+            time_res="hourly",
+            wet_threshold=1.0, # threshold for rainfall intensity to be considered
+            min_n_neighbours=1, # number of neighbours needed for comparison
+            n_neighbours_ignored=0, # ignore no neighbours and include all
+        )
+
+
+Example 3. - Run single checks on rain gauge network data (multiple sources)
+-----------------------------------------------------------------------------
+Let's say you have data for a multiple rain gauge stored in multiple CSV files, with metadata stored in "rain_gauge_metadata.csv" which looks like this:
+
+.. code-block:: csv
+
+        station_id,latitude,longitude,path
+        gauge_1,50.0,8.0,path/to/gauge_1.csv
+        gauge_2,50.1,8.1,path/to/gauge_2.csv
+        gauge_3,49.9,7.9,path/to/gauge_3.csv
+        ...
+
+Bear in mind, you could create the 'path' column programmatically if needed.
+
+
+
+
+Example 4. - Individual quality checks on a single rain gauge
+-------------------------------------------------------------
+
+
+Example 5. - Individual quality checks on a single rain gauge
+-------------------------------------------------------------
+
+
+
 
 
 Example X. - Neighbourhood quality checks for the global sub-daily rain gauge network (GSDR)
-============================================================================================
+--------------------------------------------------------------------------------------------
 
 .. code-block:: python
 
@@ -111,7 +198,7 @@ Example X. - Neighbourhood quality checks for the global sub-daily rain gauge ne
 
 
 Example 3. - Applying a framework of QC methods (e.g. IntenseQC)
-================================================================
+-----------------------------------------------------------------
 
 .. code-block:: python
 
