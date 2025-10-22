@@ -17,7 +17,27 @@ For example to run a streaks check you can run: ``rainfallqc.timeseries_checks.c
 
 Example overview
 ================
-How you use RainfallQC will depend on the format of your data.
+How you use RainfallQC will depend on the format of your data. The table below outlines a few potential formats and how to use RainfallQC with them.
+
++--------------------------------------+-----------------------------------------------+--------------------------------------------------------------+
+| Data format                         | Description                                   | Example usage                                                |
++======================================+===============================================+==============================================================+
+| Single rain gauge data              | Data from a single rain gauge in a tabular    |
+|                                      | format (e.g. CSV) with a timestamp column     | See Example 1 below                                          |
+|                                      | and a rainfall measurement column.            |                                                              |
++--------------------------------------+-----------------------------------------------+--------------------------------------------------------------+
+| Rain gauge network data (one large CSV)             | Data from multiple rain gauges in a tabular   | See Example 2 below                                          |
+|                                      | format (e.g. CSV) with a timestamp column     |
+|                                      | and multiple rainfall measurement columns.    |                                                              |
++--------------------------------------+-----------------------------------------------+--------------------------------------------------------------+
+| Rain gauge network data (multiple paths)          | Data from multiple rain gauges stored in      | See Example 2 below                                          |
+|                                      | separate files (e.g. CSVs) with a timestamp   |
+|                                      | column and a rainfall measurement column.     |                                                              |
++--------------------------------------+-----------------------------------------------+--------------------------------------------------------------+
+| Data in xarray format                | Data stored in xarray format, e.g. from       | See Example 3 below                                          |
+|                                      | NetCDF files or OpenDAP sources.              |                                                              |
++--------------------------------------+-----------------------------------------------+--------------------------------------------------------------+
+
 
 
 
