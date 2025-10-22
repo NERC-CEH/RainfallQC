@@ -8,13 +8,18 @@ RainfallQC contains four modules:
 2. ``comparison_checks`` - For detecting abnormalities by comparing to benchmark data.
 3. ``timeseries_checks`` - For detecting abnormalities in patterns of the data record.
 4. ``neighbourhood_checks`` - For detecting abnormalities based on measurements in neighbouring gauges.
-
-and then additional support to work with `pyPWSQC package <https://pypwsqc.readthedocs.io/en/latest/index.html>`
-5. ``pypwsqc_filters`` - For applying quality assurance protocols and filters for rainfall data.
+5. ``pypwsqc_filters`` - For applying quality assurance protocols and filters for rainfall data from `pyPWSQC package <https://pypwsqc.readthedocs.io/en/latest/index.html>`
 
 
 Each one of these modules contains individual QC check methods, which begin with the syntax ``check_``.
 For example to run a streaks check you can run: ``rainfallqc.timeseries_checks.check_streaks(data, **kwargs)``
+
+
+Example overview
+================
+How you use RainfallQC will depend on the format of your data.
+
+
 
 
 Example 1. - Individual quality checks on single rain gauge
@@ -27,6 +32,7 @@ Example 1. - Individual quality checks on single rain gauge
 
         data = pl.read_csv("rain_gauge_data.csv")
         intermittency_flag = gauge_checks.check_intermittency(data, target_gauge_col="rain_mm")
+
 
 Example 2. - Neighbourhood quality checks for the global sub-daily rain gauge network (GSDR)
 ============================================================================================
@@ -63,6 +69,7 @@ Example 2. - Neighbourhood quality checks for the global sub-daily rain gauge ne
             min_n_neighbours=5, # number of neighbours needed for comparison
             n_neighbours_ignored=0, # ignore no neighbours and include all
         )
+
 
 Example 3. - Applying a framework of QC methods (e.g. IntenseQC)
 ================================================================
