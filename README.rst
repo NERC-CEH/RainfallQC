@@ -1,3 +1,9 @@
+.. image:: https://github.com/NERC-CEH/RainfallQC/blob/main/docs/logos/rainfallQC_logo.png
+   :align: center
+   :height: 180px
+   :width: 200 px
+   :alt: RainfallQC
+
 ===============================================
 RainfallQC - Quality control for rainfall data
 ===============================================
