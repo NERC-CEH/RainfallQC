@@ -10,4 +10,4 @@ Development Lead
 Contributors
 ------------
 
-* Damaris Zulkarnaen <damaris.zulkarnaen@iws.uni-stuttgart.de> `@MarisZul <https@://github.com/MarisZul>`_
+* Damaris Zulkarnaen <damaris.zulkarnaen@iws.uni-stuttgart.de> `@MarisZul <https://github.com/MarisZul>`_
