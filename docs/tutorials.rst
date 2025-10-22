@@ -22,6 +22,7 @@ Example 1. - Individual quality checks on single rain gauge
 
 .. code-block:: python
 
+        import polars as pl
         from rainfallqc import gauge_checks, comparison_checks
 
         data = pl.read_csv("rain_gauge_data.csv")

@@ -9,7 +9,6 @@ You can then use RainfallQC in a project::
     import rainfallqc
 
 
-
 RainfallQC contains four modules:
 
 1. ``gauge_checks`` - For detecting abnormalities in summary and descriptive statistics.
