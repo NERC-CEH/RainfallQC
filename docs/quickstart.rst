@@ -26,6 +26,6 @@ RainfallQC contains five modules:
 5. ``pypwsqc_filters`` - For applying quality assurance protocols and filters for rainfall data.
 
 
-All quality control checks in RainfallQC begin with ``check_`` so to run a streaks check this would be ``rainfallqc.timeseries_checks.check_intermittency(data, **kwargs)``
+All quality control checks in the RainfallQC package begin with ``check_``
 
-You can find a jupyter notebook with an easy-to-follow example here: https://github.com/Thomasjkeel/RainfallQC-notebooks/blob/main/notebooks/demo/rainfallQC_demo.ipynb
+You can find a jupyter notebook with an easy-to-follow example `here <https://github.com/Thomasjkeel/RainfallQC-notebooks/blob/main/notebooks/demo/rainfallQC_demo.ipynb>`_
