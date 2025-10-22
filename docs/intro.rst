@@ -7,7 +7,7 @@ It is designed to help everyone, from individual researchers to industrial-scale
 
 At its core, the package offers:
 
-- 27 QC checks for rainfall data as of v0.2.5 (25 from `IntenseQC <https://www.sciencedirect.com/science/article/pii/S1364815221002127>`_, 2 from `pyPWSQC <https://doi.org/10.5281/zenodo.4501919>`_)
+- 27 QC checks for rainfall data as of v0.2.5 (25 from `IntenseQC <https://www.sciencedirect.com/science/article/pii/S1364815221002127>`_ and 2 from `pyPWSQC <https://doi.org/10.5281/zenodo.4501919>`_)
 - Customizable parameters – adjust thresholds, streak or accumulation lengths, and distances to neighboring gauges
 - A modular QC framework – users can select which QC methods to apply, and configure them according to their project’s requirements
 
