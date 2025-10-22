@@ -2,6 +2,12 @@
 History
 =======
 
+0.2.5 (2025-10-22)
+------------------
+* Add AUTHORS.rst file to include contributors
+* Update README.rst examples to remove comments
+* rename GDSR to GSDR
+
 0.2.4 (2025-10-13)
 ------------------
 * Fix haversine function so inputs are cast to np.ndarray
