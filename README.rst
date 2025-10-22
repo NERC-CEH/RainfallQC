@@ -19,10 +19,6 @@ RainfallQC - Quality control for rainfall data
 
 Provides methods for running rainfall quality control.
 
-**NOTEBOOK DEMO AVAILABLE** `HERE <https://github.com/Thomasjkeel/RainfallQC-notebooks/blob/main/notebooks/demo/rainfallQC_demo.ipynb>`_
-
-Please email tomkee@ceh.ac.uk if you have any questions.
-
 Installation
 ------------
 RainfallQC can be installed from PyPi:
@@ -34,6 +30,7 @@ RainfallQC can be installed from PyPi:
 
 Example use
 -----------
+**NOTEBOOK DEMO AVAILABLE** `HERE <https://github.com/Thomasjkeel/RainfallQC-notebooks/blob/main/notebooks/demo/rainfallQC_demo.ipynb>`_
 
 Example 1. - Individual quality checks on single rain gauge
 ===========================================================
@@ -139,6 +136,7 @@ Credits
 -------
 Based on the IntenseQC: https://github.com/nclwater/intense-qc/tree/master
 
+Please email tomkee@ceh.ac.uk if you have any questions.
 
 This package was created with Cookiecutter_ and the `audreyr/cookiecutter-pypackage`_ project template.
 
