@@ -21,24 +21,24 @@ import xarray as xr
 from rainfallqc.utils import data_utils, neighbourhood_utils
 
 MULTIPLYING_FACTORS = {"hourly": 24, "daily": 1}  # compared to daily reference
-GDSR_TIME_RES_CONVERSION = {"1hr": "hourly", "1d": "daily", "1mo": "monthly"}
+GSDR_TIME_RES_CONVERSION = {"1hr": "hourly", "1d": "daily", "1mo": "monthly"}
 GPCC_TIME_RES_CONVERSION = {"tw": "daily", "mw": "monthly"}
-GPCC_HOUR_OFFSET = 7  # Apparently the GDSR data runs from 7am to 7am, so this converts it for comparison
+GPCC_HOUR_OFFSET = 7  # Apparently the GSDR data runs from 7am to 7am, so this converts it for comparison
 
 
-def read_gdsr_metadata(data_path: str) -> dict:
+def read_gsdr_metadata(data_path: str) -> dict:
     """
-    Read the specific format and header of Global Sub-Daily Rainfall (GDSR) files.
+    Read the specific format and header of Global Sub-Daily Rainfall (GSDR) files.
 
     Parameters
     ----------
     data_path :
-        path to GDSR data file (.txt)
+        path to GSDR data file (.txt)
 
     Returns
     -------
     metadata :
-        Metadata from GDSR file
+        Metadata from GSDR file
 
     """
     metadata = {}
@@ -51,7 +51,7 @@ def read_gdsr_metadata(data_path: str) -> dict:
                 metadata[key] = val
                 if key == "other":
                     break
-    metadata = convert_gdsr_metadata_dates_to_datetime(metadata)
+    metadata = convert_gsdr_metadata_dates_to_datetime(metadata)
     return metadata
 
 
@@ -116,23 +116,23 @@ def read_gpcc_metadata_from_zip(data_path: str, time_res: str, gpcc_file_format:
     return gpcc_metadata
 
 
-def read_gdsr_data_from_file(
+def read_gsdr_data_from_file(
     data_path: str,
     raw_data_time_res: str,
     rain_col_prefix: str = None,
     rain_col_suffix: str = None,
     suffix_only: bool = False,
-    gdsr_header_rows: int = 20,
+    gsdr_header_rows: int = 20,
 ) -> pl.DataFrame:
     """
-    Read GDSR data from file.
+    Read GSDR data from file.
 
-    Note: this was developed on the GDSR data available from IntenseQC. So it needs a number of header rows in data.
+    Note: this was developed on the GSDR data available from IntenseQC. So it needs a number of header rows in data.
 
     Parameters
     ----------
     data_path :
-        Path to GDSR data file
+        Path to GSDR data file
     raw_data_time_res :
         Time resolution of data record i.e. 'hourly' or 'daily'
     rain_col_prefix :
@@ -141,44 +141,44 @@ def read_gdsr_data_from_file(
         Suffix for column name for target_gauge_col (set as None by default)
     suffix_only :
         Override to only include the suffix e.g. if the column name is the ID)
-    gdsr_header_rows :
+    gsdr_header_rows :
         Number of rows to skip in the header of the GSDR data (default=20)
 
     Returns
     -------
-    gdsr_data :
-        GDSR data as Pandas DataFrame
+    gsdr_data :
+        GSDR data as Pandas DataFrame
 
     """
     # 1. read in metadata of gauge
-    gdsr_metadata = read_gdsr_metadata(data_path)
+    gsdr_metadata = read_gsdr_metadata(data_path)
     if suffix_only:
         rain_col_name = f"{rain_col_suffix}"
     else:
-        rain_col_name = f"{gdsr_metadata['original_units']}"
+        rain_col_name = f"{gsdr_metadata['original_units']}"
         if rain_col_prefix:
             rain_col_name = f"{rain_col_prefix}_" + rain_col_name
         if rain_col_suffix:
             rain_col_name += f"_{rain_col_suffix}"
 
     # 2. read in gauge data
-    gdsr_data = pl.read_csv(
+    gsdr_data = pl.read_csv(
         data_path,
-        skip_rows=gdsr_header_rows,
+        skip_rows=gsdr_header_rows,
         schema_overrides={rain_col_name: pl.Float64},
     )
 
     # 3. add datetime column to data
-    gdsr_data = add_datetime_to_gdsr_data(
-        gdsr_data, gdsr_metadata, multiplying_factor=MULTIPLYING_FACTORS[raw_data_time_res]
+    gsdr_data = add_datetime_to_gsdr_data(
+        gsdr_data, gsdr_metadata, multiplying_factor=MULTIPLYING_FACTORS[raw_data_time_res]
     )
-    gdsr_data = data_utils.replace_missing_vals_with_nan(
-        gdsr_data, target_gauge_col=rain_col_name, missing_val=int(gdsr_metadata["no_data_value"])
+    gsdr_data = data_utils.replace_missing_vals_with_nan(
+        gsdr_data, target_gauge_col=rain_col_name, missing_val=int(gsdr_metadata["no_data_value"])
     )
 
     # 4. Select time and rain col
-    gdsr_data = gdsr_data.select(["time", rain_col_name])  # Reorder (to look nice)
-    return gdsr_data
+    gsdr_data = gsdr_data.select(["time", rain_col_name])  # Reorder (to look nice)
+    return gsdr_data
 
 
 def read_gpcc_data_from_zip(
@@ -260,51 +260,51 @@ def read_gpcc_data_from_zip(
     return gpcc_data
 
 
-def convert_gdsr_metadata_dates_to_datetime(gdsr_metadata: dict) -> dict:
+def convert_gsdr_metadata_dates_to_datetime(gsdr_metadata: dict) -> dict:
     """
-    Convert GDSR metadata date string column to datetime.
+    Convert GSDR metadata date string column to datetime.
 
     Parameters
     ----------
-    gdsr_metadata :
-        Metadata from GDSR file
+    gsdr_metadata :
+        Metadata from GSDR file
 
     Returns
     -------
-    gdsr_metadata : dict
-    Metadata from GDSR file with start and end date column
+    gsdr_metadata : dict
+    Metadata from GSDR file with start and end date column
 
     """
-    gdsr_metadata["start_datetime"] = datetime.datetime.strptime(gdsr_metadata["start_datetime"], "%Y%m%d%H")
-    gdsr_metadata["end_datetime"] = datetime.datetime.strptime(gdsr_metadata["end_datetime"], "%Y%m%d%H")
-    return gdsr_metadata
+    gsdr_metadata["start_datetime"] = datetime.datetime.strptime(gsdr_metadata["start_datetime"], "%Y%m%d%H")
+    gsdr_metadata["end_datetime"] = datetime.datetime.strptime(gsdr_metadata["end_datetime"], "%Y%m%d%H")
+    return gsdr_metadata
 
 
-def add_datetime_to_gdsr_data(
-    gdsr_data: pl.DataFrame, gdsr_metadata: dict, multiplying_factor: int | float
+def add_datetime_to_gsdr_data(
+    gsdr_data: pl.DataFrame, gsdr_metadata: dict, multiplying_factor: int | float
 ) -> pl.DataFrame:
     """
-    Add datetime column to GDSR gauge data using metadata from that gauge.
+    Add datetime column to GSDR gauge data using metadata from that gauge.
 
     NOTE: Could maybe extend so can find metadata if not provided?
 
     Parameters
     ----------
-    gdsr_data :
-        GDSR data
-    gdsr_metadata :
-        Metadata from GDSR file
+    gsdr_data :
+        GSDR data
+    gsdr_metadata :
+        Metadata from GSDR file
     multiplying_factor : int or float
         Factor to multiply the data by.
 
     Returns
     -------
-    gdsr_data
-        GDSR data with datetime column added
+    gsdr_data
+        GSDR data with datetime column added
 
     """
-    start_date = gdsr_metadata["start_datetime"]
-    end_date = gdsr_metadata["end_datetime"]
+    start_date = gsdr_metadata["start_datetime"]
+    end_date = gsdr_metadata["end_datetime"]
     assert isinstance(start_date, datetime.datetime), (
         "Please convert start_ and end_datetime to datetime.datetime objects"
     )
@@ -315,10 +315,10 @@ def add_datetime_to_gdsr_data(
         date_interval.append(start_date + datetime.timedelta(hours=i))
 
     # add time column
-    assert len(gdsr_data) == len(date_interval)
-    gdsr_data = gdsr_data.with_columns(time=pl.Series(date_interval))
+    assert len(gsdr_data) == len(date_interval)
+    gsdr_data = gsdr_data.with_columns(time=pl.Series(date_interval))
 
-    return gdsr_data
+    return gsdr_data
 
 
 def convert_data_hourly_to_daily(hourly_data: pl.DataFrame, rain_cols: List[str], hour_offset: int) -> pl.DataFrame:
@@ -383,32 +383,32 @@ def load_etccdi_data(etccdi_var: str, path_to_etccdi: str = None) -> xr.Dataset:
     return etccdi_data
 
 
-def load_gdsr_gauge_network_metadata(path_to_gdsr_dir: str, file_format: str = ".txt") -> pl.DataFrame:
+def load_gsdr_gauge_network_metadata(path_to_gsdr_dir: str, file_format: str = ".txt") -> pl.DataFrame:
     """
-    Load metadata from GDSR gauges from a directory.
+    Load metadata from GSDR gauges from a directory.
 
     Parameters
     ----------
-    path_to_gdsr_dir :
-        Path to directory with GDSR gauges
+    path_to_gsdr_dir :
+        Path to directory with GSDR gauges
     file_format :
         Format of file (default is .txt)
 
     Returns
     -------
     all_station_metadata :
-        All GDSR gauges metadata as one dataframe.
+        All GSDR gauges metadata as one dataframe.
 
     """
     # 1. Glob all metadata paths
-    if not os.path.isdir(path_to_gdsr_dir):
-        raise ValueError(f"Invalid GDSR metadata directory at {path_to_gdsr_dir}")
-    all_metadata_data_paths = glob.glob(f"{path_to_gdsr_dir}*{file_format}")
+    if not os.path.isdir(path_to_gsdr_dir):
+        raise ValueError(f"Invalid GSDR metadata directory at {path_to_gsdr_dir}")
+    all_metadata_data_paths = glob.glob(f"{path_to_gsdr_dir}*{file_format}")
 
-    # 2. Load all GDSR metadata from data
+    # 2. Load all GSDR metadata from data
     all_station_metadata_list = []
     for file in all_metadata_data_paths:
-        one_station_metadata = read_gdsr_metadata(data_path=file)
+        one_station_metadata = read_gsdr_metadata(data_path=file)
         all_station_metadata_list.append(one_station_metadata)
 
     # 3. Convert to pl.DataFrame
@@ -548,43 +548,43 @@ class GaugeNetworkReader(ABC):
         return all_neighbour_ids
 
 
-class GDSRNetworkReader(GaugeNetworkReader):
-    """GDSR rain gauge network reader."""
+class GSDRNetworkReader(GaugeNetworkReader):
+    """GSDR rain gauge network reader."""
 
-    def __init__(self, path_to_gdsr_dir: str, file_format: str = ".txt"):
+    def __init__(self, path_to_gsdr_dir: str, file_format: str = ".txt"):
         """Load network reader."""
-        self.path_to_gdsr_dir = path_to_gdsr_dir
+        self.path_to_gsdr_dir = path_to_gsdr_dir
         self.file_format = file_format
-        super().__init__(path_to_gdsr_dir)
+        super().__init__(path_to_gsdr_dir)
         self.data_paths = self._get_data_paths()
         self.metadata = self._add_paths_to_metadata()
         self.time_res = self.metadata["new_timestep"][0]
 
     def _load_metadata(self) -> pl.DataFrame:
         """
-        Load metadata from GDSR gauge metadata path.
+        Load metadata from GSDR gauge metadata path.
 
         Returns
         -------
         metadata :
-            Metadata of GDSR gauges.
+            Metadata of GSDR gauges.
 
         """
-        metadata = load_gdsr_gauge_network_metadata(self.path_to_gdsr_dir, self.file_format)
+        metadata = load_gsdr_gauge_network_metadata(self.path_to_gsdr_dir, self.file_format)
         return metadata
 
     def _get_data_paths(self) -> dict:
         """
-        Get paths to gauge network of GDSR gauges.
+        Get paths to gauge network of GSDR gauges.
 
         Returns
         -------
         gauge_paths :
-            Dataframe of all GDSR gauges rain record.
+            Dataframe of all GSDR gauges rain record.
 
         """
         gauge_paths = get_paths_using_gauge_ids(
-            self.metadata["station_id"], self.path_to_gdsr_dir, file_format=self.file_format
+            self.metadata["station_id"], self.path_to_gsdr_dir, file_format=self.file_format
         )
         return gauge_paths
 
@@ -598,10 +598,10 @@ class GDSRNetworkReader(GaugeNetworkReader):
         rain_col_prefix: str,
         data_paths: List[str] | np.ndarray[str],
         suffix_only: bool = False,
-        gdsr_header_rows: int = 20,
+        gsdr_header_rows: int = 20,
     ) -> pl.DataFrame:
         """
-        Load GDSR network data based on file paths.
+        Load GSDR network data based on file paths.
 
         Parameters
         ----------
@@ -611,28 +611,28 @@ class GDSRNetworkReader(GaugeNetworkReader):
             Prefix for rain column name (default is 'rain')
         suffix_only :
             Override to only include the suffix e.g. if the column name is the ID)
-        gdsr_header_rows :
+        gsdr_header_rows :
             Number of rows to skip in the header of the GSDR data (default=20)
 
         Returns
         -------
         network_data :
-            Dataframe of GDSR gauges.
+            Dataframe of GSDR gauges.
 
         """
         for ind, path in enumerate(data_paths):
             # 1. get gauge_id name
-            gdsr_file_name = path.split("/")[-1]
-            gdsr_name = gdsr_file_name.split(".")[0]
+            gsdr_file_name = path.split("/")[-1]
+            gsdr_name = gsdr_file_name.split(".")[0]
 
             # 2. Read in one gauge
-            one_gauge = read_gdsr_data_from_file(
+            one_gauge = read_gsdr_data_from_file(
                 data_path=path,
-                raw_data_time_res=GDSR_TIME_RES_CONVERSION[self.time_res],
+                raw_data_time_res=GSDR_TIME_RES_CONVERSION[self.time_res],
                 rain_col_prefix=rain_col_prefix,
-                rain_col_suffix=gdsr_name,
+                rain_col_suffix=gsdr_name,
                 suffix_only=suffix_only,
-                gdsr_header_rows=gdsr_header_rows,
+                gsdr_header_rows=gsdr_header_rows,
             )
 
             # 3. Join data together
@@ -679,7 +679,7 @@ class GPCCNetworkReader(GaugeNetworkReader):
         Returns
         -------
         gauge_paths :
-            Dataframe of all GDSR gauges rain record.
+            Dataframe of all GSDR gauges rain record.
 
         """
         gauge_paths = get_paths_using_gauge_ids(

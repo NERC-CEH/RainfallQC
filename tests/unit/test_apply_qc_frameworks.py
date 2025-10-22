@@ -9,7 +9,7 @@ import pytest
 from rainfallqc.qc_frameworks import apply_qc_framework
 
 TARGET_GPCC_ID = "tw_2483"
-TARGET_GDSR_ID = "DE_00310"
+TARGET_GSDR_ID = "DE_00310"
 
 
 def test_apply_qc_frameworks_daily(daily_gpcc_network, gpcc_metadata):
@@ -62,7 +62,7 @@ def test_apply_qc_frameworks_daily(daily_gpcc_network, gpcc_metadata):
         )
 
 
-def test_apply_qc_frameworks_hourly(hourly_gdsr_network, gdsr_metadata):
+def test_apply_qc_frameworks_hourly(hourly_gsdr_network, gsdr_metadata):
     qc_methods_to_run = [
         "QC1",
         "QC8",
@@ -83,21 +83,21 @@ def test_apply_qc_frameworks_hourly(hourly_gdsr_network, gdsr_metadata):
         "QC1": {"quantile": 5},
         # Shared defaults applied to all
         "shared": {
-            "target_gauge_col": f"rain_mm_{TARGET_GDSR_ID}",
-            "gauge_lat": gdsr_metadata["latitude"],
-            "gauge_lon": gdsr_metadata["longitude"],
+            "target_gauge_col": f"rain_mm_{TARGET_GSDR_ID}",
+            "gauge_lat": gsdr_metadata["latitude"],
+            "gauge_lon": gsdr_metadata["longitude"],
             "time_res": "hourly",
             "data_resolution": 0.1,
             "wet_threshold": 1.0,
             "min_n_neighbours": 5,
             "neighbouring_gauge_col": "rain_mm_DE_02483",  # filling as nearest neighbour to target gauge
             "accumulation_multiplying_factor": 2.0,
-            "neighbouring_gauge_cols": hourly_gdsr_network.columns[2:],
+            "neighbouring_gauge_cols": hourly_gsdr_network.columns[2:],
             "n_neighbours_ignored": 0,
         },
     }
     result = apply_qc_framework.run_qc_framework(
-        hourly_gdsr_network, qc_framework="IntenseQC", qc_methods_to_run=qc_methods_to_run, qc_kwargs=qc_kwargs
+        hourly_gsdr_network, qc_framework="IntenseQC", qc_methods_to_run=qc_methods_to_run, qc_kwargs=qc_kwargs
     )
     assert len(result.keys()) == 14
     assert len(result["QC15"].filter(pl.col("streak_flag1") > 0)) == 0
@@ -106,7 +106,7 @@ def test_apply_qc_frameworks_hourly(hourly_gdsr_network, gdsr_metadata):
     assert round(result["QC23"], 2) == 0.03  # correlation
 
 
-def test_apply_qc_frameworks_15min(mins15_gdsr_network, gdsr_metadata):
+def test_apply_qc_frameworks_15min(mins15_gsdr_network, gsdr_metadata):
     qc_methods_to_run = [
         "QC1",
         "QC8",
@@ -125,21 +125,21 @@ def test_apply_qc_frameworks_15min(mins15_gdsr_network, gdsr_metadata):
         "QC1": {"quantile": 5},
         # Shared defaults applied to all
         "shared": {
-            "target_gauge_col": f"rain_mm_{TARGET_GDSR_ID}",
-            "gauge_lat": gdsr_metadata["latitude"],
-            "gauge_lon": gdsr_metadata["longitude"],
+            "target_gauge_col": f"rain_mm_{TARGET_GSDR_ID}",
+            "gauge_lat": gsdr_metadata["latitude"],
+            "gauge_lon": gsdr_metadata["longitude"],
             "time_res": "15m",
             "data_resolution": 0.1,
             "wet_threshold": 1.0,
             "min_n_neighbours": 5,
             "neighbouring_gauge_col": "rain_mm_DE_02483",  # filling as nearest neighbour to target gauge
             "accumulation_multiplying_factor": 2.0,
-            "neighbouring_gauge_cols": mins15_gdsr_network.columns[2:],
+            "neighbouring_gauge_cols": mins15_gsdr_network.columns[2:],
             "n_neighbours_ignored": 0,
         },
     }
     result = apply_qc_framework.run_qc_framework(
-        mins15_gdsr_network, qc_framework="IntenseQC", qc_methods_to_run=qc_methods_to_run, qc_kwargs=qc_kwargs
+        mins15_gsdr_network, qc_framework="IntenseQC", qc_methods_to_run=qc_methods_to_run, qc_kwargs=qc_kwargs
     )
     assert len(result.keys()) == 12
     assert result["QC21"] == 0  # timing offset
@@ -147,8 +147,8 @@ def test_apply_qc_frameworks_15min(mins15_gdsr_network, gdsr_metadata):
     assert round(result["QC23"], 2) == 0.31  # correlation
 
 
-def test_apply_pypwsqc_framework(hourly_gdsr_network_no_prefix, gdsr_gauge_network):
-    all_neighbour_cols = hourly_gdsr_network_no_prefix.columns[1:]  # exclude time
+def test_apply_pypwsqc_framework(hourly_gsdr_network_no_prefix, gsdr_gauge_network):
+    all_neighbour_cols = hourly_gsdr_network_no_prefix.columns[1:]  # exclude time
     assert len(all_neighbour_cols) == 10
     qc_methods_to_run = [
         "FZ",
@@ -159,7 +159,7 @@ def test_apply_pypwsqc_framework(hourly_gdsr_network_no_prefix, gdsr_gauge_netwo
         "SO": {"evaluation_period": 8064, "mmatch": 200, "gamma": 0.15},
         # Shared defaults applied to all
         "shared": {
-            "neighbour_metadata": gdsr_gauge_network,
+            "neighbour_metadata": gsdr_gauge_network,
             "neighbouring_gauge_ids": all_neighbour_cols,
             "neighbour_metadata_gauge_id_col": "station_id",
             "time_res": "hourly",
@@ -170,7 +170,7 @@ def test_apply_pypwsqc_framework(hourly_gdsr_network_no_prefix, gdsr_gauge_netwo
         },
     }
     result = apply_qc_framework.run_qc_framework(
-        hourly_gdsr_network_no_prefix, qc_framework="pypwsqc", qc_methods_to_run=qc_methods_to_run, qc_kwargs=qc_kwargs
+        hourly_gsdr_network_no_prefix, qc_framework="pypwsqc", qc_methods_to_run=qc_methods_to_run, qc_kwargs=qc_kwargs
     )
     assert len(result.keys()) == 2
     _, fz_counts = np.unique(result["FZ"]["fz_flag"], return_counts=True)
