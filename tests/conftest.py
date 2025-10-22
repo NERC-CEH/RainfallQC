@@ -11,7 +11,7 @@ import pytest
 from rainfallqc.utils import data_readers, data_utils
 
 DEFAULT_RAIN_COL = "rain_mm"
-DEFAULT_GDSR_OFFSET = 7  # 7 hours
+DEFAULT_GSDR_OFFSET = 7  # 7 hours
 GPCC_TIME_RES_CONVERSION = {"tw": "daily", "mw": "monthly"}
 
 
@@ -30,8 +30,8 @@ def get_gpcc_data(time_res: str, gauge_id: str = "2483"):
     return gpcc_data
 
 
-def get_hourly_gdsr_network(
-    path_to_gdsr_dir: str,
+def get_hourly_gsdr_network(
+    path_to_gsdr_dir: str,
     target_id: str,
     rain_col_prefix: str = "rain",
     suffix_only: bool = False,
@@ -39,9 +39,9 @@ def get_hourly_gdsr_network(
     n_closest: int = 10,
     min_overlap_days: int = 500,
 ) -> pl.DataFrame:
-    gdsr_obj = data_readers.GDSRNetworkReader(path_to_gdsr_dir=path_to_gdsr_dir)
+    gsdr_obj = data_readers.GSDRNetworkReader(path_to_gsdr_dir=path_to_gsdr_dir)
     nearby_ids = list(
-        gdsr_obj.get_nearest_overlapping_neighbours_to_target(
+        gsdr_obj.get_nearest_overlapping_neighbours_to_target(
             target_id=target_id,
             distance_threshold=distance_threshold,
             n_closest=n_closest,
@@ -49,25 +49,25 @@ def get_hourly_gdsr_network(
         )
     )
     nearby_ids.append(target_id)
-    nearby_data_paths = gdsr_obj.metadata.filter(pl.col("station_id").is_in(nearby_ids))["path"]
-    gdsr_network = gdsr_obj.load_network_data(
+    nearby_data_paths = gsdr_obj.metadata.filter(pl.col("station_id").is_in(nearby_ids))["path"]
+    gsdr_network = gsdr_obj.load_network_data(
         data_paths=nearby_data_paths, rain_col_prefix=rain_col_prefix, suffix_only=suffix_only
     )
-    return gdsr_network
+    return gsdr_network
 
 
 @pytest.fixture
-def hourly_gdsr_data() -> pl.DataFrame:
-    data_path = "./tests/data/GDSR/DE_02483.txt"  # TODO: maybe randomise this with every call? Or use parameterise
-    return data_readers.read_gdsr_data_from_file(data_path, raw_data_time_res="hourly", rain_col_prefix="rain")
+def hourly_gsdr_data() -> pl.DataFrame:
+    data_path = "./tests/data/GSDR/DE_02483.txt"  # TODO: maybe randomise this with every call? Or use parameterise
+    return data_readers.read_gsdr_data_from_file(data_path, raw_data_time_res="hourly", rain_col_prefix="rain")
 
 
 @pytest.fixture()
-def gdsr_metadata() -> dict:
+def gsdr_metadata() -> dict:
     # TODO: maybe randomise this with every call? Or use parameterise
-    data_path = "./tests/data/GDSR/DE_02483.txt"
+    data_path = "./tests/data/GSDR/DE_02483.txt"
     # read in metadata of gauge
-    return data_readers.read_gdsr_metadata(data_path)
+    return data_readers.read_gsdr_metadata(data_path)
 
 
 @pytest.fixture()
@@ -78,19 +78,19 @@ def gpcc_metadata() -> dict:
 
 
 @pytest.fixture
-def daily_gdsr_data() -> pl.DataFrame:
-    data_path = "./tests/data/GDSR/DE_02483.txt"
-    gdsr_data = data_readers.read_gdsr_data_from_file(data_path, raw_data_time_res="hourly", rain_col_prefix="rain")
+def daily_gsdr_data() -> pl.DataFrame:
+    data_path = "./tests/data/GSDR/DE_02483.txt"
+    gsdr_data = data_readers.read_gsdr_data_from_file(data_path, raw_data_time_res="hourly", rain_col_prefix="rain")
     # convert to daily
-    gdsr_data_daily = data_readers.convert_data_hourly_to_daily(
-        gdsr_data, rain_cols=[DEFAULT_RAIN_COL], hour_offset=DEFAULT_GDSR_OFFSET
+    gsdr_data_daily = data_readers.convert_data_hourly_to_daily(
+        gsdr_data, rain_cols=[DEFAULT_RAIN_COL], hour_offset=DEFAULT_GSDR_OFFSET
     )
-    return gdsr_data_daily
+    return gsdr_data_daily
 
 
 @pytest.fixture
-def gdsr_gauge_network() -> pl.DataFrame:
-    return data_readers.load_gdsr_gauge_network_metadata(path_to_gdsr_dir="./tests/data/GDSR/")
+def gsdr_gauge_network() -> pl.DataFrame:
+    return data_readers.load_gsdr_gauge_network_metadata(path_to_gsdr_dir="./tests/data/GSDR/")
 
 
 @pytest.fixture()
@@ -136,53 +136,53 @@ def monthly_gpcc_network() -> pl.DataFrame:
 
 
 @pytest.fixture()
-def mins15_gdsr_network() -> pl.DataFrame:
-    hourly_gdsr_network = get_hourly_gdsr_network(path_to_gdsr_dir="./tests/data/GDSR/", target_id="DE_00310")
-    mins15_gdsr_network = hourly_gdsr_network.upsample("time", every="15m")
-    mins15_gdsr_network = mins15_gdsr_network.with_columns(
-        [pl.col(col).forward_fill(limit=3) for col in mins15_gdsr_network.columns[1:]]  # hours
+def mins15_gsdr_network() -> pl.DataFrame:
+    hourly_gsdr_network = get_hourly_gsdr_network(path_to_gsdr_dir="./tests/data/GSDR/", target_id="DE_00310")
+    mins15_gsdr_network = hourly_gsdr_network.upsample("time", every="15m")
+    mins15_gsdr_network = mins15_gsdr_network.with_columns(
+        [pl.col(col).forward_fill(limit=3) for col in mins15_gsdr_network.columns[1:]]  # hours
     )
-    mins15_gdsr_network = mins15_gdsr_network[50000:]
-    return mins15_gdsr_network
+    mins15_gsdr_network = mins15_gsdr_network[50000:]
+    return mins15_gsdr_network
 
 
 @pytest.fixture()
-def hourly_gdsr_network() -> pl.DataFrame:
-    return get_hourly_gdsr_network(path_to_gdsr_dir="./tests/data/GDSR/", target_id="DE_00310")
+def hourly_gsdr_network() -> pl.DataFrame:
+    return get_hourly_gsdr_network(path_to_gsdr_dir="./tests/data/GSDR/", target_id="DE_00310")
 
 
 @pytest.fixture()
-def hourly_gdsr_network_no_prefix() -> pl.DataFrame:
-    return get_hourly_gdsr_network(
-        path_to_gdsr_dir="./tests/data/GDSR/", target_id="DE_00310", rain_col_prefix=None, suffix_only=True
+def hourly_gsdr_network_no_prefix() -> pl.DataFrame:
+    return get_hourly_gsdr_network(
+        path_to_gsdr_dir="./tests/data/GSDR/", target_id="DE_00310", rain_col_prefix=None, suffix_only=True
     )
 
 
 @pytest.fixture()
-def daily_gdsr_network() -> pl.DataFrame:
-    gdsr_network = get_hourly_gdsr_network(path_to_gdsr_dir="./tests/data/GDSR/", target_id="DE_00310")
+def daily_gsdr_network() -> pl.DataFrame:
+    gsdr_network = get_hourly_gsdr_network(path_to_gsdr_dir="./tests/data/GSDR/", target_id="DE_00310")
 
     # convert to daily
-    daily_gdsr_network = data_readers.convert_data_hourly_to_daily(
-        gdsr_network, rain_cols=gdsr_network.columns[1:], hour_offset=DEFAULT_GDSR_OFFSET
+    daily_gsdr_network = data_readers.convert_data_hourly_to_daily(
+        gsdr_network, rain_cols=gsdr_network.columns[1:], hour_offset=DEFAULT_GSDR_OFFSET
     )
-    return daily_gdsr_network
+    return daily_gsdr_network
 
 
 @pytest.fixture()
-def monthly_gdsr_network() -> pl.DataFrame:
-    gdsr_network = get_hourly_gdsr_network(path_to_gdsr_dir="./tests/data/GDSR/", target_id="DE_00310")
+def monthly_gsdr_network() -> pl.DataFrame:
+    gsdr_network = get_hourly_gsdr_network(path_to_gsdr_dir="./tests/data/GSDR/", target_id="DE_00310")
 
     # convert to daily
-    daily_gdsr_network = data_readers.convert_data_hourly_to_daily(
-        gdsr_network, rain_cols=gdsr_network.columns[1:], hour_offset=DEFAULT_GDSR_OFFSET
+    daily_gsdr_network = data_readers.convert_data_hourly_to_daily(
+        gsdr_network, rain_cols=gsdr_network.columns[1:], hour_offset=DEFAULT_GSDR_OFFSET
     )
 
     # convert to monthly
-    monthly_gdsr_network = data_utils.convert_daily_data_to_monthly(
-        daily_gdsr_network, rain_cols=daily_gdsr_network.columns[1:], perc_for_valid_month=95
+    monthly_gsdr_network = data_utils.convert_daily_data_to_monthly(
+        daily_gsdr_network, rain_cols=daily_gsdr_network.columns[1:], perc_for_valid_month=95
     )
-    return monthly_gdsr_network
+    return monthly_gsdr_network
 
 
 @pytest.fixture
@@ -311,11 +311,11 @@ def inconsistent_timestep_data():
 
 
 @pytest.fixture()
-def daily_gdsr_data_w_breakpoint(daily_gdsr_data):
+def daily_gsdr_data_w_breakpoint(daily_gsdr_data):
     # Modify 'values' column: add 10 to rows after index 10
-    return daily_gdsr_data.with_columns(
+    return daily_gsdr_data.with_columns(
         [
-            pl.when(pl.int_range(0, daily_gdsr_data.height).alias("idx") > 200)
+            pl.when(pl.int_range(0, daily_gsdr_data.height).alias("idx") > 200)
             .then(pl.col(DEFAULT_RAIN_COL) + 10)
             .otherwise(pl.col(DEFAULT_RAIN_COL) / pl.col(DEFAULT_RAIN_COL))
             .alias(DEFAULT_RAIN_COL)

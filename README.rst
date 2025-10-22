@@ -51,7 +51,7 @@ Example 2. - Neighbourhood quality checks for the global sub-daily rain gauge ne
         n_closest = 10 # number of closest neighbours to consider
         min_overlap_days = 500  # minimum overlapping days to be considered a neighbour
 
-        gsdr_obj = data_readers.GSDRNetworkReader(path_to_gdsr_dir="path/to/GSDR/data")
+        gsdr_obj = data_readers.GSDRNetworkReader(path_to_gsdr_dir="path/to/GSDR/data")
 
         nearby_ids = list(
             gsdr_obj.get_nearest_overlapping_neighbours_to_target(

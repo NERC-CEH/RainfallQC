@@ -37,23 +37,23 @@ def test_load_userpath_etccdi_data():
     data_readers.load_etccdi_data(etccdi_var="PRCPTOT", path_to_etccdi="./src/rainfallqc/data/ETCCDI/")
 
 
-def test_load_gdsr_gauge_network_metadata():
-    result = data_readers.load_gdsr_gauge_network_metadata(path_to_gdsr_dir="./tests/data/GDSR/")
+def test_load_gsdr_gauge_network_metadata():
+    result = data_readers.load_gsdr_gauge_network_metadata(path_to_gsdr_dir="./tests/data/GSDR/")
     assert len(result.columns) == 21
     assert len(result) == 11
 
     with pytest.raises(ValueError):
-        data_readers.load_gdsr_gauge_network_metadata(path_to_gdsr_dir="./tests/data/GDSR_test")
+        data_readers.load_gsdr_gauge_network_metadata(path_to_gsdr_dir="./tests/data/GSDR_test")
 
 
 def test_get_paths_using_gauge_ids():
     result = data_readers.get_paths_using_gauge_ids(
-        gauge_ids={"DE_00310", "DE_00390"}, dir_path="./tests/data/GDSR/", file_format=".txt"
+        gauge_ids={"DE_00310", "DE_00390"}, dir_path="./tests/data/GSDR/", file_format=".txt"
     )
     assert len(result) == 2
     with pytest.raises(IndexError):
         data_readers.get_paths_using_gauge_ids(
-            gauge_ids={"DE_00310", "DE_00390"}, dir_path="./tests/data/GDSR/", file_format=".dat"
+            gauge_ids={"DE_00310", "DE_00390"}, dir_path="./tests/data/GSDR/", file_format=".dat"
         )
 
     result = data_readers.get_paths_using_gauge_ids(
@@ -119,28 +119,28 @@ def test_load_gpcc_gauge_network_metadata():
     assert sorted(result["location"])[5] == "Meschede"
 
 
-def test_gdsr_network_reader():
-    gdsr_obj = data_readers.GDSRNetworkReader(path_to_gdsr_dir="./tests/data/GDSR/")
-    assert hasattr(gdsr_obj, "metadata")
-    assert hasattr(gdsr_obj, "data_paths")
+def test_gsdr_network_reader():
+    gsdr_obj = data_readers.GSDRNetworkReader(path_to_gsdr_dir="./tests/data/GSDR/")
+    assert hasattr(gsdr_obj, "metadata")
+    assert hasattr(gsdr_obj, "data_paths")
 
 
-def test_gdsr_network_nearest_neighbours():
-    gdsr_obj = data_readers.GDSRNetworkReader(path_to_gdsr_dir="./tests/data/GDSR/")
-    result = gdsr_obj.get_nearest_overlapping_neighbours_to_target(
+def test_gsdr_network_nearest_neighbours():
+    gsdr_obj = data_readers.GSDRNetworkReader(path_to_gsdr_dir="./tests/data/GSDR/")
+    result = gsdr_obj.get_nearest_overlapping_neighbours_to_target(
         target_id="DE_03215", distance_threshold=30, n_closest=3, min_overlap_days=1000
     )
     assert sorted(list(result)) == ["DE_02483", "DE_02718", "DE_06303"]
 
 
-def test_gdsr_network_load_network_data():
-    gdsr_obj = data_readers.GDSRNetworkReader(path_to_gdsr_dir="./tests/data/GDSR/")
-    result = gdsr_obj.load_network_data(
+def test_gsdr_network_load_network_data():
+    gsdr_obj = data_readers.GSDRNetworkReader(path_to_gsdr_dir="./tests/data/GSDR/")
+    result = gsdr_obj.load_network_data(
         rain_col_prefix="rain",
         data_paths=[
-            "./tests/data/GDSR/DE_06303.txt",
-            "./tests/data/GDSR/DE_00310.txt",
-            "./tests/data/GDSR/DE_02483.txt",
+            "./tests/data/GSDR/DE_06303.txt",
+            "./tests/data/GSDR/DE_00310.txt",
+            "./tests/data/GSDR/DE_02483.txt",
         ],
     )
     assert len(result.columns) == 4

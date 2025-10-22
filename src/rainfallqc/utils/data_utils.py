@@ -582,8 +582,8 @@ def replace_missing_vals_with_nan(
 
     Returns
     -------
-    gdsr_data
-        GDSR data with missing values replaced
+    gsdr_data
+        GSDR data with missing values replaced
 
     """
     if missing_val is None:

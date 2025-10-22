@@ -93,12 +93,12 @@ History
 ------------------
 * Add QC16-QC17
 * Add neighbourhood utility functions
-* Add data readers for GPCC and GDSR data from intense
+* Add data readers for GPCC and GSDR data from intense
 
 0.0.6 (2025-05-09)
 ------------------
 * Add QC12-QC15
-* Add GPCC and GDSR daily fixtures
+* Add GPCC and GSDR daily fixtures
 * Package ETCCDI data with RainfallQC
 * Add description of each different type of QC check to header of files
 * Add checks for temporal resolution of data inputs
