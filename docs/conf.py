@@ -126,6 +126,10 @@ html_logo = "logos/rainfallQC_logo.png"
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ["_static"]
 
+# Custom CSS
+html_css_files = [
+    "css/my_theme.css",
+]
 
 # -- Options for HTMLHelp output ---------------------------------------
 
