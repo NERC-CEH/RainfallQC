@@ -2,6 +2,12 @@
 History
 =======
 
+0.2.5 (2025-10-?)
+------------------
+* Add AUTHORS.rst file
+* Update README.rst examples to remove comments
+
+
 0.2.4 (2025-10-13)
 ------------------
 * Fix haversine function so inputs are cast to np.ndarray

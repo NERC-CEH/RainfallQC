@@ -25,6 +25,7 @@ RainfallQC is a package for running quality control (QC) on rain gauge data in a
    :caption: Other
 
    contributing
+   credits
    history
 
 Indices and tables
