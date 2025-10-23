@@ -4,6 +4,7 @@
 
 import datetime
 
+import numpy as np
 import polars as pl
 import pytest
 
@@ -122,5 +123,9 @@ def test_get_nearest_non_nan_etccdi_val_to_gauge():
     assert round(float(result["R99p"].max()), 2) == 91.68
     with pytest.raises(ValueError):
         neighbourhood_utils.get_nearest_non_nan_etccdi_val_to_gauge(
-            etccdi_r99p, etccdi_name="R99p", gauge_lat=90.0, gauge_lon=10.0
+            etccdi_r99p, etccdi_name="R99p", gauge_lat="invalid", gauge_lon=10.0
+        )
+    with pytest.raises(TypeError):
+        neighbourhood_utils.get_nearest_non_nan_etccdi_val_to_gauge(
+            etccdi_r99p, etccdi_name="R99p", gauge_lat=np.array([50.0, 51.1]), gauge_lon=10.0
         )

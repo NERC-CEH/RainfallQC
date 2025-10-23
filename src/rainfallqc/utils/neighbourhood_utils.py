@@ -427,6 +427,12 @@ def get_nearest_non_nan_etccdi_val_to_gauge(
     # 1. Stack lat/lon into a single dimension
     stacked = etccdi_data.stack(points=("lat", "lon"))
 
+    try:
+        gauge_lat = float(gauge_lat)
+        gauge_lon = float(gauge_lon)
+    except TypeError as te:
+        raise TypeError("Gauge latitude and longitude must be convertible to float.") from te
+
     # 2. Compute haversine distance to each point
     dists = spatial_utils.haversine(stacked["lon"], stacked["lat"], gauge_lon, gauge_lat)
 

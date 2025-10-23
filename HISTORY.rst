@@ -6,9 +6,12 @@ History
 ------------------
 * Overhaul tutorials, quickstart and example on readthedocs
 * allow user-defined qc frameworks to be passed to apply_qc_framework function
+* check for data input to haversine function are convertible to float
 * rename data_resolution parameter to smallest_measurable_rainfall_amount
 * rename neighbouring_gauge_col to nearest_neighbour
 * rename neighbouring_gauges_cols to list_of_nearest_neighbours
+* update all unit tests to reflect changes above
+
 
 0.2.5 (2025-10-22)
 ------------------
