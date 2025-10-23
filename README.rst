@@ -30,79 +30,79 @@ RainfallQC can be installed from PyPi:
 
 Example use
 -----------
-`**Demo notebook**<https://github.com/Thomasjkeel/RainfallQC-notebooks/blob/main/notebooks/demo/rainfallQC_demo.ipynb>`_
 
 Example 1. - Individual quality checks on single rain gauge
 ===========================================================
+Let's say you have data for a single rain gauge stored in "hourly_rain_gauge_data.csv" which looks like this:
+
+.. code-block:: csv
+
+        time,rain_mm
+        2020-01-01 00:00,0.0
+        2020-01-01 01:00,0.1
+        2020-01-01 02:00,0.0
+        2020-01-01 03:00,1.0
+        2020-01-01 04:00,0.6
+        ...
+
+You can run individual quality control checks as follows:
 
 .. code-block:: python
 
         import polars as pl
-        from rainfallqc import gauge_checks, comparison_checks
+        from rainfallqc import gauge_checks
 
-        data = pl.read_csv("rain_gauge_data.csv")
+        data = pl.read_csv("hourly_rain_gauge_data.csv")
         intermittency_flag = gauge_checks.check_intermittency(data, target_gauge_col="rain_mm")
 
-Example 2. - Neighbourhood quality checks for the global sub-daily rain gauge network (GSDR)
-============================================================================================
 
-.. code-block:: python
-
-        from rainfallqc import neighbourhood_checks
-        from rainfallqc.utils import data_readers
-
-        distance_threshold = 50  # km
-        n_closest = 10 # number of closest neighbours to consider
-        min_overlap_days = 500  # minimum overlapping days to be considered a neighbour
-
-        gsdr_obj = data_readers.GSDRNetworkReader(path_to_gsdr_dir="path/to/GSDR/data")
-
-        nearby_ids = list(
-            gsdr_obj.get_nearest_overlapping_neighbours_to_target(
-                target_id="DE_00310", distance_threshold=distance_threshold, n_closest=n_closest, min_overlap_days=min_overlap_days
-            )
-        )
-        nearby_ids.append(target_id)
-        nearby_data_paths = gsdr_obj.metadata.filter(pl.col("station_id").is_in(nearby_ids))["path"]
-
-        # Load those nearest gauges from network metadata
-        gsdr_network = gsdr_obj.load_network_data(data_paths=nearby_data_paths)
-
-        # Run wet neighbour check
-        extreme_wet_flags = neighbourhood_checks.check_wet_neighbours(
-            gsdr_network,
-            target_gauge_col="rain_mm_DE_02483",
-            neighbouring_gauge_cols=gsdr_network.columns[1:],  # exclude time
-            time_res="hourly",
-            wet_threshold=1.0, # threshold for rainfall intensity to be considered
-            min_n_neighbours=5, # number of neighbours needed for comparison
-            n_neighbours_ignored=0, # ignore no neighbours and include all
-        )
-
-Example 3. - Applying a framework of QC methods (e.g. IntenseQC)
+Example 2. - Applying a framework of QC methods (e.g. IntenseQC)
 ================================================================
+You may have data that you want to run as part of a workflow of QC methods, e.g. the IntenseQC framework.
+Let's say you have data for a multiple rain gauge stored in "hourly_rain_gauge_network.csv" which looks like this:
+
+.. code-block:: csv
+
+        time,rain_mm_gauge_1,rain_mm_gauge_2,rain_mm_gauge_3
+        2020-01-01 00:00,0.0,0.5,0.0
+        2020-01-01 01:00,0.5,0.0,1.0
+        2020-01-01 02:00,0.0,1.0,0.0
+        2020-01-01 03:00,1.0,0.0,0.5
+        2020-01-01 04:00,0.0,0.5,0.0
+        ...
+
+To run some of the location-specific checks you will also need metadata for the gauges, e.g.:
+
+.. code-block:: csv
+
+        gauge_id,latitude,longitude
+        rain_mm_gauge_1,52.0,-1.5
+        rain_mm_gauge_2,52.1,-1.6
+        rain_mm_gauge_3,52.2,-1.4
+        ...
+
 
 .. code-block:: python
 
+        import polars as pl
         from rainfallqc.qc_frameworks import apply_qc_framework
 
-        # 1. Decide which QC methods of IntenseQC will be run
-        qc_framework = "IntenseQC"
+        rain_gauge_network = pl.read_csv("hourly_rain_gauge_network.csv")
+
         qc_methods_to_run = ["QC1", "QC8", "QC9", "QC10", "QC11", "QC12", "QC14", "QC15", "QC16"]
 
-        # 2 Decide which parameters for QC
+        # Decide which parameters for QC
         qc_kwargs = {
             "QC1": {"quantile": 5},
             "QC14": {"wet_day_threshold": 1.0, "accumulation_multiplying_factor": 2.0},
             "QC16": {
-                "neighbouring_gauge_cols": daily_gpcc_network.columns[2:],
+                "neighbouring_gauge_cols": rain_gauge_network.columns[2:],
                 "wet_threshold": 1.0,
                 "min_n_neighbours": 5,
                 "n_neighbours_ignored": 0,
             },
-            # Shared defaults applied to all
             "shared": {
-                "target_gauge_col": "rain_mm_DE_02483",
+                "target_gauge_col": "rain_mm_gauge_1",
                 "gauge_lat": gpcc_metadata["latitude"],
                 "gauge_lon": gpcc_metadata["longitude"],
                 "time_res": "daily",
@@ -110,18 +110,20 @@ Example 3. - Applying a framework of QC methods (e.g. IntenseQC)
             },
         }
 
-        # 3. Run QC methods on network data
+        # Run QC methods
         qc_result = apply_qc_framework.run_qc_framework(
-            daily_gpcc_network, qc_framework=qc_framework, qc_methods_to_run=qc_methods_to_run, qc_kwargs=qc_kwargs
+            rain_gauge_network, qc_framework=qc_framework, qc_methods_to_run=qc_methods_to_run, qc_kwargs=qc_kwargs
         )
 
 
 Other examples
 ===================
-Also see example Jupyter Notebooks here: https://github.com/Thomasjkeel/RainfallQC-notebooks/tree/main
+Of course, your data may not be tabular, or may not be stored in a single file. Therefore, please see our other `Tutorials <https://rainfallqc.readthedocs.io/en/latest/tutorials.html>`_.
+There is also a `**demo notebook**<https://github.com/Thomasjkeel/RainfallQC-notebooks/blob/main/notebooks/demo/rainfallQC_demo.ipynb>`_.
 
-Documents
----------
+Documentation and License
+-------------------------
+* RainfallQC is developed and maintained by UKCEH.
 * Free software: GNU General Public License v3
 * Documentation: https://rainfallqc.readthedocs.io.
 
@@ -129,16 +131,17 @@ Documents
 Features
 --------
 
-- 25 rainfall QC methods (all from IntenseQC)
+- 27 rainfall QC methods (25 from IntenseQC, 2 from pyPWSQC)
+- polars DataFrame support for fast data processing
+- modular structure so you can pick and choose which checks to run
+- support for single gauges or networks of gauges
 - editable parameters so you can tweak thresholds, streak or accumulation lengths, and distances to neighbouring gauges
 
 Credits
 -------
-Based on the IntenseQC: https://github.com/nclwater/intense-qc/tree/master
-
-Please email tomkee@ceh.ac.uk if you have any questions.
-
-This package was created with Cookiecutter_ and the `audreyr/cookiecutter-pypackage`_ project template.
+* Builds upon `IntenseQC <https://github.com/nclwater/intense-qc/tree/master>`_, and (is compatible with) `pyPWSQC <https://github.com/OpenSenseAction/pypwsqc>`_:
+* Please email tomkee@ceh.ac.uk if you have any questions.
+* This package was created with Cookiecutter_ and the `audreyr/cookiecutter-pypackage`_ project template.
 
 .. _Cookiecutter: https://github.com/audreyr/cookiecutter
 .. _`audreyr/cookiecutter-pypackage`: https://github.com/audreyr/cookiecutter-pypackage
