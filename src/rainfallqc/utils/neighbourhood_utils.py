@@ -130,7 +130,7 @@ def get_ids_of_n_nearest_overlapping_neighbouring_gauges(
     station_id_col: str = STATION_ID_COL,
     start_datetime_col: str = START_DATETIME_COL,
     end_datetime_col: str = END_DATETIME_COL,
-) -> set:
+) -> list:
     """
     Get gauge IDs of nearest n time-overlapping neighbouring gauges.
 
@@ -189,7 +189,7 @@ def get_ids_of_n_nearest_overlapping_neighbouring_gauges(
 
     # 6. Select gauge IDs meeting both conditions
     all_neighbour_ids = set(neighbour_distances_ids).intersection(set(neighbour_overlap_ids))
-    return all_neighbour_ids
+    return list(all_neighbour_ids)
 
 
 def compute_temporal_overlap_days(
