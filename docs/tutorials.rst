@@ -89,7 +89,7 @@ Let's say you have data for a single rain gauge stored in "hourly_rain_gauge_dat
 
 
 For the majority of the checks in RainfallQC, you can load in your data using `polars <https://pola-rs.github.io/polars-book/>`_ and run the checks directly.
-Below, we run a check from the ``gauge_checks`` and ``comparison_checks`` modules.
+Below, we run a check from the ``timeseries_checks`` module.
 
 .. code-block:: python
     :caption: Running a daily accumulation check on a single rain gauge
@@ -109,6 +109,9 @@ Below, we run a check from the ``gauge_checks`` and ``comparison_checks`` module
             gauge_lon=8.0,
             data_resolution=0.1,
         )
+
+
+Please note that some checks may require additional metadata, such as gauge location (latitude and longitude) or smallest measurable rainfall amount (e.g. 0.1 mm).
 
 
 Example 2. - Run individual checks on rain gauge network data (single source)
@@ -136,6 +139,11 @@ Let's say you have data for a multiple rain gauge stored in "hourly_rain_gauge_n
     +---------------------+-----------------+-----------------+-----------------+
 
 
+You can then run a neighbourhood check from the ``neighbourhood_checks`` module.
+Please note, you will need explicitly define which gauges are considered neighbouring to the target gauge.
+You can do this with the `get_ids_of_n_nearest_overlapping_neighbouring_gauges <rainfallqc.checks.html#rainfallqc.checks.gauge_checks.check_years_where_nth_percentile_is_zero>`_ function.
+An example of its use is given in Example X below.
+
 .. code-block:: python
     :caption: Running a wet neighbours check on a rain gauge network
 
@@ -157,8 +165,7 @@ Let's say you have data for a multiple rain gauge stored in "hourly_rain_gauge_n
 
 Example 3. - Run single checks on rain gauge network data (multiple sources)
 -----------------------------------------------------------------------------
-Let's say you have data for a multiple rain gauge stored in multiple CSV files, with metadata stored in "rain_gauge_metadata.csv" which looks like this:
-
+Let's say you have data for a multiple rain gauge stored in multiple CSV files, you could use metadata to store the paths to them e.g. in "rain_gauge_metadata.csv" which could looks like this:
 
 
 .. table:: Example data 3. Rain gauge metadata
@@ -170,21 +177,19 @@ Let's say you have data for a multiple rain gauge stored in multiple CSV files, 
     +============+==========+===========+=====================+
     | gauge_1    | 53.0     | 2.0       | path/to/gauge_1.csv |
     +------------+----------+-----------+---------------------+
-    | gauge_2    | 54.1     | -0.5       | path/to/gauge_2.csv |
+    | gauge_2    | 54.1     | -0.5      | path/to/gauge_2.csv |
     +------------+----------+-----------+---------------------+
     | gauge_3    | 56.9     | 1.9       | path/to/gauge_3.csv |
     +------------+----------+-----------+---------------------+
     | ...        | ...      | ...       | ...                 |
     +------------+----------+-----------+---------------------+
 
-
 Bear in mind, you could create the 'path' column programmatically if needed.
-
-
 
 
 Example 4. - Running check when your rain gauge data in netCDF format
 ---------------------------------------------------------------------
+
 
 
 Example 5. - Tablular data you want to convert to xarray for pyPWSQC
@@ -194,17 +199,28 @@ Example 5. - Tablular data you want to convert to xarray for pyPWSQC
 
 Example 6. - Running multiple QC checks on a single gauge
 ---------------------------------------------------------
-Applying a framework of QC methods (e.g. IntenseQC) to a rain gauge network.
+To run multiple QC checks, you can use the `apply_qc_framework() <rainfallqc.checks.html#rainfallqc.qc_frameworks.html#module-rainfallqc.qc_frameworks.apply_qc_framework>`_
+method to run QC methods from a given framework (e.g. IntenseQC).
+
 Let's say you have daily rain gauge network data stored in a Polars DataFrame `daily_gpcc_network` (from a file like **Example data 2.**)
-and metadata stored in a dictionary `gpcc_metadata` (from a file like **Example data 3.**).
+and metadata stored in a dictionary `gpcc_metadata` (from a file like **Example data 3.**). You can then run multiple QC checks by defining which framework as follows:
+
 
 .. code-block:: python
 
+        import polars as pl
         from rainfallqc.qc_frameworks import apply_qc_framework
+
+        daily_gpcc_network = pl.read_csv("daily_gpcc_network.csv")  # Load your daily rain gauge network data
+        daily_gpcc_metadata = pl.read_csv("daily_gpcc_metadata.csv")  # Load your metadata
 
         # 1. Decide which QC methods of IntenseQC will be run
         qc_framework = "IntenseQC"
         qc_methods_to_run = ["QC1", "QC8", "QC9", "QC10", "QC11", "QC12", "QC14", "QC15", "QC16"]
+
+        # 2. Determine nearest neighbouring gauges for neighbourhood checks
+        gauge_lat = gpcc_metadata["latitude"]
+        gauge_lon = gpcc_metadata["longitude"]
 
         # 2 Decide which parameters for QC
         qc_kwargs = {
@@ -216,7 +232,6 @@ and metadata stored in a dictionary `gpcc_metadata` (from a file like **Example 
                 "min_n_neighbours": 5,
                 "n_neighbours_ignored": 0,
             },
-            # Shared defaults applied to all
             "shared": {
                 "target_gauge_col": "rain_mm_DE_02483",
                 "gauge_lat": gpcc_metadata["latitude"],
@@ -230,8 +245,6 @@ and metadata stored in a dictionary `gpcc_metadata` (from a file like **Example 
         qc_result = apply_qc_framework.run_qc_framework(
             daily_gpcc_network, qc_framework=qc_framework, qc_methods_to_run=qc_methods_to_run, qc_kwargs=qc_kwargs
         )
-
-
 
 
 Example 7. - Running multiple QC checks on a network of gauges
