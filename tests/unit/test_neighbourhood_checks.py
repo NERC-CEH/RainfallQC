@@ -2,6 +2,7 @@
 
 """Tests for neighbourhood quality control checks."""
 
+import numpy as np
 import polars as pl
 import pytest
 
@@ -125,6 +126,17 @@ def test_dry_neighbour_check_daily_gsdr(daily_gsdr_network):
     assert len(result.columns) == 2
     assert result["dry_spell_flag_daily"].max() == 3.0
     assert len(result.filter(pl.col("dry_spell_flag_daily") == 3)) == 150
+
+    daily_gsdr_network = daily_gsdr_network.with_columns(nan_col=np.nan)
+
+    neighbourhood_checks.check_dry_neighbours(
+        daily_gsdr_network,
+        target_gauge_col=f"{DEFAULT_RAIN_COL}_DE_02483",
+        list_of_nearest_stations=[f"{DEFAULT_RAIN_COL}_DE_02483", "nan_col", f"{DEFAULT_RAIN_COL}_DE_00310"],
+        time_res="daily",
+        min_n_neighbours=5,
+        dry_period_days=15,
+    )
 
 
 def test_check_dry_neighbour_daily_gpcc(daily_gpcc_network):
