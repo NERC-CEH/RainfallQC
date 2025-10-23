@@ -17,6 +17,11 @@ The easiest way to start using the package is to install it using :code:`pip ins
         flags = rainfallqc.gauge_checks.check_intermittency(data, target_gauge_col="rain_mm")
 
 
+All quality control checks in the RainfallQC package begin with ``check_``
+
+Content overview
+----------------
+
 RainfallQC contains five modules:
 
 1. ``gauge_checks`` - For detecting abnormalities in summary and descriptive statistics.
@@ -25,7 +30,16 @@ RainfallQC contains five modules:
 4. ``neighbourhood_checks`` - For detecting abnormalities based on measurements in neighbouring gauges.
 5. ``pypwsqc_filters`` - For applying quality assurance protocols and filters for rainfall data.
 
-
-All quality control checks in the RainfallQC package begin with ``check_``
-
 You can find a jupyter notebook with an easy-to-follow example `here <https://github.com/Thomasjkeel/RainfallQC-notebooks/blob/main/notebooks/demo/rainfallQC_demo.ipynb>`_
+
+Which checks for which temporal data_resolution
+-----------------------------------------------
+As you can imagine, not all quality control checks are suitable for all temporal data resolutions (e.g. 15 min, hourly, daily, monthly).
+Therefore, we have created a table that shows which checks are suitable for which temporal data resolutions.
+
+
+.. image:: https://github.com/NERC-CEH/RainfallQC/blob/main/docs/images/qc_applicability_table.png
+   :align: center
+   :height: 300px
+   :width: 200 px
+   :alt: Temporal applicability QC table
