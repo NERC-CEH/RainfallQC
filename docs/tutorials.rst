@@ -69,7 +69,7 @@ Example 1. - Running individual checks on a single rain gauge
 -------------------------------------------------------------
 Let's say you have data for a single rain gauge stored in "hourly_rain_gauge_data.csv" which looks like this:
 
-.. table:: Single rain gauge data example
+.. table:: Example data 1. Single rain gauge
     :widths: auto
     :align: center
 
@@ -92,7 +92,7 @@ For the majority of the checks in RainfallQC, you can load in your data using `p
 Below, we run a check from the ``gauge_checks`` and ``comparison_checks`` modules.
 
 .. code-block:: python
-    :caption: Running individual quality checks on a single rain gauge
+    :caption: Running a daily accumulation check on a single rain gauge
 
 
         import polars as pl
@@ -115,7 +115,7 @@ Example 2. - Run individual checks on rain gauge network data (single source)
 -----------------------------------------------------------------------------
 Let's say you have data for a multiple rain gauge stored in "hourly_rain_gauge_network.csv" which looks like this:
 
-.. table:: Rain gauge network data example
+.. table:: Example data 2. Rain gauge network
     :widths: auto
     :align: center
 
@@ -137,6 +137,7 @@ Let's say you have data for a multiple rain gauge stored in "hourly_rain_gauge_n
 
 
 .. code-block:: python
+    :caption: Running a wet neighbours check on a rain gauge network
 
         import polars as pl
         from rainfallqc import neighbourhood_checks
@@ -158,69 +159,44 @@ Example 3. - Run single checks on rain gauge network data (multiple sources)
 -----------------------------------------------------------------------------
 Let's say you have data for a multiple rain gauge stored in multiple CSV files, with metadata stored in "rain_gauge_metadata.csv" which looks like this:
 
-.. code-block:: csv
 
-        station_id,latitude,longitude,path
-        gauge_1,50.0,8.0,path/to/gauge_1.csv
-        gauge_2,50.1,8.1,path/to/gauge_2.csv
-        gauge_3,49.9,7.9,path/to/gauge_3.csv
-        ...
+
+.. table:: Example data 3. Rain gauge metadata
+    :widths: auto
+    :align: center
+
+    +------------+----------+-----------+---------------------+
+    | station_id | latitude | longitude | path                |
+    +============+==========+===========+=====================+
+    | gauge_1    | 53.0     | 2.0       | path/to/gauge_1.csv |
+    +------------+----------+-----------+---------------------+
+    | gauge_2    | 54.1     | -0.5       | path/to/gauge_2.csv |
+    +------------+----------+-----------+---------------------+
+    | gauge_3    | 56.9     | 1.9       | path/to/gauge_3.csv |
+    +------------+----------+-----------+---------------------+
+    | ...        | ...      | ...       | ...                 |
+    +------------+----------+-----------+---------------------+
+
 
 Bear in mind, you could create the 'path' column programmatically if needed.
 
 
 
 
-Example 4. - Individual quality checks on a single rain gauge
--------------------------------------------------------------
+Example 4. - Running check when your rain gauge data in netCDF format
+---------------------------------------------------------------------
 
 
-Example 5. - Individual quality checks on a single rain gauge
--------------------------------------------------------------
-
-
+Example 5. - Tablular data you want to convert to xarray for pyPWSQC
+--------------------------------------------------------------------
 
 
 
-Example X. - Neighbourhood quality checks for the global sub-daily rain gauge network (GSDR)
---------------------------------------------------------------------------------------------
-
-.. code-block:: python
-
-        from rainfallqc import neighbourhood_checks
-        from rainfallqc.utils import data_readers
-
-        distance_threshold = 50  # km
-        n_closest = 10 # number of closest neighbours to consider
-        min_overlap_days = 500  # minimum overlapping days to be considered a neighbour
-
-        gsdr_obj = data_readers.GSDRNetworkReader(path_to_gsdr_dir="path/to/GSDR/data")
-
-        nearby_ids = list(
-            gsdr_obj.get_nearest_overlapping_neighbours_to_target(
-                target_id="DE_00310", distance_threshold=distance_threshold, n_closest=n_closest, min_overlap_days=min_overlap_days
-            )
-        )
-        nearby_ids.append(target_id)
-        nearby_data_paths = gsdr_obj.metadata.filter(pl.col("station_id").is_in(nearby_ids))["path"]
-
-        # Load those nearest gauges from network metadata
-        gsdr_network = gsdr_obj.load_network_data(data_paths=nearby_data_paths)
-
-        # Run wet neighbour check
-        extreme_wet_flags = neighbourhood_checks.check_wet_neighbours(
-            gsdr_network,
-            target_gauge_col="rain_mm_DE_02483",
-            neighbouring_gauge_cols=gsdr_network.columns[1:],  # exclude time
-            time_res="hourly",
-            wet_threshold=1.0, # threshold for rainfall intensity to be considered
-            min_n_neighbours=5, # number of neighbours needed for comparison
-            n_neighbours_ignored=0, # ignore no neighbours and include all
-        )
-
-
-Example 3. - Applying a framework of QC methods (e.g. IntenseQC)
------------------------------------------------------------------
+Example 6. - Running multiple QC checks on a single gauge
+---------------------------------------------------------
+Applying a framework of QC methods (e.g. IntenseQC) to a rain gauge network.
+Let's say you have daily rain gauge network data stored in a Polars DataFrame `daily_gpcc_network` (from a file like **Example data 2.**)
+and metadata stored in a dictionary `gpcc_metadata` (from a file like **Example data 3.**).
 
 .. code-block:: python
 
@@ -254,6 +230,18 @@ Example 3. - Applying a framework of QC methods (e.g. IntenseQC)
         qc_result = apply_qc_framework.run_qc_framework(
             daily_gpcc_network, qc_framework=qc_framework, qc_methods_to_run=qc_methods_to_run, qc_kwargs=qc_kwargs
         )
+
+
+
+
+Example 7. - Running multiple QC checks on a network of gauges
+--------------------------------------------------------------
+
+
+
+Example 8. - Running a sensitivity analysis
+-------------------------------------------
+
 
 
 Also see example Jupyter Notebooks here: https://github.com/Thomasjkeel/RainfallQC-notebooks/tree/main
