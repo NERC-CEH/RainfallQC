@@ -120,6 +120,7 @@ Other examples
 ===================
 Of course, your data may not be tabular, or may not be stored in a single file. Therefore, please see our other `Tutorials <https://rainfallqc.readthedocs.io/en/latest/tutorials.html>`_.
 There is also a `**demo notebook**<https://github.com/Thomasjkeel/RainfallQC-notebooks/blob/main/notebooks/demo/rainfallQC_demo.ipynb>`_.
+Finally, different QC methods are suitable for different temporal resolutions - see our `Which checks are suitable for my data's temporal resolution? <https://rainfallqc.readthedocs.io/en/latest/quickstart.html>`_ for more information.
 
 Documentation and License
 -------------------------

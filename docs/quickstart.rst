@@ -32,8 +32,8 @@ RainfallQC contains five modules:
 
 You can find a jupyter notebook with an easy-to-follow example `here <https://github.com/Thomasjkeel/RainfallQC-notebooks/blob/main/notebooks/demo/rainfallQC_demo.ipynb>`_
 
-Which checks for which temporal data_resolution
------------------------------------------------
+Which checks are suitable for my data's temporal resolution?
+------------------------------------------------------------
 As you can imagine, not all quality control checks are suitable for all temporal data resolutions (e.g. 15 min, hourly, daily, monthly).
 Therefore, we have created a table that shows which checks are suitable for which temporal data resolutions.
 
