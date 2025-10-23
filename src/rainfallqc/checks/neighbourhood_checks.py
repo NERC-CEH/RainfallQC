@@ -69,7 +69,7 @@ def check_wet_neighbours(
     if target_gauge_col in list_of_nearest_stations_new:
         # Remove target col from list so it is not included as a neighbour of itself.
         list_of_nearest_stations_new.remove(target_gauge_col)
-    check_neighbouring_gauge_columns(neighbour_data, target_gauge_col, list_of_nearest_stations_new)
+    check_nearest_neighbour_columns(neighbour_data, target_gauge_col, list_of_nearest_stations_new)
 
     # 1. Resample to daily
     if time_res == "hourly":
@@ -81,20 +81,20 @@ def check_wet_neighbours(
 
     # 2. Loop through each neighbour and get wet_flags
     list_of_nearest_stations_iterable = list_of_nearest_stations_new.copy()  # make copy again to allow removal in loop
-    for neighbouring_gauge_col in list_of_nearest_stations_iterable:
+    for nearest_neighbour in list_of_nearest_stations_iterable:
         # 2.1 Flag data based on comparison of wet values in neighbours
         try:
             one_neighbour_data_wet_flags = flag_wet_day_errors_based_on_neighbours(
-                neighbour_data, target_gauge_col, neighbouring_gauge_col, wet_threshold
+                neighbour_data, target_gauge_col, nearest_neighbour, wet_threshold
             )
         except ValueError as ve:
-            list_of_nearest_stations_new.remove(neighbouring_gauge_col)
-            print(f"Warning: removing '{neighbouring_gauge_col}' from list_of_nearest_stations because: {ve}")
+            list_of_nearest_stations_new.remove(nearest_neighbour)
+            print(f"Warning: removing '{nearest_neighbour}' from list_of_nearest_stations because: {ve}")
             continue
 
         # 2.2 Join to all data
         neighbour_data = neighbour_data.join(
-            one_neighbour_data_wet_flags[["time", f"wet_flag_{neighbouring_gauge_col}"]],
+            one_neighbour_data_wet_flags[["time", f"wet_flag_{nearest_neighbour}"]],
             on="time",
             how="left",
         )
@@ -190,7 +190,7 @@ def check_dry_neighbours(
     if target_gauge_col in list_of_nearest_stations_new:
         # Remove target col from list so it is not included as a neighbour of itself.
         list_of_nearest_stations_new.remove(target_gauge_col)
-    check_neighbouring_gauge_columns(neighbour_data, target_gauge_col, list_of_nearest_stations_new)
+    check_nearest_neighbour_columns(neighbour_data, target_gauge_col, list_of_nearest_stations_new)
 
     # 1. Get proportions of dry period required to be flagged 1, 2, or 3
     dry_period_proportions = data_utils.get_dry_period_proportions(dry_period_days)
@@ -205,31 +205,31 @@ def check_dry_neighbours(
 
     # 3. Loop through each neighbour and get dry_flags
     list_of_nearest_stations_iterable = list_of_nearest_stations_new.copy()  # make copy again to allow removal in loop
-    for neighbouring_gauge_col in list_of_nearest_stations_iterable:
+    for nearest_neighbour in list_of_nearest_stations_iterable:
         # 3.1 Convert to dry spell fraction
         try:
             one_neighbour_data = get_dry_spell_fraction_col(
                 neighbour_data,
                 target_gauge_col=target_gauge_col,
                 dry_period_days=dry_period_days,
-                neighbouring_gauge_col=neighbouring_gauge_col,
+                nearest_neighbour=nearest_neighbour,
             )
         except ValueError as ve:
-            list_of_nearest_stations_new.remove(neighbouring_gauge_col)
-            print(f"Warning: {ve}. Removing {neighbouring_gauge_col} from list_of_nearest_stations.")
+            list_of_nearest_stations_new.remove(nearest_neighbour)
+            print(f"Warning: {ve}. Removing {nearest_neighbour} from list_of_nearest_stations.")
             continue
 
         # 3.2 Flag dry spell fractions
         one_neighbour_data_dry_flags = flag_dry_spell_fractions(
             one_neighbour_data,
             target_gauge_col=target_gauge_col,
-            neighbouring_gauge_col=neighbouring_gauge_col,
+            nearest_neighbour=nearest_neighbour,
             proportion_of_dry_day_for_flags=dry_period_proportions,
         )
 
         # 3.3 Join to all data
         neighbour_data = neighbour_data.join(
-            one_neighbour_data_dry_flags[["time", f"dry_flag_{neighbouring_gauge_col}"]],
+            one_neighbour_data_dry_flags[["time", f"dry_flag_{nearest_neighbour}"]],
             on="time",
             how="left",
         )
@@ -328,23 +328,23 @@ def check_monthly_neighbours(
     if target_gauge_col in list_of_nearest_stations_new:
         # Remove target col from list so it is not included as a neighbour of itself.
         list_of_nearest_stations_new.remove(target_gauge_col)
-    check_neighbouring_gauge_columns(monthly_neighbour_data, target_gauge_col, list_of_nearest_stations_new)
+    check_nearest_neighbour_columns(monthly_neighbour_data, target_gauge_col, list_of_nearest_stations_new)
 
     # 2. Loop through each neighbour and get percentage diff flags
-    for neighbouring_gauge_col in list_of_nearest_stations_new:
+    for nearest_neighbour in list_of_nearest_stations_new:
         # 2.1. Calculate percentage difference between target and neighbour
         one_neighbour_data_perc_diff = monthly_neighbour_data.select(
-            ["time", stats.percentage_diff(pl.col(target_gauge_col), pl.col(neighbouring_gauge_col)).alias("perc_diff")]
+            ["time", stats.percentage_diff(pl.col(target_gauge_col), pl.col(nearest_neighbour)).alias("perc_diff")]
         )
 
         # 2.2 Flag percentage difference
         one_neighbour_data_monthly_flags = flag_percentage_diff_of_neighbour(
-            one_neighbour_data_perc_diff, neighbouring_gauge_col=neighbouring_gauge_col
+            one_neighbour_data_perc_diff, nearest_neighbour=nearest_neighbour
         )
 
         # 2.3 Join to all data
         monthly_neighbour_data = monthly_neighbour_data.join(
-            one_neighbour_data_monthly_flags[["time", f"perc_diff_flag_{neighbouring_gauge_col}"]],
+            one_neighbour_data_monthly_flags[["time", f"perc_diff_flag_{nearest_neighbour}"]],
             on="time",
             how="left",
         )
@@ -375,7 +375,7 @@ def check_monthly_neighbours(
 def check_timing_offset(
     neighbour_data: pl.DataFrame,
     target_gauge_col: str,
-    neighbouring_gauge_col: str,
+    nearest_neighbour: str,
     time_res: str,
     offsets_to_check: Iterable[int] = (-1, 0, 1),
 ) -> int:
@@ -395,7 +395,7 @@ def check_timing_offset(
         Rainfall data with target and neighbouring gauge and time col
     target_gauge_col :
         Target gauge column
-    neighbouring_gauge_col :
+    nearest_neighbour :
         Neighbouring gauge column
     time_res :
         Time resolution of data
@@ -409,8 +409,8 @@ def check_timing_offset(
 
     """
     # 0. Initial checks
-    assert all(column in neighbour_data.columns for column in [target_gauge_col, neighbouring_gauge_col]), (
-        f"Not all of {[target_gauge_col, neighbouring_gauge_col]} found in input data columns"
+    assert all(column in neighbour_data.columns for column in [target_gauge_col, nearest_neighbour]), (
+        f"Not all of {[target_gauge_col, nearest_neighbour]} found in input data columns"
     )
     # Add 0 (i.e. no lag) to offsets to check if not included
     if 0 not in offsets_to_check:
@@ -430,7 +430,7 @@ def check_timing_offset(
 
         # 2.2 get non-zero minima column
         offset_neighbour_data = neighbourhood_utils.get_rain_not_minima_column(
-            offset_neighbour_data, target_col=target_gauge_col, other_col=neighbouring_gauge_col
+            offset_neighbour_data, target_col=target_gauge_col, other_col=nearest_neighbour
         )
 
         # 2.3 Calculate affinity index
@@ -440,7 +440,7 @@ def check_timing_offset(
         neighbour_correlation[offset] = stats.gauge_correlation(
             offset_neighbour_data,
             target_col=target_gauge_col,
-            other_col=neighbouring_gauge_col,
+            other_col=nearest_neighbour,
         )
 
     # Get flag
@@ -455,7 +455,7 @@ def check_timing_offset(
 
 @qc_check("check_neighbour_affinity_index", require_non_negative=True)
 def check_neighbour_affinity_index(
-    neighbour_data: pl.DataFrame, target_gauge_col: str, neighbouring_gauge_col: str
+    neighbour_data: pl.DataFrame, target_gauge_col: str, nearest_neighbour: str
 ) -> float:
     """
     Pre-QC Affinity index calculated between target and nearest neighbouring gauge.
@@ -471,7 +471,7 @@ def check_neighbour_affinity_index(
         Rainfall data with target and neighbouring gauge and time col
     target_gauge_col :
         Target gauge column
-    neighbouring_gauge_col :
+    nearest_neighbour :
         Neighbouring gauge column
 
     Returns
@@ -482,7 +482,7 @@ def check_neighbour_affinity_index(
     """
     # 1. get non-zero minima column
     neighbour_data = neighbourhood_utils.get_rain_not_minima_column(
-        neighbour_data, target_col=target_gauge_col, other_col=neighbouring_gauge_col
+        neighbour_data, target_col=target_gauge_col, other_col=nearest_neighbour
     )
 
     # 2. Calculate affinity index
@@ -490,9 +490,7 @@ def check_neighbour_affinity_index(
 
 
 @qc_check("check_neighbour_correlation", require_non_negative=True)
-def check_neighbour_correlation(
-    neighbour_data: pl.DataFrame, target_gauge_col: str, neighbouring_gauge_col: str
-) -> float:
+def check_neighbour_correlation(neighbour_data: pl.DataFrame, target_gauge_col: str, nearest_neighbour: str) -> float:
     """
     Pre-QC pearson correlation calculated between target and neighbouring gauge.
 
@@ -507,7 +505,7 @@ def check_neighbour_correlation(
         Rainfall data with target and neighbouring gauge and time col
     target_gauge_col :
         Target gauge column
-    neighbouring_gauge_col :
+    nearest_neighbour :
         Neighbouring gauge column
 
     Returns
@@ -517,12 +515,12 @@ def check_neighbour_correlation(
 
     """
     # 1. Calculate pearson correlation
-    return stats.gauge_correlation(neighbour_data, target_col=target_gauge_col, other_col=neighbouring_gauge_col)
+    return stats.gauge_correlation(neighbour_data, target_col=target_gauge_col, other_col=nearest_neighbour)
 
 
 @qc_check("check_daily_factor", require_non_negative=True)
 def check_daily_factor(
-    neighbour_data: pl.DataFrame, target_gauge_col: str, neighbouring_gauge_col: str, averaging_method: str = "mean"
+    neighbour_data: pl.DataFrame, target_gauge_col: str, nearest_neighbour: str, averaging_method: str = "mean"
 ) -> float:
     """
     Daily factor difference between target and neighbouring gauge.
@@ -538,7 +536,7 @@ def check_daily_factor(
         Daily rainfall data with target and neighbouring gauge and time col
     target_gauge_col :
         Target gauge column
-    neighbouring_gauge_col :
+    nearest_neighbour :
         Neighbouring gauge column
     averaging_method :
         Method to use to get average i.e. mean or median (default mean)
@@ -558,11 +556,11 @@ def check_daily_factor(
     data_utils.check_data_is_specific_time_res(neighbour_data, "daily")
 
     # 1. Daily factor difference
-    daily_factor = stats.factor_diff(neighbour_data, target_col=target_gauge_col, other_col=neighbouring_gauge_col)
+    daily_factor = stats.factor_diff(neighbour_data, target_col=target_gauge_col, other_col=nearest_neighbour)
 
     # 2. Get mean daily factor difference
     daily_factor_positive_vals = daily_factor.drop_nans().filter(
-        (pl.col(target_gauge_col) > 0) & (pl.col(neighbouring_gauge_col) > 0)
+        (pl.col(target_gauge_col) > 0) & (pl.col(nearest_neighbour) > 0)
     )
 
     if averaging_method == "mean":
@@ -574,9 +572,7 @@ def check_daily_factor(
 
 
 @qc_check("check_monthly_factor", require_non_negative=True)
-def check_monthly_factor(
-    neighbour_data: pl.DataFrame, target_gauge_col: str, neighbouring_gauge_col: str
-) -> pl.DataFrame:
+def check_monthly_factor(neighbour_data: pl.DataFrame, target_gauge_col: str, nearest_neighbour: str) -> pl.DataFrame:
     """
     Monthly factor difference between target and neighbouring gauge.
 
@@ -597,7 +593,7 @@ def check_monthly_factor(
         Daily rainfall data with target and neighbouring gauge and time col
     target_gauge_col :
         Target gauge column
-    neighbouring_gauge_col :
+    nearest_neighbour :
         Neighbouring gauge column
 
     Returns
@@ -610,10 +606,10 @@ def check_monthly_factor(
     data_utils.check_data_is_monthly(neighbour_data)
 
     # 1. Calculate monthly factor difference
-    monthly_factor = stats.factor_diff(neighbour_data, target_col=target_gauge_col, other_col=neighbouring_gauge_col)
+    monthly_factor = stats.factor_diff(neighbour_data, target_col=target_gauge_col, other_col=nearest_neighbour)
 
     # 2. Flag factor difference
-    monthly_factor_flags = flag_monthly_factor_differences(monthly_factor, target_gauge_col=neighbouring_gauge_col)
+    monthly_factor_flags = flag_monthly_factor_differences(monthly_factor, target_gauge_col=nearest_neighbour)
     return monthly_factor_flags.select(["time", "monthly_factor_flag"])
 
 
@@ -824,7 +820,7 @@ def get_majority_positive_or_negative_flags(
 
 
 def get_dry_spell_fraction_col(
-    neighbour_data: pl.DataFrame, target_gauge_col: str, neighbouring_gauge_col: str, dry_period_days: int
+    neighbour_data: pl.DataFrame, target_gauge_col: str, nearest_neighbour: str, dry_period_days: int
 ) -> pl.DataFrame:
     """
     Get dry spell fraction column.
@@ -835,7 +831,7 @@ def get_dry_spell_fraction_col(
         Rainfall data of neighbouring gauges with time col
     target_gauge_col :
         Target gauge column
-    neighbouring_gauge_col:
+    nearest_neighbour:
         Neighbouring gauge column
     dry_period_days :
         Length for of a "dry_spell" (default: 15 days)
@@ -854,20 +850,20 @@ def get_dry_spell_fraction_col(
             )
         )
         .alias(f"dry_spell_fraction_{target_gauge_col}"),
-        pl.col(neighbouring_gauge_col)
+        pl.col(nearest_neighbour)
         .map_batches(
             lambda row: data_utils.calculate_dry_spell_fraction(
-                row, target_gauge_col=neighbouring_gauge_col, dry_period_days=dry_period_days
+                row, target_gauge_col=nearest_neighbour, dry_period_days=dry_period_days
             )
         )
-        .alias(f"dry_spell_fraction_{neighbouring_gauge_col}"),
+        .alias(f"dry_spell_fraction_{nearest_neighbour}"),
     )
 
 
 def flag_dry_spell_fractions(
     one_neighbour_data: pl.DataFrame,
     target_gauge_col: str,
-    neighbouring_gauge_col: str,
+    nearest_neighbour: str,
     proportion_of_dry_day_for_flags: dict,
 ) -> pl.DataFrame:
     """
@@ -879,7 +875,7 @@ def flag_dry_spell_fractions(
         Rainfall data of one neighbouring gauge with time col
     target_gauge_col :
         Target gauge column
-    neighbouring_gauge_col :
+    nearest_neighbour :
         Neighbouring gauge column
     proportion_of_dry_day_for_flags :
         Proportion of dry days needed to be flagged 1, 2, or 3
@@ -893,32 +889,32 @@ def flag_dry_spell_fractions(
     return one_neighbour_data.with_columns(
         pl.when(
             (pl.col(f"dry_spell_fraction_{target_gauge_col}") == 1.0)
-            & (pl.col(f"dry_spell_fraction_{neighbouring_gauge_col}") == 1.0)
+            & (pl.col(f"dry_spell_fraction_{nearest_neighbour}") == 1.0)
         )
         .then(0)
         .when(
             (pl.col(f"dry_spell_fraction_{target_gauge_col}") == 1.0)
-            & (pl.col(f"dry_spell_fraction_{neighbouring_gauge_col}") < 1.0)
-            & (pl.col(f"dry_spell_fraction_{neighbouring_gauge_col}") >= proportion_of_dry_day_for_flags["1"]),
+            & (pl.col(f"dry_spell_fraction_{nearest_neighbour}") < 1.0)
+            & (pl.col(f"dry_spell_fraction_{nearest_neighbour}") >= proportion_of_dry_day_for_flags["1"]),
         )
         .then(1)
         .when(
             (pl.col(f"dry_spell_fraction_{target_gauge_col}") == 1.0)
-            & (pl.col(f"dry_spell_fraction_{neighbouring_gauge_col}") < proportion_of_dry_day_for_flags["1"])
-            & (pl.col(f"dry_spell_fraction_{neighbouring_gauge_col}") >= proportion_of_dry_day_for_flags["2"]),
+            & (pl.col(f"dry_spell_fraction_{nearest_neighbour}") < proportion_of_dry_day_for_flags["1"])
+            & (pl.col(f"dry_spell_fraction_{nearest_neighbour}") >= proportion_of_dry_day_for_flags["2"]),
         )
         .then(2)
         .when(
             (pl.col(f"dry_spell_fraction_{target_gauge_col}") == 1.0)
-            & (pl.col(f"dry_spell_fraction_{neighbouring_gauge_col}") < proportion_of_dry_day_for_flags["2"])
+            & (pl.col(f"dry_spell_fraction_{nearest_neighbour}") < proportion_of_dry_day_for_flags["2"])
         )
         .then(3)
         .otherwise(0)
-        .alias(f"dry_flag_{neighbouring_gauge_col}")
+        .alias(f"dry_flag_{nearest_neighbour}")
     )
 
 
-def flag_percentage_diff_of_neighbour(neighbour_data: pl.DataFrame, neighbouring_gauge_col: str) -> pl.DataFrame:
+def flag_percentage_diff_of_neighbour(neighbour_data: pl.DataFrame, nearest_neighbour: str) -> pl.DataFrame:
     """
     Flag percentage difference between target gauge and neighbouring gauge.
 
@@ -934,7 +930,7 @@ def flag_percentage_diff_of_neighbour(neighbour_data: pl.DataFrame, neighbouring
     ----------
     neighbour_data :
         Rainfall data of all neighbouring gauges with time col
-    neighbouring_gauge_col:
+    nearest_neighbour:
         Neighbouring gauge column
 
     Returns
@@ -959,7 +955,7 @@ def flag_percentage_diff_of_neighbour(neighbour_data: pl.DataFrame, neighbouring
         .when((pl.col("perc_diff") >= 100.0))
         .then(3)
         .otherwise(0)
-        .alias(f"perc_diff_flag_{neighbouring_gauge_col}")
+        .alias(f"perc_diff_flag_{nearest_neighbour}")
     )
 
 
@@ -1067,7 +1063,7 @@ def make_num_neighbours_online_col(neighbour_data: pl.DataFrame, list_of_nearest
 
 
 def flag_wet_day_errors_based_on_neighbours(
-    neighbour_data: pl.DataFrame, target_gauge_col: str, neighbouring_gauge_col: str, wet_threshold: float
+    neighbour_data: pl.DataFrame, target_gauge_col: str, nearest_neighbour: str, wet_threshold: float
 ) -> pl.DataFrame:
     """
     Flag wet days with errors based on the percentile difference with neighbouring gauge.
@@ -1078,7 +1074,7 @@ def flag_wet_day_errors_based_on_neighbours(
         Rainfall data of all neighbouring gauges with time col
     target_gauge_col :
         Target gauge column
-    neighbouring_gauge_col:
+    nearest_neighbour:
         Neighbouring gauge column
     wet_threshold :
         Threshold for rainfall intensity in given time period
@@ -1090,28 +1086,28 @@ def flag_wet_day_errors_based_on_neighbours(
 
     """
     # 1. Remove nans from target and neighbour
-    neighbour_data_clean = neighbour_data.drop_nans(subset=[target_gauge_col, neighbouring_gauge_col])
+    neighbour_data_clean = neighbour_data.drop_nans(subset=[target_gauge_col, nearest_neighbour])
 
     # 2. Get normalised difference between target and neighbour
     neighbour_data_diff = normalised_diff_between_target_neighbours(
-        neighbour_data_clean, target_gauge_col=target_gauge_col, neighbouring_gauge_col=neighbouring_gauge_col
+        neighbour_data_clean, target_gauge_col=target_gauge_col, nearest_neighbour=nearest_neighbour
     )
     # 3. filter wet values
     neighbour_data_filtered_diff = filter_data_based_on_unusual_wetness(
         neighbour_data_diff,
         target_gauge_col=target_gauge_col,
-        neighbouring_gauge_col=neighbouring_gauge_col,
+        nearest_neighbour=nearest_neighbour,
         wet_threshold=wet_threshold,
     )
 
     # 4. Fit exponential function of normalised diff and get q95, q99 and q999
     expon_percentiles = stats.fit_expon_and_get_percentile(
-        neighbour_data_filtered_diff[f"diff_{neighbouring_gauge_col}"], percentiles=[0.95, 0.99, 0.999]
+        neighbour_data_filtered_diff[f"diff_{nearest_neighbour}"], percentiles=[0.95, 0.99, 0.999]
     )
 
     # 5. Assign flags
     all_neighbour_data_wet_flags = add_wet_flags_to_data(
-        neighbour_data_diff, target_gauge_col, neighbouring_gauge_col, expon_percentiles, wet_threshold
+        neighbour_data_diff, target_gauge_col, nearest_neighbour, expon_percentiles, wet_threshold
     )
     return all_neighbour_data_wet_flags
 
@@ -1119,7 +1115,7 @@ def flag_wet_day_errors_based_on_neighbours(
 def add_wet_flags_to_data(
     neighbour_data_diff: pl.DataFrame,
     target_gauge_col: str,
-    neighbouring_gauge_col: str,
+    nearest_neighbour: str,
     expon_percentiles: dict,
     wet_threshold: float,
 ) -> pl.DataFrame:
@@ -1133,7 +1129,7 @@ def add_wet_flags_to_data(
 
     target_gauge_col :
         Target gauge column
-    neighbouring_gauge_col :
+    nearest_neighbour :
         Neighbouring gauge column
     expon_percentiles :
         Thresholds at percentile of fitted distribution (needs 0.95, 0.99 & 0.999)
@@ -1149,33 +1145,33 @@ def add_wet_flags_to_data(
     return neighbour_data_diff.with_columns(
         pl.when(
             (pl.col(target_gauge_col) >= wet_threshold)
-            & (pl.col(f"diff_{neighbouring_gauge_col}") <= expon_percentiles[0.95])
+            & (pl.col(f"diff_{nearest_neighbour}") <= expon_percentiles[0.95])
         )
         .then(0)
         .when(
             (pl.col(target_gauge_col) >= wet_threshold)
-            & (pl.col(f"diff_{neighbouring_gauge_col}") > expon_percentiles[0.95])
-            & (pl.col(f"diff_{neighbouring_gauge_col}") <= expon_percentiles[0.99]),
+            & (pl.col(f"diff_{nearest_neighbour}") > expon_percentiles[0.95])
+            & (pl.col(f"diff_{nearest_neighbour}") <= expon_percentiles[0.99]),
         )
         .then(1)
         .when(
             (pl.col(target_gauge_col) >= wet_threshold)
-            & (pl.col(f"diff_{neighbouring_gauge_col}") > expon_percentiles[0.99])
-            & (pl.col(f"diff_{neighbouring_gauge_col}") <= expon_percentiles[0.999]),
+            & (pl.col(f"diff_{nearest_neighbour}") > expon_percentiles[0.99])
+            & (pl.col(f"diff_{nearest_neighbour}") <= expon_percentiles[0.999]),
         )
         .then(2)
         .when(
             (pl.col(target_gauge_col) >= wet_threshold)
-            & (pl.col(f"diff_{neighbouring_gauge_col}") > expon_percentiles[0.999])
+            & (pl.col(f"diff_{nearest_neighbour}") > expon_percentiles[0.999])
         )
         .then(3)
         .otherwise(0)
-        .alias(f"wet_flag_{neighbouring_gauge_col}")
+        .alias(f"wet_flag_{nearest_neighbour}")
     )
 
 
 def filter_data_based_on_unusual_wetness(
-    neighbour_data_diff: pl.DataFrame, target_gauge_col: str, neighbouring_gauge_col: str, wet_threshold: float
+    neighbour_data_diff: pl.DataFrame, target_gauge_col: str, nearest_neighbour: str, wet_threshold: float
 ) -> pl.DataFrame:
     """
     Filter data based on wet threshold.
@@ -1186,7 +1182,7 @@ def filter_data_based_on_unusual_wetness(
         Data with normalised diff to neighbour
     target_gauge_col :
         Target gauge column
-    neighbouring_gauge_col :
+    nearest_neighbour :
         Neighbouring gauge column
     wet_threshold :
         Threshold for rainfall intensity in given time period
@@ -1200,13 +1196,13 @@ def filter_data_based_on_unusual_wetness(
     return neighbour_data_diff.filter(
         (pl.col(target_gauge_col) >= wet_threshold)
         & (pl.col(target_gauge_col).is_finite())
-        & (pl.col(neighbouring_gauge_col).is_finite())
-        & (pl.col(f"diff_{neighbouring_gauge_col}") > 0.0)
+        & (pl.col(nearest_neighbour).is_finite())
+        & (pl.col(f"diff_{nearest_neighbour}") > 0.0)
     )
 
 
 def normalised_diff_between_target_neighbours(
-    neighbour_data: pl.DataFrame, target_gauge_col: str, neighbouring_gauge_col: str
+    neighbour_data: pl.DataFrame, target_gauge_col: str, nearest_neighbour: str
 ) -> pl.DataFrame:
     """
     Normalised difference between target rain col and neighbouring rain col.
@@ -1217,7 +1213,7 @@ def normalised_diff_between_target_neighbours(
         Rainfall data of all neighbouring gauges with time col
     target_gauge_col :
         Target gauge column
-    neighbouring_gauge_col :
+    nearest_neighbour :
         Neighbouring gauge column
 
     Returns
@@ -1228,13 +1224,12 @@ def normalised_diff_between_target_neighbours(
     """
     return neighbour_data.with_columns(
         (
-            data_utils.normalise_data(pl.col(target_gauge_col))
-            - data_utils.normalise_data(pl.col(neighbouring_gauge_col))
-        ).alias(f"diff_{neighbouring_gauge_col}")
+            data_utils.normalise_data(pl.col(target_gauge_col)) - data_utils.normalise_data(pl.col(nearest_neighbour))
+        ).alias(f"diff_{nearest_neighbour}")
     )
 
 
-def check_neighbouring_gauge_columns(
+def check_nearest_neighbour_columns(
     neighbour_data: pl.DataFrame, target_gauge_col: str, list_of_nearest_stations: list
 ) -> None:
     """

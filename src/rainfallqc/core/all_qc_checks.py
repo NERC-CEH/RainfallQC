@@ -48,7 +48,7 @@ def qc_check(name: str, require_non_negative: bool = False) -> callable:
                 full_kwargs, kwarg_name="target_gauge_col", column_list=columns_to_check, name=name
             )
 
-            for kwarg_name in ["neighbouring_gauge_col", "list_of_nearest_stations"]:
+            for kwarg_name in ["nearest_neighbour", "list_of_nearest_stations"]:
                 if kwarg_name in full_kwargs:
                     columns_to_check = get_columns_in_kwargs(
                         full_kwargs, kwarg_name=kwarg_name, column_list=columns_to_check, name=name

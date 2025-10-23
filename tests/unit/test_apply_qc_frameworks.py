@@ -45,7 +45,7 @@ def test_apply_qc_frameworks_daily(daily_gpcc_network, gpcc_metadata):
             "smallest_measurable_rainfall_amount": 0.1,
             "wet_threshold": 1.0,
             "min_n_neighbours": 5,
-            "neighbouring_gauge_col": "rain_mm_tw_310",  # filling as nearest neighbour to target gauge
+            "nearest_neighbour": "rain_mm_tw_310",  # filling as nearest neighbour to target gauge
         },
     }
     result = apply_qc_framework.run_qc_framework(
@@ -91,7 +91,7 @@ def test_apply_qc_frameworks_hourly(hourly_gsdr_network, gsdr_metadata):
             "smallest_measurable_rainfall_amount": 0.1,
             "wet_threshold": 1.0,
             "min_n_neighbours": 5,
-            "neighbouring_gauge_col": "rain_mm_DE_02483",  # filling as nearest neighbour to target gauge
+            "nearest_neighbour": "rain_mm_DE_02483",  # filling as nearest neighbour to target gauge
             "accumulation_multiplying_factor": 2.0,
             "list_of_nearest_stations": hourly_gsdr_network.columns[2:],
             "n_neighbours_ignored": 0,
@@ -133,7 +133,7 @@ def test_apply_qc_frameworks_15min(mins15_gsdr_network, gsdr_metadata):
             "smallest_measurable_rainfall_amount": 0.1,
             "wet_threshold": 1.0,
             "min_n_neighbours": 5,
-            "neighbouring_gauge_col": "rain_mm_DE_02483",  # filling as nearest neighbour to target gauge
+            "nearest_neighbour": "rain_mm_DE_02483",  # filling as nearest neighbour to target gauge
             "accumulation_multiplying_factor": 2.0,
             "list_of_nearest_stations": mins15_gsdr_network.columns[2:],
             "n_neighbours_ignored": 0,
