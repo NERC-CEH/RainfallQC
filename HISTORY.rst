@@ -4,7 +4,7 @@ History
 
 0.3.0 (2025-10-23)
 ------------------
-* Overhaul tutorials, quickstart and example on readthedocs
+* Overhaul tutorials, quickstart and examples on readthedocs
 * allow user-defined qc frameworks to be passed to apply_qc_framework function
 * check for data input to haversine function are convertible to float
 * rename data_resolution parameter to smallest_measurable_rainfall_amount
