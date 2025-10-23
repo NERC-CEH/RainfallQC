@@ -428,6 +428,10 @@ def get_nearest_non_nan_etccdi_val_to_gauge(
     stacked = etccdi_data.stack(points=("lat", "lon"))
 
     try:
+        if isinstance(gauge_lat, pl.Series) and gauge_lat.len() == 1:
+            gauge_lat = gauge_lat.item()
+        if isinstance(gauge_lon, pl.Series) and gauge_lon.len() == 1:
+            gauge_lon = gauge_lon.item()
         gauge_lat = float(gauge_lat)
         gauge_lon = float(gauge_lon)
     except TypeError as te:
