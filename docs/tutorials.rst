@@ -89,7 +89,7 @@ Let's say you have data for a single rain gauge stored in "hourly_rain_gauge_dat
 
 
 For the majority of the checks in RainfallQC, you can load in your data using `polars <https://pola-rs.github.io/polars-book/>`_ and run the checks directly.
-Below, we run a check from the ``timeseries_checks`` module.
+Below, we run a check from the ``gauge_checks`` and ``timeseries_checks`` modules.
 
 .. code-block:: python
     :caption: Running a daily accumulation check on a single rain gauge
@@ -112,10 +112,47 @@ Below, we run a check from the ``timeseries_checks`` module.
 
 
 Please note that some checks may require additional metadata, such as gauge location (latitude and longitude) or smallest measurable rainfall amount (e.g. 0.1 mm).
+This could look like:
+
+.. table:: Example metadata 1. Rain gauge metadata
+    :widths: auto
+    :align: center
+
+    +--------------------+----------+-----------+------------------+------------------+---------------------+
+    | station_id         | latitude | longitude | start_datetime   | end_datetime     | path                |
+    +====================+==========+===========+==================+==================+=====================+
+    | rain_mm_gauge_1    | 53.0     | 2.0       | 2020-01-01 00:00 | 2024-01-01 00:00 | path/to/gauge_1.csv |
+    +--------------------+----------+-----------+------------------+------------------+---------------------+
+    | rain_mm_gauge_2    | 54.1     | -0.5      | 2018-01-01 00:00 | 2023-01-01 00:00 | path/to/gauge_2.csv |
+    +--------------------+----------+-----------+------------------+------------------+---------------------+
+    | rain_mm_gauge_3    | 56.9     | 1.9       | 2015-01-01 00:00 | 2025-01-01 00:00 | path/to/gauge_3.csv |
+    +--------------------+----------+-----------+------------------+------------------+---------------------+
+    | ...                | ...      | ...       |                  |                  | ...                 |
+    +--------------------+----------+-----------+------------------+------------------+---------------------+
+
+You could then run checks that require metadata like:
+
+.. code-block:: python
+    :caption: Running a check for annual exceedance of maximum PRCPTOT from ETCCDI dataset.
+
+        import polars as pl
+        from rainfallqc import comparison_checks
+
+        data = pl.read_csv("hourly_rain_gauge_data_gauge_1.csv")
+        metadata = pl.read_csv("rain_gauge_metadata.csv")
+
+        target_gauge_id = "rain_mm_gauge_1"
+
+        target_gauge_lat = metadata.filter(pl.col("station_id") == target_gauge_id)["latitude"][0]
+        target_gauge_lon = metadata.filter(pl.col("station_id") == target_gauge_id)["longitude"][0]
+
+        comparison_checks.check_annual_exceedance_etccdi_prcptot(
+            data, target_gauge_col=target_gauge_col, gauge_lat=target_gauge_lat, gauge_lon=target_gauge_lon
+        )
 
 
-Example 2. - Run individual checks on rain gauge network data (single source)
------------------------------------------------------------------------------
+Example 2. - Run individual checks on rain gauge network data (single file)
+---------------------------------------------------------------------------
 Let's say you have data for a multiple rain gauge stored in "hourly_rain_gauge_network.csv" which looks like this:
 
 .. table:: Example data 2. Rain gauge network
@@ -141,8 +178,8 @@ Let's say you have data for a multiple rain gauge stored in "hourly_rain_gauge_n
 
 You can then run a neighbourhood check from the ``neighbourhood_checks`` module.
 Please note, you will need explicitly define which gauges are considered neighbouring to the target gauge.
-You can do this with the `get_ids_of_n_nearest_overlapping_neighbouring_gauges <rainfallqc.checks.html#rainfallqc.checks.gauge_checks.check_years_where_nth_percentile_is_zero>`_ function.
-An example of its use is given in Example X below.
+You can do this with the `get_ids_of_n_nearest_overlapping_neighbouring_gauges <rainfallqc.utils.html#rainfallqc.utils.neighbourhood_utils.get_ids_of_n_nearest_overlapping_neighbouring_gauges>`_ function.
+An example of its use is given in Example 3.
 
 .. code-block:: python
     :caption: Running a wet neighbours check on a rain gauge network
@@ -163,32 +200,73 @@ An example of its use is given in Example X below.
         )
 
 
-Example 3. - Run single checks on rain gauge network data (multiple sources)
------------------------------------------------------------------------------
-Let's say you have data for a multiple rain gauge stored in multiple CSV files, you could use metadata to store the paths to them e.g. in "rain_gauge_metadata.csv" which could looks like this:
+Example 3. - Run single checks on rain gauge network data (multiple file paths)
+-------------------------------------------------------------------------------
+Let's say you have data for a multiple rain gauge stored in multiple CSV files, you could use metadata to store the paths to them e.g. in "rain_gauge_metadata.csv" (Example metadata 1).
+Because you may not want to load in all gauges to memory at once, you can read in only the nearby gauges to a given target gauge.
+You can do this with the `get_ids_of_n_nearest_overlapping_neighbouring_gauges <rainfallqc.utils.html#rainfallqc.utils.neighbourhood_utils.get_ids_of_n_nearest_overlapping_neighbouring_gauges>`_ function.
+(this example assumes all the CSVs look like Example data 1):
+
+.. code-block:: python
+    :caption: Making a pl.DataFrame of only nearby gauges to a target gauge
+
+        import polars as pl
+        from rainfallqc.utils.neighbourhood_utils import get_ids_of_n_nearest_overlapping_neighbouring_gauges, compute_km_distances_from_target_id
+
+        data = pl.read_csv("hourly_rain_gauge_network.csv")
+        metadata = pl.read_csv("rain_gauge_metadata.csv")
+
+        target_gauge_id = "rain_mm_gauge_1"
+
+        ten_nearest_neighbour_ids = get_ids_of_n_nearest_overlapping_neighbouring_gauges(
+            metadata,
+            target_id=target_gauge_id,
+            distance_threshold=50,  # in km
+            min_overlap_days=365*5,  # in days
+            n_closest=10,  # number of neighbours to return
+            start_datetime_col="start_datetime",
+            end_datetime_col="end_datetime",
+        )
+
+        nearby_gauge_distances = neighbourhood_utils.compute_km_distances_from_target_id(metadata, target_id=target_gauge_id, station_id_col='station_id')
+
+        nearest_gauge_id = nearby_gauge_distances.filter(
+            pl.col("station_id").is_in(ten_nearest_neighbour_ids)
+        ).sort('distance')[0]['station_id'].item()
+
+        nearby_metadata = metadata.filter((pl.col('station_id').is_in(ten_nearest_neighbour_ids)) |
+                                        (pl.col('station_id') == target_gauge_id))
+
+        nearby_rainfall_data_list = []
+        for path in nearby_metadata['path']:
+            one_gauge = pl.read_csv(path, try_parse_dates=True)
+            one_gauge = one_gauge.select(['time', 'rain_mm']) # assuming each file has these columns
+            gauge_rain_col = path.split('/')[-1].split(f'.csv')[0] # create unique column name
+            one_gauge = one_gauge.rename({'rain_mm': gauge_rain_col})
+            nearby_rainfall_data_list.append(one_gauge)
+
+        # Join all data together (consider 'how' to merge)
+        nearby_rainfall_data = reduce(lambda left, right: left.join(right, on="time", how="left"), nearby_rainfall_data_list)
 
 
-.. table:: Example data 3. Rain gauge metadata
-    :widths: auto
-    :align: center
+You can then run checks as normal e.g.:
 
-    +------------+----------+-----------+---------------------+
-    | station_id | latitude | longitude | path                |
-    +============+==========+===========+=====================+
-    | gauge_1    | 53.0     | 2.0       | path/to/gauge_1.csv |
-    +------------+----------+-----------+---------------------+
-    | gauge_2    | 54.1     | -0.5      | path/to/gauge_2.csv |
-    +------------+----------+-----------+---------------------+
-    | gauge_3    | 56.9     | 1.9       | path/to/gauge_3.csv |
-    +------------+----------+-----------+---------------------+
-    | ...        | ...      | ...       | ...                 |
-    +------------+----------+-----------+---------------------+
+.. code-block:: python
+    :caption: Running correlation with nearest neighbour check
 
-Bear in mind, you could create the 'path' column programmatically if needed.
+        from rainfallqc import neighbourhood_checks
+
+        neighbour_correlation = neighbourhood_checks.check_neighbour_correlation(
+                                        nearby_rainfall_data,
+                                        target_gauge_col=target_gauge_id,
+                                        nearest_neighbour=nearest_gauge_id
+                                        )
+
 
 
 Example 4. - Running check when your rain gauge data in netCDF format
 ---------------------------------------------------------------------
+
 
 
 

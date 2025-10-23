@@ -10,8 +10,8 @@ History
 * rename data_resolution parameter to smallest_measurable_rainfall_amount
 * rename neighbouring_gauge_col to nearest_neighbour
 * rename neighbouring_gauges_cols to list_of_nearest_neighbours
+* get_ids_of_n_nearest_overlapping_neighbouring_gauges now returns list not set
 * update all unit tests to reflect changes above
-
 
 0.2.5 (2025-10-22)
 ------------------
