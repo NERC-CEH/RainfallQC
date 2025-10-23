@@ -299,7 +299,7 @@ and metadata stored in a dictionary `gpcc_metadata` (from a file like **Example 
         # 2. Determine nearest neighbouring gauges for neighbourhood checks
         gauge_lat = gpcc_metadata["latitude"]
         gauge_lon = gpcc_metadata["longitude"]
-        nearest_neighbourhours = ["rain_mm_gauge_2", "rain_mm_gauge_3", ...]
+        nearest_neighbourhours = ["rain_mm_gauge_2", "rain_mm_gauge_3", ...] # or see Example 3 if not determined
 
         # 2 Decide which parameters for QC
         qc_kwargs = {
@@ -325,6 +325,8 @@ and metadata stored in a dictionary `gpcc_metadata` (from a file like **Example 
             daily_gpcc_network, qc_framework=qc_framework, qc_methods_to_run=qc_methods_to_run, qc_kwargs=qc_kwargs
         )
 
+
+Because lots of the checks share the same parameters with a standard vocabulary, you can use the "shared" part of the ``qc_kwargs`` dictionary to set those.
 
 Example 7. - Running multiple QC checks on a network of gauges
 --------------------------------------------------------------
