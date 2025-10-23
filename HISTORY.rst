@@ -7,7 +7,6 @@ History
 * Overhaul tutorials, quickstart and example on readthedocs
 * allow user-defined qc frameworks to be passed to apply_qc_framework function
 
-
 0.2.5 (2025-10-22)
 ------------------
 * Add AUTHORS.rst file to include contributors
