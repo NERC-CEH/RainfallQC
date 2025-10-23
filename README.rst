@@ -88,6 +88,8 @@ To run some of the location-specific checks you will also need metadata for the 
         from rainfallqc.qc_frameworks import apply_qc_framework
 
         rain_gauge_network = pl.read_csv("hourly_rain_gauge_network.csv")
+        network_metadata = pl.read_csv("rain_gauge_network_metadata.csv")
+        target_metadata = network_metadata.filter(pl.col("gauge_id") == "rain_mm_gauge_1")
 
         qc_methods_to_run = ["QC1", "QC8", "QC9", "QC10", "QC11", "QC12", "QC14", "QC15", "QC16"]
 
@@ -96,16 +98,16 @@ To run some of the location-specific checks you will also need metadata for the 
             "QC1": {"quantile": 5},
             "QC14": {"wet_day_threshold": 1.0, "accumulation_multiplying_factor": 2.0},
             "QC16": {
-                "list_of_nearest_stations": rain_gauge_network.columns[2:],
+                "list_of_nearest_stations": ["rain_mm_gauge_2", "rain_mm_gauge_3"],
                 "wet_threshold": 1.0,
                 "min_n_neighbours": 5,
                 "n_neighbours_ignored": 0,
             },
             "shared": {
                 "target_gauge_col": "rain_mm_gauge_1",
-                "gauge_lat": gpcc_metadata["latitude"],
-                "gauge_lon": gpcc_metadata["longitude"],
-                "time_res": "daily",
+                "gauge_lat": target_metadata["latitude"],
+                "gauge_lon": target_metadata["longitude"],
+                "time_res": "hourly",
                 "smallest_measurable_rainfall_amount": 0.1,
             },
         }
