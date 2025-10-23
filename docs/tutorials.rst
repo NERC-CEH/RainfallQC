@@ -107,7 +107,7 @@ Below, we run a check from the ``timeseries_checks`` module.
             target_gauge_col="rain_mm",
             gauge_lat=50.0,
             gauge_lon=8.0,
-            data_resolution=0.1,
+            smallest_measurable_rainfall_amount=0.1,
         )
 
 
@@ -155,7 +155,7 @@ An example of its use is given in Example X below.
         wet_neighbour_flags = neighbourhood_checks.check_wet_neighbours(
             data,
             target_gauge_col="rain_mm_gauge_1",
-            neighbouring_gauge_cols=["rain_mm_gauge_2", "rain_mm_gauge_3"],
+            list_of_nearest_stations=["rain_mm_gauge_2", "rain_mm_gauge_3"],
             time_res="hourly",
             wet_threshold=1.0, # threshold for rainfall intensity to be considered
             min_n_neighbours=1, # number of neighbours needed for comparison
@@ -202,8 +202,8 @@ Example 6. - Running multiple QC checks on a single gauge
 To run multiple QC checks, you can use the `apply_qc_framework() <rainfallqc.checks.html#rainfallqc.qc_frameworks.html#module-rainfallqc.qc_frameworks.apply_qc_framework>`_
 method to run QC methods from a given framework (e.g. IntenseQC).
 
-Let's say you have daily rain gauge network data stored in a Polars DataFrame `daily_gpcc_network` (from a file like **Example data 2.**)
-and metadata stored in a dictionary `gpcc_metadata` (from a file like **Example data 3.**). You can then run multiple QC checks by defining which framework as follows:
+Let's say you have daily rain gauge network data stored in a Polars DataFrame `daily_gpcc_network` (from a file like **Example data 2**)
+and metadata stored in a dictionary `gpcc_metadata` (from a file like **Example data 3**). You can then run multiple QC checks by defining which framework as follows:
 
 
 .. code-block:: python
@@ -221,23 +221,24 @@ and metadata stored in a dictionary `gpcc_metadata` (from a file like **Example 
         # 2. Determine nearest neighbouring gauges for neighbourhood checks
         gauge_lat = gpcc_metadata["latitude"]
         gauge_lon = gpcc_metadata["longitude"]
+        nearest_neighbourhours = ["rain_mm_gauge_2", "rain_mm_gauge_3", ...]
 
         # 2 Decide which parameters for QC
         qc_kwargs = {
             "QC1": {"quantile": 5},
             "QC14": {"wet_day_threshold": 1.0, "accumulation_multiplying_factor": 2.0},
             "QC16": {
-                "neighbouring_gauge_cols": daily_gpcc_network.columns[2:],
+                "list_of_nearest_stations": nearest_neighbourhours,
                 "wet_threshold": 1.0,
                 "min_n_neighbours": 5,
                 "n_neighbours_ignored": 0,
             },
             "shared": {
-                "target_gauge_col": "rain_mm_DE_02483",
-                "gauge_lat": gpcc_metadata["latitude"],
-                "gauge_lon": gpcc_metadata["longitude"],
+                "target_gauge_col": "rain_mm_gauge_1",
+                "gauge_lat": gauge_lat,
+                "gauge_lon": gauge_lon,
                 "time_res": "daily",
-                "data_resolution": 0.1,
+                "smallest_measurable_rainfall_amount": 0.1,
             },
         }
 

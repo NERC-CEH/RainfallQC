@@ -96,7 +96,7 @@ To run some of the location-specific checks you will also need metadata for the 
             "QC1": {"quantile": 5},
             "QC14": {"wet_day_threshold": 1.0, "accumulation_multiplying_factor": 2.0},
             "QC16": {
-                "neighbouring_gauge_cols": rain_gauge_network.columns[2:],
+                "list_of_nearest_stations": rain_gauge_network.columns[2:],
                 "wet_threshold": 1.0,
                 "min_n_neighbours": 5,
                 "n_neighbours_ignored": 0,
@@ -106,7 +106,7 @@ To run some of the location-specific checks you will also need metadata for the 
                 "gauge_lat": gpcc_metadata["latitude"],
                 "gauge_lon": gpcc_metadata["longitude"],
                 "time_res": "daily",
-                "data_resolution": 0.1,
+                "smallest_measurable_rainfall_amount": 0.1,
             },
         }
 

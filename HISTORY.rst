@@ -6,6 +6,7 @@ History
 ------------------
 * Overhaul tutorials, quickstart and example on readthedocs
 * allow user-defined qc frameworks to be passed to apply_qc_framework function
+* rename data_resolution parameter to smallest_measurable_rainfall_amount
 
 0.2.5 (2025-10-22)
 ------------------

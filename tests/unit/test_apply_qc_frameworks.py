@@ -32,7 +32,7 @@ def test_apply_qc_frameworks_daily(daily_gpcc_network, gpcc_metadata):
         "QC13": {"accumulation_multiplying_factor": 2.0},
         "QC14": {"accumulation_multiplying_factor": 2.0},
         "QC16": {
-            "neighbouring_gauge_cols": daily_gpcc_network.columns[2:],
+            "list_of_nearest_stations": daily_gpcc_network.columns[2:],
             "n_neighbours_ignored": 0,
         },
         "QC24": {"averaging_method": "mean"},
@@ -42,7 +42,7 @@ def test_apply_qc_frameworks_daily(daily_gpcc_network, gpcc_metadata):
             "gauge_lat": gpcc_metadata["latitude"],
             "gauge_lon": gpcc_metadata["longitude"],
             "time_res": "daily",
-            "data_resolution": 0.1,
+            "smallest_measurable_rainfall_amount": 0.1,
             "wet_threshold": 1.0,
             "min_n_neighbours": 5,
             "neighbouring_gauge_col": "rain_mm_tw_310",  # filling as nearest neighbour to target gauge
@@ -88,12 +88,12 @@ def test_apply_qc_frameworks_hourly(hourly_gsdr_network, gsdr_metadata):
             "gauge_lat": gsdr_metadata["latitude"],
             "gauge_lon": gsdr_metadata["longitude"],
             "time_res": "hourly",
-            "data_resolution": 0.1,
+            "smallest_measurable_rainfall_amount": 0.1,
             "wet_threshold": 1.0,
             "min_n_neighbours": 5,
             "neighbouring_gauge_col": "rain_mm_DE_02483",  # filling as nearest neighbour to target gauge
             "accumulation_multiplying_factor": 2.0,
-            "neighbouring_gauge_cols": hourly_gsdr_network.columns[2:],
+            "list_of_nearest_stations": hourly_gsdr_network.columns[2:],
             "n_neighbours_ignored": 0,
         },
     }
@@ -130,12 +130,12 @@ def test_apply_qc_frameworks_15min(mins15_gsdr_network, gsdr_metadata):
             "gauge_lat": gsdr_metadata["latitude"],
             "gauge_lon": gsdr_metadata["longitude"],
             "time_res": "15m",
-            "data_resolution": 0.1,
+            "smallest_measurable_rainfall_amount": 0.1,
             "wet_threshold": 1.0,
             "min_n_neighbours": 5,
             "neighbouring_gauge_col": "rain_mm_DE_02483",  # filling as nearest neighbour to target gauge
             "accumulation_multiplying_factor": 2.0,
-            "neighbouring_gauge_cols": mins15_gsdr_network.columns[2:],
+            "list_of_nearest_stations": mins15_gsdr_network.columns[2:],
             "n_neighbours_ignored": 0,
         },
     }

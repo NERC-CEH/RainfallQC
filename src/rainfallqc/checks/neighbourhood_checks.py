@@ -20,7 +20,7 @@ from rainfallqc.utils import data_readers, data_utils, neighbourhood_utils, stat
 def check_wet_neighbours(
     neighbour_data: pl.DataFrame,
     target_gauge_col: str,
-    neighbouring_gauge_cols: List[str],
+    list_of_nearest_stations: List[str],
     time_res: str,
     wet_threshold: int | float,
     min_n_neighbours: int,
@@ -44,7 +44,7 @@ def check_wet_neighbours(
         Rainfall data of neighbouring gauges with time col
     target_gauge_col :
         Target gauge column
-    neighbouring_gauge_cols:
+    list_of_nearest_stations:
         List of columns with neighbouring gauges
     time_res :
         Time resolution of data
@@ -65,11 +65,11 @@ def check_wet_neighbours(
     """
     # 0. Initial checks
     data_utils.check_data_is_specific_time_res(neighbour_data, time_res)
-    neighbouring_gauge_cols_new = neighbouring_gauge_cols.copy()  # make copy
-    if target_gauge_col in neighbouring_gauge_cols_new:
+    list_of_nearest_stations_new = list_of_nearest_stations.copy()  # make copy
+    if target_gauge_col in list_of_nearest_stations_new:
         # Remove target col from list so it is not included as a neighbour of itself.
-        neighbouring_gauge_cols_new.remove(target_gauge_col)
-    check_neighbouring_gauge_columns(neighbour_data, target_gauge_col, neighbouring_gauge_cols_new)
+        list_of_nearest_stations_new.remove(target_gauge_col)
+    check_neighbouring_gauge_columns(neighbour_data, target_gauge_col, list_of_nearest_stations_new)
 
     # 1. Resample to daily
     if time_res == "hourly":
@@ -80,16 +80,16 @@ def check_wet_neighbours(
         )
 
     # 2. Loop through each neighbour and get wet_flags
-    neighbouring_gauge_cols_iterable = neighbouring_gauge_cols_new.copy()  # make copy again to allow removal in loop
-    for neighbouring_gauge_col in neighbouring_gauge_cols_iterable:
+    list_of_nearest_stations_iterable = list_of_nearest_stations_new.copy()  # make copy again to allow removal in loop
+    for neighbouring_gauge_col in list_of_nearest_stations_iterable:
         # 2.1 Flag data based on comparison of wet values in neighbours
         try:
             one_neighbour_data_wet_flags = flag_wet_day_errors_based_on_neighbours(
                 neighbour_data, target_gauge_col, neighbouring_gauge_col, wet_threshold
             )
         except ValueError as ve:
-            neighbouring_gauge_cols_new.remove(neighbouring_gauge_col)
-            print(f"Warning: removing '{neighbouring_gauge_col}' from neighbouring_gauge_cols because: {ve}")
+            list_of_nearest_stations_new.remove(neighbouring_gauge_col)
+            print(f"Warning: removing '{neighbouring_gauge_col}' from list_of_nearest_stations because: {ve}")
             continue
 
         # 2.2 Join to all data
@@ -100,12 +100,12 @@ def check_wet_neighbours(
         )
 
     # 3. Get number of neighbours 'online' for each time step
-    neighbour_data = make_num_neighbours_online_col(neighbour_data, neighbouring_gauge_cols_new)
+    neighbour_data = make_num_neighbours_online_col(neighbour_data, list_of_nearest_stations_new)
 
     # 4. Neighbour majority voting where the flag is the highest flag in all neighbours
     neighbour_data_w_wet_flags = get_majority_voting_flag(
         neighbour_data,
-        neighbouring_gauge_cols_new,
+        list_of_nearest_stations_new,
         min_n_neighbours,
         n_zeros_allowed=n_neighbours_ignored,
         flag_col_prefix="wet_flag_",
@@ -141,7 +141,7 @@ def check_wet_neighbours(
 def check_dry_neighbours(
     neighbour_data: pl.DataFrame,
     target_gauge_col: str,
-    neighbouring_gauge_cols: List[str],
+    list_of_nearest_stations: List[str],
     time_res: str,
     min_n_neighbours: int,
     dry_period_days: int = 15,
@@ -165,7 +165,7 @@ def check_dry_neighbours(
         Rainfall data of neighbouring gauges with time col
     target_gauge_col :
         Target gauge column
-    neighbouring_gauge_cols:
+    list_of_nearest_stations:
         List of columns with neighbouring gauges
     time_res :
         Time resolution of data
@@ -186,11 +186,11 @@ def check_dry_neighbours(
     """
     # 0. Initial checks
     data_utils.check_data_is_specific_time_res(neighbour_data, time_res)
-    neighbouring_gauge_cols_new = neighbouring_gauge_cols.copy()  # make copy
-    if target_gauge_col in neighbouring_gauge_cols_new:
+    list_of_nearest_stations_new = list_of_nearest_stations.copy()  # make copy
+    if target_gauge_col in list_of_nearest_stations_new:
         # Remove target col from list so it is not included as a neighbour of itself.
-        neighbouring_gauge_cols_new.remove(target_gauge_col)
-    check_neighbouring_gauge_columns(neighbour_data, target_gauge_col, neighbouring_gauge_cols_new)
+        list_of_nearest_stations_new.remove(target_gauge_col)
+    check_neighbouring_gauge_columns(neighbour_data, target_gauge_col, list_of_nearest_stations_new)
 
     # 1. Get proportions of dry period required to be flagged 1, 2, or 3
     dry_period_proportions = data_utils.get_dry_period_proportions(dry_period_days)
@@ -204,8 +204,8 @@ def check_dry_neighbours(
         )
 
     # 3. Loop through each neighbour and get dry_flags
-    neighbouring_gauge_cols_iterable = neighbouring_gauge_cols_new.copy()  # make copy again to allow removal in loop
-    for neighbouring_gauge_col in neighbouring_gauge_cols_iterable:
+    list_of_nearest_stations_iterable = list_of_nearest_stations_new.copy()  # make copy again to allow removal in loop
+    for neighbouring_gauge_col in list_of_nearest_stations_iterable:
         # 3.1 Convert to dry spell fraction
         try:
             one_neighbour_data = get_dry_spell_fraction_col(
@@ -215,8 +215,8 @@ def check_dry_neighbours(
                 neighbouring_gauge_col=neighbouring_gauge_col,
             )
         except ValueError as ve:
-            neighbouring_gauge_cols_new.remove(neighbouring_gauge_col)
-            print(f"Warning: {ve}. Removing {neighbouring_gauge_col} from neighbouring_gauge_cols.")
+            list_of_nearest_stations_new.remove(neighbouring_gauge_col)
+            print(f"Warning: {ve}. Removing {neighbouring_gauge_col} from list_of_nearest_stations.")
             continue
 
         # 3.2 Flag dry spell fractions
@@ -235,12 +235,12 @@ def check_dry_neighbours(
         )
 
     # 4. Get number of neighbours 'online' for each time step
-    neighbour_data = make_num_neighbours_online_col(neighbour_data, neighbouring_gauge_cols_new)
+    neighbour_data = make_num_neighbours_online_col(neighbour_data, list_of_nearest_stations_new)
 
     # 5. Neighbour majority voting where the flag is the highest flag in all neighbours
     neighbour_data_w_dry_flags = get_majority_voting_flag(
         neighbour_data,
-        neighbouring_gauge_cols_new,
+        list_of_nearest_stations_new,
         min_n_neighbours,
         n_zeros_allowed=n_neighbours_ignored,
         flag_col_prefix="dry_flag_",
@@ -280,7 +280,7 @@ def check_dry_neighbours(
 def check_monthly_neighbours(
     monthly_neighbour_data: pl.DataFrame,
     target_gauge_col: str,
-    neighbouring_gauge_cols: List[str],
+    list_of_nearest_stations: List[str],
     min_n_neighbours: int,
     n_neighbours_ignored: int = 0,
 ) -> pl.DataFrame:
@@ -309,7 +309,7 @@ def check_monthly_neighbours(
         Monthly rainfall data of neighbouring gauges with time col
     target_gauge_col :
         Target gauge column
-    neighbouring_gauge_cols:
+    list_of_nearest_stations:
         List of columns with neighbouring gauges
     min_n_neighbours :
         Minimum number of neighbours needed to be checked for flag
@@ -324,14 +324,14 @@ def check_monthly_neighbours(
     """
     # 0. Initial checks
     data_utils.check_data_is_monthly(monthly_neighbour_data)
-    neighbouring_gauge_cols_new = neighbouring_gauge_cols.copy()  # make copy
-    if target_gauge_col in neighbouring_gauge_cols_new:
+    list_of_nearest_stations_new = list_of_nearest_stations.copy()  # make copy
+    if target_gauge_col in list_of_nearest_stations_new:
         # Remove target col from list so it is not included as a neighbour of itself.
-        neighbouring_gauge_cols_new.remove(target_gauge_col)
-    check_neighbouring_gauge_columns(monthly_neighbour_data, target_gauge_col, neighbouring_gauge_cols_new)
+        list_of_nearest_stations_new.remove(target_gauge_col)
+    check_neighbouring_gauge_columns(monthly_neighbour_data, target_gauge_col, list_of_nearest_stations_new)
 
     # 2. Loop through each neighbour and get percentage diff flags
-    for neighbouring_gauge_col in neighbouring_gauge_cols_new:
+    for neighbouring_gauge_col in list_of_nearest_stations_new:
         # 2.1. Calculate percentage difference between target and neighbour
         one_neighbour_data_perc_diff = monthly_neighbour_data.select(
             ["time", stats.percentage_diff(pl.col(target_gauge_col), pl.col(neighbouring_gauge_col)).alias("perc_diff")]
@@ -353,14 +353,14 @@ def check_monthly_neighbours(
     # i.e. get minimum positive flag, when positive, and maximum negative flag when negative
     monthly_neighbour_data_w_flags = get_majority_positive_or_negative_flags(
         monthly_neighbour_data,
-        neighbouring_gauge_cols=neighbouring_gauge_cols_new,
+        list_of_nearest_stations=list_of_nearest_stations_new,
         min_n_neighbours=min_n_neighbours,
         n_neighbours_ignored=n_neighbours_ignored,
     )
 
     # 4. Calculate neighbour monthly max column
     monthly_neighbour_data_w_flags = make_neighbour_monthly_max_climatology(
-        monthly_neighbour_data_w_flags, neighbouring_gauge_cols_new
+        monthly_neighbour_data_w_flags, list_of_nearest_stations_new
     )
 
     # 5. Upgrade extreme wet flags to 4 or 5 based on excess of neighbour monthly max climatology
@@ -663,7 +663,7 @@ def flag_monthly_factor_differences(monthly_factor: pl.DataFrame, target_gauge_c
 
 
 def make_neighbour_monthly_max_climatology(
-    monthly_neighbour_data: pl.DataFrame, neighbouring_gauge_cols: list
+    monthly_neighbour_data: pl.DataFrame, list_of_nearest_stations: list
 ) -> pl.DataFrame:
     """
     Make neighbourhood monthly max climatology.
@@ -672,7 +672,7 @@ def make_neighbour_monthly_max_climatology(
     ----------
     monthly_neighbour_data :
         Monthly rainfall data of neighbouring gauges with time col
-    neighbouring_gauge_cols:
+    list_of_nearest_stations:
         List of columns with neighbouring gauges
 
     Returns
@@ -682,14 +682,16 @@ def make_neighbour_monthly_max_climatology(
 
     """
     # 1. Make number of neighbours online column
-    monthly_neighbour_data = make_num_neighbours_online_col(monthly_neighbour_data, neighbouring_gauge_cols)
+    monthly_neighbour_data = make_num_neighbours_online_col(monthly_neighbour_data, list_of_nearest_stations)
 
     # 2. Make month and year column
     monthly_neighbour_data = data_utils.make_month_and_year_col(monthly_neighbour_data)
 
     # 3. Calculate neighbour max monthly climatology
     monthly_neighbour_data_max = monthly_neighbour_data.group_by("month").agg(
-        pl.max_horizontal([pl.col(col).max() for col in neighbouring_gauge_cols]).alias("neighbour_max")
+        pl.max_horizontal([pl.col(station_col).max() for station_col in list_of_nearest_stations]).alias(
+            "neighbour_max"
+        )
     )
 
     # 4. Join neighbour max climatology back to data
@@ -739,7 +741,7 @@ def upgrade_monthly_flag_using_neighbour_max_climatology(
 
 def get_majority_positive_or_negative_flags(
     monthly_neighbour_data: pl.DataFrame,
-    neighbouring_gauge_cols: list,
+    list_of_nearest_stations: list,
     min_n_neighbours: int,
     n_neighbours_ignored: int,
 ) -> pl.DataFrame:
@@ -750,7 +752,7 @@ def get_majority_positive_or_negative_flags(
     ----------
     monthly_neighbour_data :
         Monthly rainfall data of neighbouring gauges with time col
-    neighbouring_gauge_cols:
+    list_of_nearest_stations:
         List of columns with neighbouring gauges
     min_n_neighbours :
         Minimum number of neighbours needed to be checked for flag
@@ -764,7 +766,7 @@ def get_majority_positive_or_negative_flags(
 
     """
     # 1. Get negative and positive only data for flagging
-    all_flag_cols = [f"perc_diff_flag_{col}" for col in neighbouring_gauge_cols]
+    all_flag_cols = [f"perc_diff_flag_{station_col}" for station_col in list_of_nearest_stations]
     data_positive = data_utils.extract_positive_values_from_data(
         monthly_neighbour_data, cols_to_extract_from=all_flag_cols
     )
@@ -779,7 +781,7 @@ def get_majority_positive_or_negative_flags(
     # 3. Neighbour majority voting where the flag is the highest flag in all neighbours
     data_positive_flags = get_majority_voting_flag(
         data_positive,
-        neighbouring_gauge_cols,
+        list_of_nearest_stations,
         min_n_neighbours,
         n_zeros_allowed=n_neighbours_ignored,
         flag_col_prefix="perc_diff_flag_",
@@ -788,7 +790,7 @@ def get_majority_positive_or_negative_flags(
     )
     data_negative_flags = get_majority_voting_flag(
         data_negative,
-        neighbouring_gauge_cols,
+        list_of_nearest_stations,
         min_n_neighbours,
         n_zeros_allowed=n_neighbours_ignored,
         flag_col_prefix="perc_diff_flag_",
@@ -963,7 +965,7 @@ def flag_percentage_diff_of_neighbour(neighbour_data: pl.DataFrame, neighbouring
 
 def get_majority_voting_flag(
     neighbour_data: pl.DataFrame,
-    neighbouring_gauge_cols: list[str],
+    list_of_nearest_stations: list[str],
     min_n_neighbours: int,
     n_zeros_allowed: int,
     flag_col_prefix: str,
@@ -981,7 +983,7 @@ def get_majority_voting_flag(
     ----------
     neighbour_data :
         Rainfall data of neighbouring gauges with time col
-    neighbouring_gauge_cols:
+    list_of_nearest_stations:
         List of columns with neighbouring gauges
     min_n_neighbours :
         Minimum number of neighbours online that will be considered
@@ -1011,7 +1013,7 @@ def get_majority_voting_flag(
                 pl.sum_horizontal(
                     [
                         (pl.col(f"{flag_col_prefix}{neighbour_col}") == 0).cast(pl.Int8)
-                        for neighbour_col in neighbouring_gauge_cols
+                        for neighbour_col in list_of_nearest_stations
                     ]
                 )
                 <= n_zeros_allowed
@@ -1023,13 +1025,13 @@ def get_majority_voting_flag(
                         pl.when(pl.col(f"{flag_col_prefix}{neighbour_col}") == 0)
                         .then(None)
                         .otherwise(pl.col(f"{flag_col_prefix}{neighbour_col}"))
-                        for neighbour_col in neighbouring_gauge_cols
+                        for neighbour_col in list_of_nearest_stations
                     ]
                 )
             )
             .otherwise(
                 aggregate_func(
-                    [pl.col(f"{flag_col_prefix}{neighbour_col}") for neighbour_col in neighbouring_gauge_cols]
+                    [pl.col(f"{flag_col_prefix}{neighbour_col}") for neighbour_col in list_of_nearest_stations]
                 )
             )
         )
@@ -1037,7 +1039,7 @@ def get_majority_voting_flag(
     )
 
 
-def make_num_neighbours_online_col(neighbour_data: pl.DataFrame, neighbouring_gauge_cols: list[str]) -> pl.DataFrame:
+def make_num_neighbours_online_col(neighbour_data: pl.DataFrame, list_of_nearest_stations: list[str]) -> pl.DataFrame:
     """
     Get number of neighbours online column.
 
@@ -1045,8 +1047,8 @@ def make_num_neighbours_online_col(neighbour_data: pl.DataFrame, neighbouring_ga
     ----------
     neighbour_data :
         Rainfall data of neighbouring gauges with time col
-    neighbouring_gauge_cols :
-        Columns to check if not null
+    list_of_nearest_stations :
+        Neighbouring columns to check if not null
 
     Returns
     -------
@@ -1056,8 +1058,10 @@ def make_num_neighbours_online_col(neighbour_data: pl.DataFrame, neighbouring_ga
     """
     return neighbour_data.with_columns(
         (
-            len(neighbouring_gauge_cols)
-            - pl.sum_horizontal([pl.col(c).is_null().cast(pl.Int32) for c in neighbouring_gauge_cols])
+            len(list_of_nearest_stations)
+            - pl.sum_horizontal(
+                [pl.col(station_col).is_null().cast(pl.Int32) for station_col in list_of_nearest_stations]
+            )
         ).alias("n_neighbours_online")
     )
 
@@ -1231,7 +1235,7 @@ def normalised_diff_between_target_neighbours(
 
 
 def check_neighbouring_gauge_columns(
-    neighbour_data: pl.DataFrame, target_gauge_col: str, neighbouring_gauge_cols: list
+    neighbour_data: pl.DataFrame, target_gauge_col: str, list_of_nearest_stations: list
 ) -> None:
     """
     Run checks of neighbouring gauge columns to check if there are any columns and if the target gauge is there.
@@ -1242,18 +1246,18 @@ def check_neighbouring_gauge_columns(
         Rainfall data of all neighbouring gauges with time col
     target_gauge_col :
         Target gauge column
-    neighbouring_gauge_cols:
+    list_of_nearest_stations:
         List of columns with neighbouring gauges
 
     Raises
     ------
     ValueError :
-        If there are no neighbouring gauges in the 'neighbouring_gauge_cols' list
+        If there are no neighbouring gauges in the 'list_of_nearest_stations' list
     AssertionError :
         If 'target_gauge_col' not in neighbour_data
 
     """
-    if len(neighbouring_gauge_cols) == 0:
+    if len(list_of_nearest_stations) == 0:
         raise ValueError("No neighbouring gauge columns found, please make sure that there is at least 1.")
     assert target_gauge_col in neighbour_data.columns, (
         f"Target column: '{target_gauge_col}' needs to column be in data."
