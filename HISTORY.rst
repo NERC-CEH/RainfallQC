@@ -2,7 +2,7 @@
 History
 =======
 
-0.2.6 (2025-10-22)
+0.3.0 (2025-10-23)
 ------------------
 * Overhaul tutorials, quickstart and example on readthedocs
 * allow user-defined qc frameworks to be passed to apply_qc_framework function
