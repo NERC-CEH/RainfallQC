@@ -35,7 +35,8 @@ You can find a jupyter notebook with an easy-to-follow example `here <https://gi
 Which checks are suitable for my data's temporal resolution?
 ------------------------------------------------------------
 As you can imagine, not all quality control checks are suitable for all temporal data resolutions (e.g. 15 min, hourly, daily, monthly).
-Therefore, we have created a table that shows which checks are suitable for which temporal data resolutions.
+Therefore, we have created a table that shows which checks are suitable for which temporal data resolutions,
+and which can be applied after aggregating data to a coarser temporal resolution.
 
 
 .. image:: https://github.com/NERC-CEH/RainfallQC/blob/main/docs/images/qc_applicability_table.png
