@@ -15,12 +15,12 @@ Each one of these modules contains individual QC check methods, which begin with
 For example to run a streaks check you can run: ``rainfallqc.timeseries_checks.check_streaks(data, **kwargs)``
 
 
-Using RainfallQC
-================
-How you use RainfallQC will depend on the format of your data. The table below outlines a few potential formats and how to use RainfallQC with them.
+Getting started
+===============
 
 What's the format of your data?
 -------------------------------
+How you use RainfallQC will depend on the format of your data. The table below outlines a few potential formats and how to use RainfallQC with them.
 
 +--------------------------------------------+--------------+--------------------------------------------------------------+
 | Data format                                | See...       | Notes                                                        |
@@ -42,10 +42,10 @@ What's the format of your data?
 +--------------------------------------------+--------------+--------------------------------------------------------------+
 
 
-Scenarios for running RainfallQC
---------------------------------
-
-For running RainfallQC as part of a data processing pipeline, see some example scenarios:
+Which scenario best suits you?
+------------------------------
+Do you have a single rain gauge, or a whole network? Do you want to run a single check or use RainfallQC as part of a data processing pipeline?
+The table below outlines some common scenarios and advice on how to proceed.
 
 +---------------------------------------------------+--------------------------------------------------------------+
 | Scenario                                          | Advice                                                       |
@@ -70,6 +70,7 @@ Example 1. - Running individual checks on a single rain gauge
 Let's say you have data for a single rain gauge stored in "hourly_rain_gauge_data.csv" which looks like this:
 
 .. code-block:: csv
+    :caption: **Example data** Single rain gauge data example
 
         time,rain_mm
         2020-01-01 00:00,0.0
@@ -79,10 +80,13 @@ Let's say you have data for a single rain gauge stored in "hourly_rain_gauge_dat
         2020-01-01 04:00,0.6
         ...
 
+
 For the majority of the checks in RainfallQC, you can load in your data using `polars <https://pola-rs.github.io/polars-book/>`_ and run the checks directly.
 Below, we run a check from the ``gauge_checks`` and ``comparison_checks`` modules.
 
 .. code-block:: python
+    :caption: Running individual quality checks on a single rain gauge
+
 
         import polars as pl
         from rainfallqc import gauge_checks, timeseries_checks
