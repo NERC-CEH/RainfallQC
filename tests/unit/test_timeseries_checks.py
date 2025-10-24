@@ -134,7 +134,7 @@ def test_streaks_check(hourly_gsdr_data, gsdr_metadata):
         target_gauge_col=DEFAULT_RAIN_COL,
         gauge_lat=gsdr_metadata["latitude"],
         gauge_lon=gsdr_metadata["longitude"],
-        data_resolution=gsdr_metadata["resolution"],
+        smallest_measurable_rainfall_amount=gsdr_metadata["resolution"],
     )
     assert len(result.filter(pl.col("streak_flag1") == 1)) == 33
     assert len(result.filter(pl.col("streak_flag3") == 3)) == 455
@@ -150,21 +150,21 @@ def test_get_streaks_of_repeated_values(hourly_gsdr_data):
     assert result["streak_id"].unique().len() == 8775
 
 
-def test_flag_streaks_exceeding_data_resolution(hourly_gsdr_data, gsdr_metadata):
+def test_flag_streaks_exceeding_smallest_measurable_rainfall_amount(hourly_gsdr_data, gsdr_metadata):
     streak_data = timeseries_checks.get_streaks_of_repeated_values(hourly_gsdr_data, DEFAULT_RAIN_COL)
-    result = timeseries_checks.flag_streaks_exceeding_data_resolution(
+    result = timeseries_checks.flag_streaks_exceeding_smallest_measurable_rainfall_amount(
         streak_data,
         target_gauge_col=DEFAULT_RAIN_COL,
         streak_length=12,
-        data_resolution=gsdr_metadata["resolution"],
+        smallest_measurable_rainfall_amount=gsdr_metadata["resolution"],
     )
     assert len(result.filter(pl.col("streak_flag3") > 0)) == 455
 
-    result = timeseries_checks.flag_streaks_exceeding_data_resolution(
+    result = timeseries_checks.flag_streaks_exceeding_smallest_measurable_rainfall_amount(
         streak_data,
         target_gauge_col=DEFAULT_RAIN_COL,
         streak_length=36,
-        data_resolution=gsdr_metadata["resolution"],
+        smallest_measurable_rainfall_amount=gsdr_metadata["resolution"],
     )
     assert len(result.filter(pl.col("streak_flag3") > 0)) == 288
 

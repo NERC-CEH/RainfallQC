@@ -235,7 +235,7 @@ def check_streaks(
     target_gauge_col: str,
     gauge_lat: int | float,
     gauge_lon: int | float,
-    data_resolution: float,
+    smallest_measurable_rainfall_amount: float,
     accumulation_threshold: float = None,
 ) -> pl.DataFrame:
     """
@@ -243,7 +243,7 @@ def check_streaks(
 
     Flags (TODO: change numbers as original includes unuseful 2):
     1, if streaks of 2 or more repeated values exceeding 2* mean wet day rainfall
-    3, if streaks of 12 or more greater than data resolution
+    3, if streaks of 12 or more greater than smallest measurable rainfall amount
     4, if streaks of 24 or more greater than zero
     5, if period of zeros bounded by streaks of >= 24
 
@@ -259,7 +259,7 @@ def check_streaks(
         latitude of the rain gauge.
     gauge_lon :
         longitude of the rain gauge.
-    data_resolution :
+    smallest_measurable_rainfall_amount :
         Resolution of rainfall data (i.e. minimum rainfall recording).
     accumulation_threshold :
         Rain accumulation for detecting possible monthly accumulations
@@ -287,9 +287,12 @@ def check_streaks(
         streak_data, target_gauge_col, streak_length=2, accumulation_threshold=accumulation_threshold
     )
 
-    # 4. Flag streaks of 12 or more greater than data resolution
-    streak_flag3 = flag_streaks_exceeding_data_resolution(
-        streak_data, target_gauge_col, streak_length=12, data_resolution=data_resolution
+    # 4. Flag streaks of 12 or more greater than smallest measurable rainfall amount
+    streak_flag3 = flag_streaks_exceeding_smallest_measurable_rainfall_amount(
+        streak_data,
+        target_gauge_col,
+        streak_length=12,
+        smallest_measurable_rainfall_amount=smallest_measurable_rainfall_amount,
     )
 
     # 5. Flag streaks of 24 or more greater than zero
@@ -398,11 +401,11 @@ def flag_streaks_exceeding_zero(data: pl.DataFrame, target_gauge_col: str, strea
     return data_w_flags
 
 
-def flag_streaks_exceeding_data_resolution(
-    data: pl.DataFrame, target_gauge_col: str, streak_length: int, data_resolution: float
+def flag_streaks_exceeding_smallest_measurable_rainfall_amount(
+    data: pl.DataFrame, target_gauge_col: str, streak_length: int, smallest_measurable_rainfall_amount: float
 ) -> pl.DataFrame:
     """
-    Flag streaks exceeding data resolution.
+    Flag streaks exceeding smallest measurable rainfall amount in data.
 
     Parameters
     ----------
@@ -412,7 +415,7 @@ def flag_streaks_exceeding_data_resolution(
         Column with rainfall data.
     streak_length :
         Only streaks longer than this will be considered
-    data_resolution:
+    smallest_measurable_rainfall_amount:
         Resolution of rainfall data (i.e. minimum rainfall recording).
 
     Returns
@@ -421,12 +424,16 @@ def flag_streaks_exceeding_data_resolution(
         Data with streak flag 3
 
     """
-    # 1. Get streak above length and data resolution
-    streaks_above_data_resolution = get_streaks_above_threshold(data, target_gauge_col, streak_length, data_resolution)
+    # 1. Get streak above length and smallest measurable rainfall amount
+    streaks_above_smallest_measurable_rainfall_amount = get_streaks_above_threshold(
+        data, target_gauge_col, streak_length, smallest_measurable_rainfall_amount
+    )
 
     # 2. Label original data
     data_w_flags = data.with_columns(
-        pl.when(pl.col("streak_id").is_in(streaks_above_data_resolution["streak_id"].unique().to_list()))
+        pl.when(
+            pl.col("streak_id").is_in(streaks_above_smallest_measurable_rainfall_amount["streak_id"].unique().to_list())
+        )
         .then(3)
         .otherwise(0)
         .alias("streak_flag3")

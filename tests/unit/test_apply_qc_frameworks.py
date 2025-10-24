@@ -6,6 +6,7 @@ import numpy as np
 import polars as pl
 import pytest
 
+from rainfallqc import gauge_checks
 from rainfallqc.qc_frameworks import apply_qc_framework
 
 TARGET_GPCC_ID = "tw_2483"
@@ -31,7 +32,7 @@ def test_apply_qc_frameworks_daily(daily_gpcc_network, gpcc_metadata):
         "QC13": {"accumulation_multiplying_factor": 2.0},
         "QC14": {"accumulation_multiplying_factor": 2.0},
         "QC16": {
-            "neighbouring_gauge_cols": daily_gpcc_network.columns[2:],
+            "list_of_nearest_stations": daily_gpcc_network.columns[2:],
             "n_neighbours_ignored": 0,
         },
         "QC24": {"averaging_method": "mean"},
@@ -41,10 +42,10 @@ def test_apply_qc_frameworks_daily(daily_gpcc_network, gpcc_metadata):
             "gauge_lat": gpcc_metadata["latitude"],
             "gauge_lon": gpcc_metadata["longitude"],
             "time_res": "daily",
-            "data_resolution": 0.1,
+            "smallest_measurable_rainfall_amount": 0.1,
             "wet_threshold": 1.0,
             "min_n_neighbours": 5,
-            "neighbouring_gauge_col": "rain_mm_tw_310",  # filling as nearest neighbour to target gauge
+            "nearest_neighbour": "rain_mm_tw_310",  # filling as nearest neighbour to target gauge
         },
     }
     result = apply_qc_framework.run_qc_framework(
@@ -87,12 +88,12 @@ def test_apply_qc_frameworks_hourly(hourly_gsdr_network, gsdr_metadata):
             "gauge_lat": gsdr_metadata["latitude"],
             "gauge_lon": gsdr_metadata["longitude"],
             "time_res": "hourly",
-            "data_resolution": 0.1,
+            "smallest_measurable_rainfall_amount": 0.1,
             "wet_threshold": 1.0,
             "min_n_neighbours": 5,
-            "neighbouring_gauge_col": "rain_mm_DE_02483",  # filling as nearest neighbour to target gauge
+            "nearest_neighbour": "rain_mm_DE_02483",  # filling as nearest neighbour to target gauge
             "accumulation_multiplying_factor": 2.0,
-            "neighbouring_gauge_cols": hourly_gsdr_network.columns[2:],
+            "list_of_nearest_stations": hourly_gsdr_network.columns[2:],
             "n_neighbours_ignored": 0,
         },
     }
@@ -129,12 +130,12 @@ def test_apply_qc_frameworks_15min(mins15_gsdr_network, gsdr_metadata):
             "gauge_lat": gsdr_metadata["latitude"],
             "gauge_lon": gsdr_metadata["longitude"],
             "time_res": "15m",
-            "data_resolution": 0.1,
+            "smallest_measurable_rainfall_amount": 0.1,
             "wet_threshold": 1.0,
             "min_n_neighbours": 5,
-            "neighbouring_gauge_col": "rain_mm_DE_02483",  # filling as nearest neighbour to target gauge
+            "nearest_neighbour": "rain_mm_DE_02483",  # filling as nearest neighbour to target gauge
             "accumulation_multiplying_factor": 2.0,
-            "neighbouring_gauge_cols": mins15_gsdr_network.columns[2:],
+            "list_of_nearest_stations": mins15_gsdr_network.columns[2:],
             "n_neighbours_ignored": 0,
         },
     }
@@ -179,3 +180,34 @@ def test_apply_pypwsqc_framework(hourly_gsdr_network_no_prefix, gsdr_gauge_netwo
     print("SO: ", so_counts)
     assert all([a == b for a, b in zip(fz_counts, [19208, 418223, 809], strict=False)])
     assert all([a == b for a, b in zip(so_counts, [98112, 329181, 10947], strict=False)])
+
+
+def test_apply_custom_framework(daily_gpcc_network):
+    custom_framework = {
+        "QC7_pnt2": {
+            "function": gauge_checks.check_min_val_change,
+            "description": "QC7 from IntenseQC.",
+        },
+        "QC7_pnt1": {
+            "function": gauge_checks.check_min_val_change,
+            "description": "QC7 from IntenseQC.",
+        },
+    }
+    qc_methods_to_run = ["QC7_pnt2", "QC7_pnt1"]
+    qc_kwargs = {
+        "QC7_pnt2": {"expected_min_val": 0.2},
+        "QC7_pnt1": {"expected_min_val": 0.1},
+        "shared": {"target_gauge_col": f"rain_mm_{TARGET_GPCC_ID}"},
+    }
+
+    result = apply_qc_framework.run_qc_framework(
+        daily_gpcc_network,
+        qc_framework="custom",
+        qc_methods_to_run=qc_methods_to_run,
+        qc_kwargs=qc_kwargs,
+        user_defined_framework=custom_framework,
+    )
+
+    assert len(result.keys()) == 2
+    assert len(result["QC7_pnt2"]) == 64
+    assert len(result["QC7_pnt1"]) == 0
