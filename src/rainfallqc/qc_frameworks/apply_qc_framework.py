@@ -10,7 +10,7 @@ from rainfallqc.qc_frameworks.inbuilt_qc_frameworks import INBUILT_QC_FRAMEWORKS
 
 def run_qc_framework(
     data: pl.DataFrame,
-    qc_framework: dict | str,
+    qc_framework: str,
     qc_methods_to_run: list,
     qc_kwargs: dict,
     user_defined_framework: dict = None,
@@ -40,17 +40,16 @@ def run_qc_framework(
     qc_results = {}
     shared_kwargs = qc_kwargs.get("shared", {})
 
-    if type(qc_framework) is str:
-        if qc_framework in INBUILT_QC_FRAMEWORKS.keys():
-            # select in-built qc framework by name
-            qc_framework = INBUILT_QC_FRAMEWORKS[qc_framework]
-        elif qc_framework == "custom":
-            qc_framework = user_defined_framework
-        else:
-            raise KeyError(
-                f"QC framework '{qc_framework}' is not known."
-                f"In-built QC frameworks include: {INBUILT_QC_FRAMEWORKS.keys()}."
-            )
+    if qc_framework in INBUILT_QC_FRAMEWORKS.keys():
+        # select in-built qc framework by name
+        qc_framework = INBUILT_QC_FRAMEWORKS[qc_framework]
+    elif qc_framework.lower() == "custom":
+        qc_framework = user_defined_framework
+    else:
+        raise KeyError(
+            f"QC framework '{qc_framework}' is not known."
+            f"In-built QC frameworks include: {INBUILT_QC_FRAMEWORKS.keys()}."
+        )
 
     for qc_method in qc_methods_to_run:
         qc_func = qc_framework[qc_method]["function"]
