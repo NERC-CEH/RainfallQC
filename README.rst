@@ -109,7 +109,7 @@ This could look like:
     +--------------------+----------+-----------+------------------+------------------+---------------------+
 
 You could then run checks that require metadata i.e. the ``check_hourly_exceedance_etccdi_rx1day`` QC check which flags rainfall values exceeding
-the hourly day rainfall 1-day record at a given location (Figure 2):
+the hourly day rainfall 1-day record at a given location (see Figure 2):
 
 .. figure:: https://thomasjkeel.github.io/UK-Rain-Gauge-Network/example_images/rx1day_check.png
    :align: center
@@ -118,6 +118,7 @@ the hourly day rainfall 1-day record at a given location (Figure 2):
 
    **Figure 2.** Example of an Rx1day check from the IntenseQC framework
 
+The code for that check looks like:
 
 .. code-block:: python
     :caption: Running a check for annual exceedance of maximum Rx1day from the ETCCDI dataset.
@@ -140,7 +141,7 @@ the hourly day rainfall 1-day record at a given location (Figure 2):
 
 Output flags will then look like:
 
-.. table:: Example flag outputs for a QC check
+.. table:: Example flag outputs for the Rx1day QC check
     :widths: auto
     :align: center
 
@@ -165,16 +166,7 @@ Example 2. - Running multiple QC checks on a single target gauge
 To run multiple QC checks, you can use the `apply_qc_framework() <rainfallqc.checks.html#rainfallqc.qc_frameworks.html#module-rainfallqc.qc_frameworks.apply_qc_framework>`_
 method to run QC methods from a given framework (e.g. IntenseQC).
 
-Let's say you have hourly rainfall values from a rain gauge network data like
-example data 2 below and metadata like example metadata 1.
-You can then run multiple QC checks at once by defining which QC framework, methods and parameters to set.
-
-As of RainfallQC v0.3.0, there are three QC frameworks:
-
-- 1. "intenseqc" - All 25 checks from IntenseQC/GSDR-QC with names like: "QC1", "QC2" ... "QC25",
-- 2. "pypwsqc" - 2 checks from pyPWSQC with the names: "FZ" and "SO",
-- 3. "custom" - Allows the user to select a custom set of checks (see Example 8).
-
+Let's say you have hourly rainfall values from a rain gauge network data like:
 
 .. table:: Example data 2. Rain gauge network
     :widths: auto
@@ -195,6 +187,14 @@ As of RainfallQC v0.3.0, there are three QC frameworks:
     +---------------------+-----------------+-----------------+-----------------+
     | ...                 | ...             | ...             | ...             |
     +---------------------+-----------------+-----------------+-----------------+
+
+You can then run multiple QC checks at once by defining which QC framework, methods and parameters to set.
+
+As of RainfallQC v0.3.0, there are three QC frameworks:
+
+- 1. "intenseqc" - All 25 checks from IntenseQC/GSDR-QC with names like: "QC1", "QC2" ... "QC25",
+- 2. "pypwsqc" - 2 checks from pyPWSQC with the names: "FZ" and "SO",
+- 3. "custom" - Allows the user to select a custom set of checks (see Example 8).
 
 Let's run some QC checks from intenseqc framework below:
 

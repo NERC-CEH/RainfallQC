@@ -146,7 +146,7 @@ This could look like:
     +--------------------+----------+-----------+------------------+------------------+---------------------+
 
 You could then run checks that require metadata i.e. the ``check_hourly_exceedance_etccdi_rx1day`` QC check which flags rainfall values exceeding
-the hourly day rainfall 1-day record at a given location (Figure 2):
+the hourly day rainfall 1-day record at a given location (see Figure 2):
 
 .. figure:: https://thomasjkeel.github.io/UK-Rain-Gauge-Network/example_images/rx1day_check.png
    :align: center
@@ -155,6 +155,7 @@ the hourly day rainfall 1-day record at a given location (Figure 2):
 
    **Figure 2.** Example of an Rx1day check from the IntenseQC framework
 
+The code for that check looks like:
 
 .. code-block:: python
     :caption: Running a check for annual exceedance of maximum Rx1day from the ETCCDI dataset.
@@ -177,7 +178,7 @@ the hourly day rainfall 1-day record at a given location (Figure 2):
 
 Output flags will then look like:
 
-.. table:: Example flag outputs for a QC check
+.. table:: Example flag outputs for the Rx1day QC check
     :widths: auto
     :align: center
 
