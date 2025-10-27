@@ -624,7 +624,7 @@ My plan is to update this example after some feedback.
 **More advice** because this example assumes the data is hourly, the data is explicitly upsampled to 'hourly' in the loop with the Polars method ``.upsample("time", every="1h")``
 
 .. code-block:: python
-    :caption: Apply checks from a QC framework to multiple rain gauges
+    :caption: Apply checks from a QC framework to multiple rain gauges and store summary statistics for each gauge
 
         import polars as pl
         from rainfallqc.qc_frameworks import apply_qc_framework
