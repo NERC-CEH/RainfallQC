@@ -70,8 +70,6 @@ Below, we run 2 example QC checks:
    **Figure 1.** Example of an intermittency issue within the rainfall record
 
 .. code-block:: python
-    :caption: Running a QC checks on a single rain gauge
-
 
         import polars as pl
         from rainfallqc import gauge_checks, timeseries_checks
@@ -121,7 +119,6 @@ the hourly day rainfall 1-day record at a given location (see Figure 2):
 The code for that check looks like:
 
 .. code-block:: python
-    :caption: Running a check for annual exceedance of maximum Rx1day from the ETCCDI dataset.
 
         import polars as pl
         from rainfallqc import comparison_checks
@@ -201,7 +198,6 @@ As of RainfallQC v0.3.0, there are three QC frameworks:
 Let's run some QC checks from intenseqc framework below:
 
 .. code-block:: python
-    :caption: Apply checks from a QC framework to a rain gauge data
 
         import polars as pl
         from rainfallqc.qc_frameworks import apply_qc_framework
