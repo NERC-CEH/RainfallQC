@@ -41,6 +41,7 @@ extensions = [
     "numpydoc",
     "sphinx.ext.autosummary",
     "sphinx.ext.autosectionlabel",
+    "sphinx_copybutton",
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -105,7 +106,7 @@ todo_include_todos = False
 #
 html_theme = "sphinx_rtd_theme"
 
-numfig = True
+numfig = False
 # Theme options are theme-specific and customize the look and feel of a
 # theme further.  For a list of options available for each theme, see the
 # documentation.
@@ -126,6 +127,10 @@ html_logo = "logos/rainfallQC_logo.png"
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ["_static"]
 
+# Custom CSS
+html_css_files = [
+    "css/my_theme.css",
+]
 
 # -- Options for HTMLHelp output ---------------------------------------
 

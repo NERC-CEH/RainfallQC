@@ -32,13 +32,13 @@ You can either clone the public repository:
 
 .. code-block:: console
 
-    $ git clone git://github.com/thomasjkeel/RainfallQC
+    $ git clone git://github.com/NERC-CEH/RainfallQC
 
 Or download the `tarball`_:
 
 .. code-block:: console
 
-    $ curl -OJL https://github.com/thomasjkeel/RainfallQC/tarball/master
+    $ curl -OJL https://github.com/NERC-CEH/RainfallQC/tarball/master
 
 Once you have a copy of the source, you can install it with:
 
@@ -47,5 +47,5 @@ Once you have a copy of the source, you can install it with:
     $ python setup.py install
 
 
-.. _Github repo: https://github.com/thomasjkeel/RainfallQC
-.. _tarball: https://github.com/thomasjkeel/RainfallQC/tarball/master
+.. _Github repo: https://github.com/NERC-CEH/RainfallQC
+.. _tarball: https://github.com/NERC-CEH/RainfallQC/tarball/master

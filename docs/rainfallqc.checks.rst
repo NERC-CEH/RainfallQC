@@ -36,6 +36,14 @@ rainfallqc.checks.timeseries\_checks module
    :show-inheritance:
    :undoc-members:
 
+rainfallqc.checks.pypwsqc\_filters module
+-------------------------------------------
+
+.. automodule:: rainfallqc.checks.pypwsqc_filters
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
 Module contents
 ---------------
 

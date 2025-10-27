@@ -7,7 +7,7 @@ It is designed to help everyone, from individual researchers to industrial-scale
 
 At its core, the package offers:
 
-- 25 QC checks for precipitation data (all derived from `IntenseQC <https://www.sciencedirect.com/science/article/pii/S1364815221002127>`_)
+- 27 QC checks for rainfall data as of v0.2.5 (25 from `IntenseQC <https://www.sciencedirect.com/science/article/pii/S1364815221002127>`_ and 2 from `pyPWSQC <https://doi.org/10.5281/zenodo.4501919>`_)
 - Customizable parameters – adjust thresholds, streak or accumulation lengths, and distances to neighboring gauges
 - A modular QC framework – users can select which QC methods to apply, and configure them according to their project’s requirements
 
@@ -21,6 +21,7 @@ The *RainfallQC* package breaks down the QC checks into four distinct types:
 - **Comparison checks** – For detecting abnormalities based on rainfall benchmarks.
 - **Time-series checks** – For detecting abnormalities in patterns of the data record.
 - **Neighbourhood checks** – For detecting abnormalities based on measurements in neighbouring rain gauges.
+- **pypwsqc filters** – For applying quality assurance protocols and filters for rainfall data.
 
 These different types of rainfall checks are either rainfall-specific or not and need different amounts of data to run (Figure 1).
 
@@ -61,10 +62,12 @@ These are the quality control checks currently implemented in the package:
    `Hourly neighbours (wet) <rainfallqc.checks.html#rainfallqc.checks.neighbourhood_checks.check_wet_neighbours>`_            Neighbourhood checks  IntenseQC                                                                             QC17
    `Daily neighbours (dry) <rainfallqc.checks.html#rainfallqc.checks.neighbourhood_checks.check_dry_neighbours>`_             Neighbourhood checks  IntenseQC                                                                             QC18
    `Daily neighbours (dry) <rainfallqc.checks.html#rainfallqc.checks.neighbourhood_checks.check_dry_neighbours>`_             Neighbourhood checks  IntenseQC                                                                             QC19
-   `Monthly neighbiours <rainfallqc.checks.html#rainfallqc.checks.neighbourhood_checks.check_monthly_neighbours>`_            Neighbourhood checks  IntenseQC                                                                             QC20
+   `Monthly neighbours <rainfallqc.checks.html#rainfallqc.checks.neighbourhood_checks.check_monthly_neighbours>`_             Neighbourhood checks  IntenseQC                                                                             QC20
    `Timing offset <rainfallqc.checks.html#rainfallqc.checks.neighbourhood_checks.check_timing_offset>`_                       Neighbourhood checks  IntenseQC                                                                             QC21
    `Pre-QC affinity index <rainfallqc.checks.html#rainfallqc.checks.neighbourhood_checks.check_neighbour_affinity_index>`_    Neighbourhood checks  IntenseQC                                                                             QC22
    `Pre-QC pearson correlation <rainfallqc.checks.html#rainfallqc.checks.neighbourhood_checks.check_neighbour_correlation>`_  Neighbourhood checks  IntenseQC                                                                             QC23
    `Daily factor <rainfallqc.checks.html#rainfallqc.checks.neighbourhood_checks.check_daily_factor>`_                         Neighbourhood checks  IntenseQC                                                                             QC24
    `Monthly factor <rainfallqc.checks.html#rainfallqc.checks.neighbourhood_checks.check_monly_factor>`_                       Neighbourhood checks  IntenseQC                                                                             QC25
+   `Faulty Zeros <rainfallqc.checks.html#rainfallqc.checks.pypwsqc_filters.check_faulty_zeros>`_                              pyPWSQC filters       `pyPWSQC <https://doi.org/10.5281/zenodo.4501919>`_                                   FZ
+   `Station Outliers <rainfallqc.checks.html#rainfallqc.checks.pypwsqc_filters.check_station_outlier>`_                       pyPWSQC filters       pyPWSQC                                                                               SO
    =========================================================================================================================  ====================  ====================================================================================  ===============
