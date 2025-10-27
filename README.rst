@@ -265,6 +265,10 @@ Features
 - support for single gauges or networks of gauges
 - editable parameters so you can tweak thresholds, streak or accumulation lengths, and distances to neighbouring gauges
 
+How to cite this package
+========================
+To cite a specific version, you can reference the Zenodo DOI. `v0.3.1 <https://doi.org/10.5281/zenodo.17457013>`_
+
 Credits
 =======
 * Builds upon `IntenseQC <https://github.com/nclwater/intense-qc/tree/master>`_, and (is compatible with) `pyPWSQC <https://github.com/OpenSenseAction/pypwsqc>`_:
