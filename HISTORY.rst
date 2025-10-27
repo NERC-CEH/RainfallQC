@@ -2,6 +2,10 @@
 History
 =======
 
+0.3.1 (2025-10-23)
+------------------
+* Publish to Zenodo
+
 0.3.0 (2025-10-23)
 ------------------
 * Overhaul tutorials, quickstart and examples on readthedocs
