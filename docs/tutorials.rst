@@ -12,8 +12,9 @@ RainfallQC contains five modules:
 
 
 Each one of these modules contains individual QC check methods, which begin with the syntax ``check_``.
-For example to run a QC check that will check whether there are streaks of repeating values in your data, you can run: ``rainfallqc.timeseries_checks.check_streaks(data, **kwargs)``
-(this method is from the IntenseQC framework).
+For example to run a QC check that will check whether there are streaks of repeating values in your data, you can run: ``timeseries_checks.check_streaks(data, **kwargs)``.
+
+Various example of errors in rainfall data can be viewed on this `web map <https://thomasjkeel.github.io/UK-Rain-Gauge-Network/qc_map.html>`_.
 
 
 Getting started
@@ -95,13 +96,13 @@ Let's say you have data for a single rain gauge stored in "hourly_rain_gauge_dat
 For the majority of the checks in RainfallQC, you can load in your data using `polars <https://pola-rs.github.io/polars-book/>`_ and run the checks directly.
 Below, we run 2 example QC checks:
 
-- 1) ``check_intermittency`` - to flag years in the data with intermittency i.e. periods of non-zero bounded by 0 (see Figure 1.),
+- 1) ``check_intermittency`` - to flag years where there are periods of non-zero bounded by 0 (see Figure 1.),
 - 2) ``daily_accumulations`` - to flag accumulations of hourly values into daily.
 
 .. figure:: https://thomasjkeel.github.io/UK-Rain-Gauge-Network/example_images/intermittency.png
    :align: center
-   :height: 300px
-   :width: 300 px
+   :height: 250px
+   :width: 300px
 
    **Figure 1.** Example of an intermittency issue within the rainfall record
 
@@ -145,7 +146,15 @@ This could look like:
     +--------------------+----------+-----------+------------------+------------------+---------------------+
 
 You could then run checks that require metadata i.e. the ``check_hourly_exceedance_etccdi_rx1day`` QC check which flags rainfall values exceeding
-the hourly day rainfall 1-day record at a given location:
+the hourly day rainfall 1-day record at a given location (Figure 2):
+
+.. figure:: https://thomasjkeel.github.io/UK-Rain-Gauge-Network/example_images/rx1day_check.png
+   :align: center
+   :height: 250px
+   :width: 300px
+
+   **Figure 2.** Example of an Rx1day check from the IntenseQC framework
+
 
 .. code-block:: python
     :caption: Running a check for annual exceedance of maximum Rx1day from the ETCCDI dataset.
@@ -213,15 +222,16 @@ Let's say you have data for a multiple rain gauge stored in "hourly_rain_gauge_n
     +---------------------+-----------------+-----------------+-----------------+
 
 
-You can then run checks that compare a target gauge to its neighbours e.g. the wet_neighbours_check from the ``neighbourhood_checks`` module.
-This check will flag rainfall values that are in excess of a given number of the neighbours (see Figure 2.)
+You can then run checks that compare a target gauge to its neighbours.
+To demonstrate, we use the ``check_wet_neighbours`` QC check from ``neighbourhood_checks``.
+This check will flag rainfall values that are in excess of a given number of the neighbours (see Figure 3.)
 
 .. figure:: https://thomasjkeel.github.io/UK-Rain-Gauge-Network/example_images/wet_spell_flag_hourly.png
    :align: center
    :height: 300px
-   :width: 300 px
+   :width: 280 px
 
-   **Figure 2.** Wetter than neighbors check from the IntenseQC framework.
+   **Figure 3.** Wetter than neighbors check from the IntenseQC framework.
 
 
 .. code-block:: python
@@ -289,8 +299,16 @@ See an example below where we assume all the CSVs look like example data 1 and t
         nearby_rainfall_data = reduce(lambda left, right: left.join(right, on="time", how="left"), nearby_rainfall_data_list)
 
 
-You can then run checks as normal with that data, let's imagine its a check where we need to define the
-nearest neighbour to a given gauge:
+You can then run checks as normal with that data.
+Let's imagine we run the nearest neighbour correlation QC check (see Figure 4), so for that we also need to compute the nearest neighbour in our data.
+To do this we can use the nearby_metadata calculated above and the ``compute_km_distances_from_target_id`` function:
+
+.. figure:: https://thomasjkeel.github.io/UK-Rain-Gauge-Network/example_images/pearson_corr.png
+   :align: center
+   :height: 300px
+   :width: 350 px
+
+   **Figure 4.** Nearest Neighbour correlation from IntenseQC framework.
 
 .. code-block:: python
     :caption: Running correlation with nearest neighbour check
@@ -364,8 +382,9 @@ with RainfallQC by selecting a single rain gauge as follows:
 
 Example 5. - Tabular data you want to convert to xarray for pypwsqc
 -------------------------------------------------------------------
-By default, the methods from pypwsqc require the inputs to be xarray datasets. Although some of the pypwsqc methods are
-embedded into RainfallQC, for example you can run the station outlier check like:
+By default, the methods from `pyPWSQC <https://doi.org/10.5281/zenodo.4501919>`_ require the inputs to be xarray datasets.
+Please note that an interface for running some of the pyPWSQC methods are embedded into RainfallQC already.
+For example you can run the station outlier check like:
 
 .. code-block:: python
     :caption: Making a pl.DataFrame of only nearby gauges to a target gauge
@@ -401,8 +420,8 @@ embedded into RainfallQC, for example you can run the station outlier check like
     )
 
 
-If you would like to convert the data to xarray (which is done behind the scenes by `convert_neighbour_data_to_xarray <rainfallqc.checks.html#rainfallqc.checks.pypwsqc_filters.convert_neighbour_data_to_xarray>`_ function)
-, you can do that as follows (assuming data is like example data 1)
+If you would like to convert the data to xarray (which is done behind the scenes by `convert_neighbour_data_to_xarray <rainfallqc.checks.html#rainfallqc.checks.pypwsqc_filters.convert_neighbour_data_to_xarray>`_ function).
+Assuming your data is like example data 1, you can do that as follows.
 
 .. code-block:: python
     :caption: Convert polars data to xarray
@@ -440,18 +459,27 @@ If you would like to convert the data to xarray (which is done behind the scenes
         data_ds['rainfall'] = data_ds['rainfall'].assign_attrs(RAINFALL_ATTRIBUTES)
         data_ds['longitude'] = data_ds['longitude'].assign_attrs({"units": "degrees in WGS84 projection"})
         data_ds['latitude'] = data_ds['latitude'].assign_attrs({"units": "degrees in WGS84 projection"})
-        gdsr_network_ds = gdsr_network_ds.assign_attrs(GLOBAL_ATTRIBUTES)
+        data_ds = data_ds.assign_attrs(GLOBAL_ATTRIBUTES)
 
-
+After following the above step to create ``data_ds``, you can then run methods from pyPWSQC.
 
 Example 6. - Running multiple QC checks on a single target gauge
 ----------------------------------------------------------------
 To run multiple QC checks, you can use the `apply_qc_framework() <rainfallqc.checks.html#rainfallqc.qc_frameworks.html#module-rainfallqc.qc_frameworks.apply_qc_framework>`_
 method to run QC methods from a given framework (e.g. IntenseQC).
 
-Let's say you have daily rain gauge network data stored in a Polars DataFrame `daily_gpcc_network` (from a file like
-example data 2) and metadata stored in a dictionary `gpcc_metadata` (from a file like example metadata 1).
-You can then run multiple QC checks by defining which framework as follows:
+Let's say you have hourly rainfall values from a rain gauge network data like
+example data 2 and metadata like example metadata 1.
+You can then run multiple QC checks at once by defining which QC framework, methods and parameters to set.
+
+As of RainfallQC v0.3.0, there are three QC frameworks:
+
+- 1. "intenseqc" - All 25 checks from IntenseQC/GSDR-QC with names like: "QC1", "QC2" ... "QC25",
+- 2. "pypwsqc" - 2 checks from pyPWSQC with the names: "FZ" and "SO",
+- 3. "custom" - Allows the user to select a custom set of checks (see Example 8).
+
+Let's run some QC checks from intenseqc framework below:
+
 
 .. code-block:: python
     :caption: Apply checks from a QC framework to a rain gauge data
@@ -459,8 +487,8 @@ You can then run multiple QC checks by defining which framework as follows:
         import polars as pl
         from rainfallqc.qc_frameworks import apply_qc_framework
 
-        daily_gpcc_network = pl.read_csv("daily_gpcc_network.csv")  # Load your daily rain gauge network data
-        daily_gpcc_metadata = pl.read_csv("daily_gpcc_metadata.csv")  # Load your metadata
+        network_data = pl.read_csv("hourly_rain_gauge_network.csv")
+        metadata = pl.read_csv("rain_gauge_metadata.csv")
 
         # 1. Decide which QC methods of IntenseQC will be run
         qc_framework = "IntenseQC"
@@ -492,7 +520,7 @@ You can then run multiple QC checks by defining which framework as follows:
 
         # 3. Run QC methods on network data
         qc_result = apply_qc_framework.run_qc_framework(
-            daily_gpcc_network, qc_framework=qc_framework, qc_methods_to_run=qc_methods_to_run, qc_kwargs=qc_kwargs
+            daily_rain_gauge_network, qc_framework=qc_framework, qc_methods_to_run=qc_methods_to_run, qc_kwargs=qc_kwargs
         )
 
 
@@ -500,7 +528,100 @@ Because lots of the checks share the same parameters with a standard vocabulary,
 
 Example 7. - Looping through rain gauges and running multiple QC checks
 -----------------------------------------------------------------------
+This example is a little more involved and less well-explained (please email me: tomkee@ceh.ac.uk if you have any questions).
 
+This example shows you to run a loop over multiple gauges and how to store the outputs of the QC checks.
+How you store things depends on the use-case.
+Below, we give an example of storing a summary of the QC runs as the number of rows with flags for each check.
+Some of the checks from RainfallQC do not return rows, but instead numbers or lists.
+So first, we need to decide which checks will run, and which of those are row-wise.
+
+.. code-block:: python
+    :caption: Set up QC framework to loop over
+
+    DATA_RESOLUTION = 0.2
+    MIN_N_NEIGHBOURS_FOR_CALC = 8
+
+    # Specificiations for QC run (NOTE: QC6 is heavy as using Pettit test)
+    qc_to_run = ["QC1", "QC2", "QC3", "QC4", "QC5", "QC7", "QC8",
+                "QC9", "QC10", "QC11", "QC12", "QC13", "QC14",
+                "QC15", "QC17", "QC19", "QC21", "QC22", "QC23"]
+
+
+    qc_kwargs = {
+        "QC1": {"quantile": 5},
+        "QC2": {"k": 3},
+        "QC3": {"time_granularity": "hour"},
+        "QC4": {"time_granularity": "weekday"},
+        "QC5": {"no_data_threshold" : 2}, # days
+        "QC7": {"expected_min_val": DATA_RESOLUTION},
+        "QC13": {"accumulation_multiplying_factor": 2.0},
+        "QC14": {"accumulation_multiplying_factor": 2.0},
+        "shared": {
+            "time_res": "hourly",
+            "smallest_measurable_rainfall_amount": DATA_RESOLUTION,
+            "wet_threshold": 1.0,
+            "min_n_neighbours": MIN_N_NEIGHBOURS_FOR_CALC,
+            "n_neighbours_ignored": 0
+        }
+    }
+
+    ## all checks that are computed as summary of overall data or once per year values
+    non_rowwise_checks = ['QC1', 'QC2', 'QC3', 'QC4', 'QC5', 'QC7', 'QC8', 'QC9', 'QC21', 'QC22', 'QC23']
+    non_rowwise_check_names = ['percentiles_zero', 'k-largest_zero', 'days_of_week', 'hours_of_day',
+                            'intermittency', 'min_val_change', 'r99p', 'prcptot','timings_offset',
+                            'affinity_index', 'pearson_corr']
+    non_rowwise_checks_converter = dict(zip(non_rowwise_checks, non_rowwise_check_names))
+
+
+We will also need a function/class that will load in our nearby_metadata for each gauge (based on code from Example 3).
+Please note that this makes very specific assumptions about the format of the data, and this may be different for your own purposes.
+
+.. code-block:: python
+    :caption: Code for loading neighbouring metadata and rainfall amount to a given target gauge ID
+
+    def load_gauge_neighbour_metadata_and_data(target_gauge_id, metadata):
+        """
+        Loads metadata and rainfall data from 10 nearest neighbours to a given target gauge
+        """
+        ten_nearest_neighbour_ids = get_ids_of_n_nearest_overlapping_neighbouring_gauges(
+            metadata,
+            target_id=target_gauge_id,
+            distance_threshold=50,  # in km
+            min_overlap_days=365*5,  # in days
+            n_closest=10,  # number of neighbours to return
+            start_datetime_col="start_datetime",
+            end_datetime_col="end_datetime",
+        )
+
+        nearby_metadata = metadata.filter((pl.col('station_id').is_in(ten_nearest_neighbour_ids)) |
+                                        (pl.col('station_id') == target_gauge_id))
+
+        nearby_rainfall_data_list = []
+        for path in nearby_metadata['path']:
+            one_gauge = pl.read_csv(path, try_parse_dates=True)
+            one_gauge = one_gauge.select(['time', 'rain_mm']) # assuming each file has these columns
+            gauge_rain_col = path.split('/')[-1].split(f'.csv')[0] # create unique column name
+            one_gauge = one_gauge.rename({'rain_mm': gauge_rain_col})
+            nearby_rainfall_data_list.append(one_gauge)
+
+        # Join all data together (consider 'how' to merge)
+        nearby_rainfall_data = reduce(lambda left, right: left.join(right, on="time", how="left"), nearby_rainfall_data_list)
+
+        return nearby_metadata, nearby_rainfall_data
+
+
+
+
+Next, we can begin the loop, which in turn is going load data in from file paths and overwrite some of the keyword arguments in  ``qc_kwargs``
+such as setting a new "target_gauge_col" each time.
+We assume the data is stored in seperate CSV files (like example data 1) and there is metadata with paths to that data like example metadata 2 (see Example 3 also).
+
+**Advice**, you may want to include ``try`` and ``except`` statements to capture rain gauges that may throw errors.
+My plan is to update this example after some feedback.
+
+
+**More advice** because this example assumes the data is hourly, the data is explicitly upsampled to 'hourly' in the loop with the Polars method ``.upsample("time", every="1h")``
 
 .. code-block:: python
     :caption: Apply checks from a QC framework to multiple rain gauges
@@ -508,13 +629,107 @@ Example 7. - Looping through rain gauges and running multiple QC checks
         import polars as pl
         from rainfallqc.qc_frameworks import apply_qc_framework
 
+        network_data = pl.read_csv("hourly_rain_gauge_network.csv")
+        metadata = pl.read_csv("rain_gauge_metadata.csv")
+
+        overall_summary_of_qc = []
+
+        # begin loop
+        for station_id in metadata['station_id'].unique():
+            nearby_metadata, nearby_rainfall_data = load_gauge_neighbour_metadata_and_data(target_gauge_id=station_id, metadata=metadata)
+
+            target_gauge_col = station_id
+
+            # get nearest neighbour
+            nearby_gauge_distances = compute_km_distances_from_target_id(nearby_metadata, target_id=target_gauge_id, station_id_col='station_id')
+            nearest_gauge_id = nearby_gauge_distances.sort('distance')[0]['station_id'].item()
+            neighbouring_gauge_col = nearest_gauge_id
+
+            # Update all the shared keyword arguments
+            qc_kwargs["shared"]["rain_col"] = target_gauge_col
+            qc_kwargs["shared"]["target_gauge_col"] = target_gauge_col
+            qc_kwargs["shared"]["nearest_neighbour"] = neighbouring_gauge_col
+            qc_kwargs["shared"]["list_of_nearest_stations"] = nearby_rainfall_data.columns[1:]
+            qc_kwargs["shared"]["gauge_lat"] = nearby_metadata.filter(pl.col("station_id") == target_gauge_col)['latitude']
+            qc_kwargs["shared"]["gauge_lon"] = nearby_metadata.filter(pl.col("station_id") == target_gauge_col)['longitude']
+
+            # Try to run the apply QC framework
+            try:
+                result = rainfallqc.apply_qc_framework.run_qc_framework(
+                    data=nearby_rainfall_data.upsample("time", every="1h"),
+                    qc_framework='IntenseQC',
+                    qc_methods_to_run=qc_to_run,
+                    qc_kwargs=qc_kwargs,
+                )
+            except Exception as e:
+                print(station_id, e)
+                continue
+
+            # join all flags together for the given target rain gauge
+            all_flags = {}
+            all_flags['all_flags_by_row'] = nearby_rainfall_data["time", target_gauge_col]
+            for qc in result:
+                if isinstance(result[qc], pl.DataFrame):
+                    try:
+                        all_flags['all_flags_by_row'] = all_flags['all_flags_by_row'].join(result[qc], on="time")
+                    except Exception as e:
+                        print(e, station_id)
+                else:
+                    all_flags[qc] = result[qc]
+
+            # Calculate summary statistics of flags
+            all_flags['all_flags_by_row'] = all_flags['all_flags_by_row'].with_columns(
+                pl.when(
+                    pl.any_horizontal(pl.all().exclude(["time", target_gauge_col]).fill_null(0.0).map_elements(lambda col: col > 0, return_dtype=pl.Float32))
+                )
+                    .then(1)
+                    .otherwise(0)
+                    .alias("is_flagged")
+            )
+            flagged_rows = all_flags['all_flags_by_row']['is_flagged'].value_counts().filter(pl.col("is_flagged") == 1)['count']
+            not_flagged_rows = all_flags['all_flags_by_row']['is_flagged'].value_counts().filter(pl.col("is_flagged") == 0)['count']
+            total_rows = flagged_rows + not_flagged_rows
+            perc_flagged = ((flagged_rows/total_rows)*100)
+            perc_flagged = perc_flagged.item() if perc_flagged.len() == 1 else 0
+            print(f"Station ID: {station_id}\t\tFlag rate: {perc_flagged: .2f}%")
+
+            # add to overall QC summary
+
+            summary_of_qc = {}
+            summary_of_qc['gauge_id'] = target_gauge_col
+            summary_of_qc['num_nearby_gauges'] = len(nearby_metadata) - 1 # do not count the target
+            summary_of_qc['perc_flagged'] = round(perc_flagged, 3)
+            summary_of_qc['total_flagged_rows'] = flagged_rows[0] if flagged_rows.len() > 0 else 0
+            summary_of_qc['total_rows'] = len(all_flags['all_flags_by_row'])
+
+            for qc_key in non_rowwise_checks:
+                if isinstance(all_flags[qc_key], list):
+                    # sum number of years flagged
+                    summary_of_qc[non_rowwise_checks_converter[qc_key]] = sum(item != 0 for item in all_flags[qc_key])
+                else:
+                    summary_of_qc[non_rowwise_checks_converter[qc_key]] = all_flags[qc_key]
+
+            for col in all_flags['all_flags_by_row'].columns[2:]:
+                summary_of_qc[col] = len(all_flags['all_flags_by_row'].filter(pl.col(col) > 0).drop_nans()[col])
+            overall_summary_of_qc.append(summary_of_qc)
+
 
 
 Example 8. - Running a sensitivity analysis
 -------------------------------------------
 As shown in Example 6-7, to run multiple QC checks, you can use the `apply_qc_framework() <rainfallqc.checks.html#rainfallqc.qc_frameworks.html#module-rainfallqc.qc_frameworks.apply_qc_framework>`_.
-This method also allows a "custom" framework to be selected, as follows:
+This method also allows a "custom" framework to be user-defined.
+In the below example, we will define a ``custom_framework`` that runs two different variations of the same
+QC check. That check will be ``check_min_val_change`` which flags when there is shifts in the gauge data from the expected minimum values (see Figure 5 for example of minimum values by year).
 
+.. figure:: https://thomasjkeel.github.io/UK-Rain-Gauge-Network/example_images/min_val_change.png
+   :align: center
+   :height: 300px
+   :width: 350 px
+
+   **Figure 5.** Minimum non-zero rainfall amounts each year.
+
+We will check min values of 0.1 and 0.2 mm as part of our "custom" framework:
 
 .. code-block:: python
     :caption: Apply checks from a QC framework to a rain gauge data
@@ -522,10 +737,38 @@ This method also allows a "custom" framework to be selected, as follows:
         import polars as pl
         from rainfallqc.qc_frameworks import apply_qc_framework
 
-        daily_gpcc_network = pl.read_csv("daily_gpcc_network.csv")  # Load your daily rain gauge network data
-        daily_gpcc_metadata = pl.read_csv("daily_gpcc_metadata.csv")  # Load your metadata
+        network_data = pl.read_csv("hourly_rain_gauge_network.csv")
+
+        # Define your custom framework
+        custom_framework = {
+            "CustomQC_check_1": {
+                "function": gauge_checks.check_min_val_change,
+            },
+            "CustomQC_check_2": {
+                "function": gauge_checks.check_min_val_change,
+            },
+        }
+
+        qc_methods_to_run = ["CustomQC_check_1", "CustomQC_check_2"]
+
+        qc_kwargs = {
+            "CustomQC_check_1": {"expected_min_val": 0.1},
+            "CustomQC_check_2": {"expected_min_val": 0.2},
+            "shared": {"target_gauge_col": f"rain_gauge_1"},
+        }
+
+        # Run custom framework
+        result = apply_qc_framework.run_qc_framework(
+            network_data,
+            qc_framework="custom", ## Set the user defined QC framework
+            qc_methods_to_run=qc_methods_to_run,
+            qc_kwargs=qc_kwargs,
+            user_defined_framework=custom_framework,
+        )
 
 
+----------------
 
+Real coding example for RainfallQC are available as Jupyter Notebooks at: https://github.com/Thomasjkeel/RainfallQC-notebooks/tree/main
 
-Also see example Jupyter Notebooks here: https://github.com/Thomasjkeel/RainfallQC-notebooks/tree/main
+----------------
