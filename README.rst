@@ -267,7 +267,8 @@ Features
 
 How to cite this package
 ========================
-To cite a specific version, you can reference the Zenodo DOI. `v0.3.1 <https://doi.org/10.5281/zenodo.17457013>`_
+To cite a specific version of RainfallQC, please see `Zenodo <https://zenodo.org/records/17457184>`_ DOI. 
+For v0.3.1: https://doi.org/10.5281/zenodo.17457013
 
 Credits
 =======
