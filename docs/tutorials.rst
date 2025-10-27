@@ -93,7 +93,17 @@ Let's say you have data for a single rain gauge stored in "hourly_rain_gauge_dat
 
 
 For the majority of the checks in RainfallQC, you can load in your data using `polars <https://pola-rs.github.io/polars-book/>`_ and run the checks directly.
-Below, we run a check from the ``gauge_checks`` and ``timeseries_checks`` modules.
+Below, we run 2 example QC checks:
+
+- 1) ``check_intermittency`` - to flag years in the data with intermittency i.e. periods of non-zero bounded by 0 (see Figure 1.),
+- 2) ``daily_accumulations`` - to flag accumulations of hourly values into daily.
+
+.. figure:: https://thomasjkeel.github.io/UK-Rain-Gauge-Network/example_images/intermittency.png
+   :align: center
+   :height: 300px
+   :width: 300 px
+
+   **Figure 1.** Example of an intermittency issue within the rainfall record
 
 .. code-block:: python
     :caption: Running a QC checks on a single rain gauge
@@ -134,8 +144,8 @@ This could look like:
     | ...                | ...      | ...       |                  |                  | ...                 |
     +--------------------+----------+-----------+------------------+------------------+---------------------+
 
-You could then run checks that require metadata i.e. using the ``check_hourly_exceedance_etccdi_rx1day`` check which exceeds
-the location-specific hourly day rainfall 1-day record:
+You could then run checks that require metadata i.e. the ``check_hourly_exceedance_etccdi_rx1day`` QC check which flags rainfall values exceeding
+the hourly day rainfall 1-day record at a given location:
 
 .. code-block:: python
     :caption: Running a check for annual exceedance of maximum Rx1day from the ETCCDI dataset.
@@ -203,7 +213,16 @@ Let's say you have data for a multiple rain gauge stored in "hourly_rain_gauge_n
     +---------------------+-----------------+-----------------+-----------------+
 
 
-You can then run a neighbourhood check from the ``neighbourhood_checks`` module.
+You can then run checks that compare a target gauge to its neighbours e.g. the wet_neighbours_check from the ``neighbourhood_checks`` module.
+This check will flag rainfall values that are in excess of a given number of the neighbours (see Figure 2.)
+
+.. figure:: https://thomasjkeel.github.io/UK-Rain-Gauge-Network/example_images/wet_spell_flag_hourly.png
+   :align: center
+   :height: 300px
+   :width: 300 px
+
+   **Figure 2.** Wetter than neighbors check from the IntenseQC framework.
+
 
 .. code-block:: python
     :caption: Running a wet neighbours check on a rain gauge network
@@ -219,13 +238,12 @@ You can then run a neighbourhood check from the ``neighbourhood_checks`` module.
             list_of_nearest_stations=["rain_mm_gauge_2", "rain_mm_gauge_3"],
             time_res="hourly",
             wet_threshold=1.0, # threshold for rainfall intensity to be considered
-            min_n_neighbours=1, # number of neighbours needed for comparison
-            n_neighbours_ignored=0, # ignore no neighbours and include all
+            min_n_neighbours=1, # min number of neighbours needed for comparison
+            n_neighbours_ignored=0, # number of neighbours to ignore for comparison
         )
 
 Please note, you will need explicitly define which gauges are considered neighbouring to the target gauge.
-You can do this with the `get_ids_of_n_nearest_overlapping_neighbouring_gauges <rainfallqc.utils.html#rainfallqc.utils.neighbourhood_utils.get_ids_of_n_nearest_overlapping_neighbouring_gauges>`_ function.
-An example of its use is given in Example 3.
+In Example 3, we show you how you can do this with the get_ids_of_n_nearest_overlapping_neighbouring_gauges function.
 
 Example 3. - Run single checks on rain gauge network data (multiple file paths)
 -------------------------------------------------------------------------------
