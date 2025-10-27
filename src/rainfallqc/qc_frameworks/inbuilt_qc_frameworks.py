@@ -41,4 +41,4 @@ PYPWSQC = {
     "SO": {"function": pypwsqc_filters.check_station_outlier},
 }
 
-INBUILT_QC_FRAMEWORKS = {"IntenseQC": INTENSE_QC, "pypwsqc": PYPWSQC}
+INBUILT_QC_FRAMEWORKS = {"intenseqc": INTENSE_QC, "pypwsqc": PYPWSQC}

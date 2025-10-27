@@ -23,7 +23,7 @@ def run_qc_framework(
     data :
         Rainfall data to QC.
     qc_framework :
-        QC framework to run, can be 'in-built' type i.e. IntenseQC or 'custom' for user-defined.
+        QC framework to run, can be 'in-built' type i.e. IntenseQC or pyPWSQC or 'custom' for user-defined.
     qc_methods_to_run :
         Which methods should be run within that framework i.e. [QC1, QC2]
     qc_kwargs :
@@ -40,10 +40,11 @@ def run_qc_framework(
     qc_results = {}
     shared_kwargs = qc_kwargs.get("shared", {})
 
+    qc_framework = qc_framework.lower()
     if qc_framework in INBUILT_QC_FRAMEWORKS.keys():
         # select in-built qc framework by name
         qc_framework = INBUILT_QC_FRAMEWORKS[qc_framework]
-    elif qc_framework.lower() == "custom":
+    elif qc_framework == "custom":
         qc_framework = user_defined_framework
     else:
         raise KeyError(
