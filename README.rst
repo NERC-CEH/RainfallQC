@@ -11,11 +11,12 @@ RainfallQC - Quality control for rainfall data
 .. image:: https://img.shields.io/pypi/v/rainfallqc.svg
         :target: https://pypi.python.org/pypi/rainfallqc
 
-..
-    image:: https://readthedocs.org/projects/rainfallqc/badge/?version=latest
+.. image:: https://readthedocs.org/projects/rainfallqc/badge/?version=latest
         :target: https://rainfallqc.readthedocs.io/en/latest/?version=latest
         :alt: Documentation Status
 
+.. image:: https://zenodo.org/badge/917722737.svg
+        :target: https://doi.org/10.5281/zenodo.17457013
 
 Provides methods for running rainfall quality control.
 
