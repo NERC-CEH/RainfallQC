@@ -471,7 +471,7 @@ method to run QC methods from a given framework (e.g. IntenseQC).
 
 Let's say you have hourly rainfall values from a rain gauge network data like
 example data 2 and metadata like example metadata 1.
-You can then run multiple QC checks at once by defining which QC framework, methods and parameters to set.
+You can then run multiple QC checks at once by defining a QC framework, the methods to run and parameters for those methods.
 
 As of RainfallQC v0.3.0, there are three QC frameworks:
 
