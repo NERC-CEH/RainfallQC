@@ -12,4 +12,5 @@ matplotlib
 sphinx
 numpydoc
 sphinx_rtd_theme
+sphinx-copybutton
 rainfallqc

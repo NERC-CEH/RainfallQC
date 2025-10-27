@@ -2,7 +2,7 @@
 Tutorials
 =========
 
-RainfallQC contains four modules:
+RainfallQC contains five modules:
 
 1. ``gauge_checks`` - For detecting abnormalities in summary and descriptive statistics.
 2. ``comparison_checks`` - For detecting abnormalities by comparing to benchmark data.
@@ -12,7 +12,8 @@ RainfallQC contains four modules:
 
 
 Each one of these modules contains individual QC check methods, which begin with the syntax ``check_``.
-For example to run a streaks check you can run: ``rainfallqc.timeseries_checks.check_streaks(data, **kwargs)``
+For example to run a QC check that will check whether there are streaks of repeating values in your data, you can run: ``rainfallqc.timeseries_checks.check_streaks(data, **kwargs)``
+(this method is from the IntenseQC framework).
 
 
 Getting started
@@ -25,7 +26,7 @@ How you use RainfallQC will depend on the format of your data. The table below o
 +--------------------------------------------+--------------+--------------------------------------------------------------+
 | Data format                                | See...       | Notes                                                        |
 +============================================+==============+==============================================================+
-| Single rain gauge (e.g. 1 CSV)             | Example 1    | RainfallQC assumes tabular data                              |
+| Single rain gauge (e.g. 1 CSV)             | Example 1    | All RainfallQC checks were built to run on tabular data      |
 +--------------------------------------------+--------------+--------------------------------------------------------------+
 | Rain gauge network data (e.g. 1 CSV        | Example 2    | You will need to define which of those gauges are considered |
 | with multiple columns)                     |              | to be neighbouring to a target gauge. Therefore you also     |
