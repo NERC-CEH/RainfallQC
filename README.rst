@@ -188,6 +188,8 @@ Let's say you have hourly rainfall values from a rain gauge network data like:
     | ...                 | ...             | ...             | ...             |
     +---------------------+-----------------+-----------------+-----------------+
 
+
+... and metadata like example metdata 1.
 You can then run multiple QC checks at once by defining a QC framework, the methods to run and parameters for those methods.
 
 As of RainfallQC v0.3.0, there are three QC frameworks:
