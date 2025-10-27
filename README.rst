@@ -194,9 +194,9 @@ You can then run multiple QC checks at once by defining a QC framework, the meth
 
 As of RainfallQC v0.3.0, there are three QC frameworks:
 
-- 1. "intenseqc" - All 25 checks from IntenseQC/GSDR-QC with names like: "QC1", "QC2" ... "QC25",
-- 2. "pypwsqc" - 2 checks from pyPWSQC with the names: "FZ" and "SO",
-- 3. "custom" - Allows the user to select a custom set of checks (see Example 8 in `Tutorials <https://rainfallqc.readthedocs.io/en/latest/tutorials.html>`_).
+1. "intenseqc" - All 25 checks from IntenseQC/GSDR-QC with names like: "QC1", "QC2" ... "QC25",
+2. "pypwsqc" - 2 checks from pyPWSQC with the names: "FZ" and "SO",
+3. "custom" - Allows the user to select a custom set of checks (see Example 8 in `Tutorials <https://rainfallqc.readthedocs.io/en/latest/tutorials.html>`_).
 
 Let's run some QC checks from intenseqc framework below:
 
