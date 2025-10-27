@@ -48,13 +48,13 @@ def qc_check(name: str, require_non_negative: bool = False) -> callable:
                 full_kwargs, kwarg_name="target_gauge_col", column_list=columns_to_check, name=name
             )
 
-            for kwarg_name in ["neighbouring_gauge_col", "neighbouring_gauge_cols"]:
+            for kwarg_name in ["nearest_neighbour", "list_of_nearest_stations"]:
                 if kwarg_name in full_kwargs:
                     columns_to_check = get_columns_in_kwargs(
                         full_kwargs, kwarg_name=kwarg_name, column_list=columns_to_check, name=name
                     )
 
-            # flatten column list for neighbouring_gauge_cols
+            # flatten column list for list_of_nearest_stations
             columns_to_check = list(
                 itertools.chain.from_iterable(col if isinstance(col, list) else [col] for col in columns_to_check)
             )
