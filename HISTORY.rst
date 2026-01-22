@@ -2,6 +2,10 @@
 History
 =======
 
+0.3.2 (2025-01-22)
+------------------
+* Bug fix, return only neighbours when calculating nearest neighbour ids
+
 0.3.1 (2025-10-23)
 ------------------
 * Publish to Zenodo
