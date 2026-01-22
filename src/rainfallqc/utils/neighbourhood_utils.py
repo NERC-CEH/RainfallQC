@@ -333,11 +333,10 @@ def compute_km_distances_from_target_id(
         target_station["longitude"].item(),
     )
 
+    other_stations = gauge_network_metadata.filter(pl.col(station_id_col) != target_id)
     # 2. Calculate lat/lon distances from the target gauge
     neighbour_distances = {}
-    for other_station_id, other_lat, other_lon in gauge_network_metadata[
-        [station_id_col, "latitude", "longitude"]
-    ].rows():
+    for other_station_id, other_lat, other_lon in other_stations[[station_id_col, "latitude", "longitude"]].rows():
         neighbour_distances[other_station_id] = geopy.distance.geodesic(
             target_latlon, (other_lat, other_lon)
         ).kilometers
