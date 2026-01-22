@@ -16,7 +16,7 @@ def test_compute_distance_from_target_id(gsdr_gauge_network):
         gauge_network_metadata=gsdr_gauge_network, target_id="DE_00310", station_id_col="station_id"
     )
     assert round(result.filter(pl.col("station_id") == "DE_02483")["distance"][0], 2) == 13.13
-    assert round(result.filter(pl.col("station_id") == "DE_00310")["distance"][0], 2) == 0.0
+    assert len(result.filter(pl.col("station_id") == "DE_00310")) == 0.
 
 
 def test_get_n_closest_neighbours(gsdr_gauge_network):
