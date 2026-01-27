@@ -2,6 +2,11 @@
 History
 =======
 
+0.4.0 (2025-01-27)
+------------------
+* Add support for 15 min data resolution
+
+
 0.3.2 (2025-01-22)
 ------------------
 * Bug fix, return only neighbours when calculating nearest neighbour ids
