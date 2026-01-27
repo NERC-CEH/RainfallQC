@@ -14,7 +14,7 @@ import polars as pl
 import xarray as xr
 
 SECONDS_IN_DAY = 86400.0
-TEMPORAL_CONVERSIONS = {"15min": "15m", "hourly": "1h", "daily": "1d", "monthly": "1mo"}
+TEMPORAL_CONVERSIONS = {"hourly": "1h", "daily": "1d", "monthly": "1mo"}
 MONTHLY_TIME_STEPS = ["28d", "29d", "30d", "31d"]
 
 
