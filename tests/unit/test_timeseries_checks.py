@@ -83,7 +83,7 @@ def test_daily_accumulations(hourly_gsdr_data, gsdr_metadata):
 
 def test_daily_accumulations_15min(min15_gsdr_data, gsdr_metadata):
     result = timeseries_checks.check_daily_accumulations(
-        min15_gsdr_data[1000:1500],
+        min15_gsdr_data[:2000],
         target_gauge_col=DEFAULT_RAIN_COL,
         gauge_lat=gsdr_metadata["latitude"],
         gauge_lon=gsdr_metadata["longitude"],
