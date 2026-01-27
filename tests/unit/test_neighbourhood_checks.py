@@ -124,10 +124,10 @@ def test_check_wet_neighbour_15min(mins15_gsdr_network):
         min_n_neighbours=3,
         hour_offset=7,
     )
-    assert len(result) == 43824
+    assert len(result) == 125293
     assert len(result.columns) == 2
-    assert result["wet_spell_flag_15min"].max() == 2.0
-    assert len(result.filter(pl.col("wet_spell_flag_15min") == 1)) == 48
+    assert result["wet_spell_flag_15m"].max() == 3.0
+    assert len(result.filter(pl.col("wet_spell_flag_15m") == 1)) == 288
 
 
 def test_dry_neighbour_check_daily_gsdr(daily_gsdr_network):
@@ -201,8 +201,9 @@ def test_check_dry_neighbour_15min(mins15_gsdr_network):
         dry_period_days=15,
         hour_offset=7,
     )
-    assert result["dry_spell_flag_15min"].max() == 3.0
-    assert len(result.filter(pl.col("dry_spell_flag_15min") == 3)) == 149 * 24
+    print(result)
+    assert result["dry_spell_flag_15m"].max() == 3.0
+    assert len(result.filter(pl.col("dry_spell_flag_15m") == 3)) == 149 * 96
 
 
 def test_check_monthly_neighbours(monthly_gsdr_network):
