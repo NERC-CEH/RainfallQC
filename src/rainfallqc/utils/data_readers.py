@@ -344,7 +344,7 @@ def convert_data_hourly_to_daily(hourly_data: pl.DataFrame, rain_cols: List[str]
     agg_expressions += [pl.col(col).sum().round(1).alias(col) for col in rain_cols]
     # resample into daily (also round to 1 decimal place)
     return (
-        hourly_data.group_by_dynamic("time", every="1d", offset=f"{hour_offset}h", closed="right")
+        hourly_data.group_by_dynamic("time", every="1d", offset=f"{hour_offset}h", closed="left", label="left")
         .agg(agg_expressions)
         .filter(pl.col("n_hours") == 24)
         .drop("n_hours")

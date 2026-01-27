@@ -198,10 +198,17 @@ def check_dry_neighbours(
     # 2. Resample to daily
     if time_res == "hourly":
         rain_cols = neighbour_data.columns[1:]  # get rain columns
-        original_hourly_neighbour_data = neighbour_data.clone()
+        original_neighbour_data = neighbour_data.clone()
         neighbour_data = data_readers.convert_data_hourly_to_daily(
             neighbour_data, rain_cols=rain_cols, hour_offset=hour_offset
         )
+    if time_res == "15m":
+        rain_cols = neighbour_data.columns[1:]  # get rain columns
+        original_neighbour_data = neighbour_data.clone()
+        neighbour_data = data_readers.convert_data_hourly_to_daily(
+            neighbour_data, rain_cols=rain_cols, hour_offset=hour_offset
+        )
+
 
     # 3. Loop through each neighbour and get dry_flags
     list_of_nearest_stations_iterable = list_of_nearest_stations_new.copy()  # make copy again to allow removal in loop
@@ -258,7 +265,7 @@ def check_dry_neighbours(
     # 8. If hourly data join back and backward flood fill
     if time_res == "hourly":
         hourly_neighbour_data_w_dry_flags = data_utils.downsample_and_fill_columns(
-            high_res_data=original_hourly_neighbour_data,
+            high_res_data=original_neighbour_data,
             low_res_data=neighbour_data_w_dry_flags,
             data_cols="majority_dry_flag",
             fill_limit=23,
