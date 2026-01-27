@@ -125,8 +125,12 @@ def check_daily_accumulations(
     IntenseQC. This decision was taken as the IntenseQC python package only returns 0 and 1 flags.
 
     """
-    # 0. Check data is hourly
-    data_utils.check_data_is_specific_time_res(data, time_res=["1h"])
+    # 0. Check data is 15 min or hourly
+    data_utils.check_data_is_specific_time_res(data, time_res=["15m", "1h"])
+    time_step = data_utils.get_data_timestep_as_str(data)
+    if time_step == "15m":
+        original_data = data.clone()
+        data = data.group_by_dynamic("time", every="1h").agg(pl.col(target_gauge_col).sum())
 
     # 1. Get accumulation threshold from ETCCDI SDII value, if not given
     if not accumulation_threshold:
@@ -142,7 +146,18 @@ def check_daily_accumulations(
     # 3. Add daily_accumulation column
     data = data.with_columns(daily_accumulation=pl.Series(da_flags))
 
-    # 4. Remove unnecessary columns
+    # 4. Convert back to 15-min data if needed
+    if time_step == "15m":
+        # 4.1 Join flags back to original hourly data
+        data = original_data.join(
+            data[["time", "daily_accumulation"]], on="time", how="left"
+        )
+        # 4.2 backward flood-fill data to convert the flags back to hourly
+        data = data.with_columns(
+            pl.col("daily_accumulation").backward_fill(limit=3)  # hours
+        )
+
+    # 5. Remove unnecessary columns
     return data.select(["time", "daily_accumulation"])
 
 
