@@ -170,6 +170,24 @@ def test_get_streaks_of_repeated_values(hourly_gsdr_data):
     assert result["streak_id"].unique().len() == 8775
 
 
+def test_flag_streaks_of_zero_bounded_by_days(hourly_gsdr_data, min15_gsdr_data):
+    streak_data = timeseries_checks.get_streaks_of_repeated_values(hourly_gsdr_data, DEFAULT_RAIN_COL)
+    result = timeseries_checks.flag_streaks_of_zero_bounded_by_days(
+        streak_data,
+        target_gauge_col=DEFAULT_RAIN_COL,
+        time_res="hourly",
+    )
+    assert len(result.filter(pl.col("streak_flag5") > 0)) == 120
+
+    streak_data = timeseries_checks.get_streaks_of_repeated_values(min15_gsdr_data, DEFAULT_RAIN_COL)
+    result = timeseries_checks.flag_streaks_of_zero_bounded_by_days(
+        streak_data,
+        target_gauge_col=DEFAULT_RAIN_COL,
+        time_res="15m",
+    )
+    assert len(result.filter(pl.col("streak_flag5") > 0)) == 480
+
+
 def test_flag_streaks_exceeding_smallest_measurable_rainfall_amount(hourly_gsdr_data, gsdr_metadata):
     streak_data = timeseries_checks.get_streaks_of_repeated_values(hourly_gsdr_data, DEFAULT_RAIN_COL)
     result = timeseries_checks.flag_streaks_exceeding_smallest_measurable_rainfall_amount(
