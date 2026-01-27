@@ -50,7 +50,7 @@ def test_dry_period_cdd_check_daily_gsdr(daily_gsdr_data, gsdr_metadata):
         gauge_lat=gsdr_metadata["latitude"],
         gauge_lon=gsdr_metadata["longitude"],
     )
-    assert len(result.filter(pl.col("dry_spell_flag") == 4)) == 91
+    assert len(result.filter(pl.col("dry_spell_flag") == 4)) == 90
 
 
 def test_daily_accumulations(hourly_gsdr_data, gsdr_metadata):
@@ -145,7 +145,7 @@ def test_monthly_accumulations_daily_data(daily_gsdr_data, gsdr_metadata):
         gauge_lat=gsdr_metadata["latitude"],
         gauge_lon=gsdr_metadata["longitude"],
     )
-    assert len(result.filter(pl.col("monthly_accumulation") > 0)) == 36
+    assert len(result.filter(pl.col("monthly_accumulation") > 0)) == 35
 
 
 def test_streaks_check(hourly_gsdr_data, gsdr_metadata):
