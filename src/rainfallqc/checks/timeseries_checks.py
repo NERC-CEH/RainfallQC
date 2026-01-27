@@ -14,7 +14,7 @@ import xarray as xr
 from rainfallqc.core.all_qc_checks import qc_check
 from rainfallqc.utils import data_readers, data_utils, neighbourhood_utils, spatial_utils, stats
 
-DAILY_DIVIDING_FACTOR = {"15m": 96, "hourly": 24, "daily": 1}
+DAILY_DIVIDING_FACTOR = {"15m": 96, "1h": 24, "1d": 1, "hourly": 24, "daily": 1}
 
 
 @qc_check("check_dry_period_cdd", require_non_negative=True)
@@ -100,7 +100,7 @@ def check_daily_accumulations(
     Parameters
     ----------
     data :
-        Hourly rainfall data
+        Hourly or 15-min rainfall data
     target_gauge_col :
         Column with rainfall data
     gauge_lat :
@@ -256,7 +256,7 @@ def check_streaks(
     """
     Check for suspected repeated values.
 
-    Flags (TODO: change numbers as original includes unuseful 2):
+    Flags (TODO: could change numbers as original includes unhelpful 2):
     1, if streaks of 2 or more repeated values exceeding 2* mean wet day rainfall
     3, if streaks of 12 or more greater than smallest measurable rainfall amount
     4, if streaks of 24 or more greater than zero
@@ -285,14 +285,22 @@ def check_streaks(
         Data with streak flags.
 
     """
-    # 0. Check data is hourly
-    data_utils.check_data_is_specific_time_res(data, time_res=["1h"])
+    # 0. Check data is 15 min or hourly
+    data_utils.check_data_is_specific_time_res(data, time_res=["15m", "1h"])
+    time_step = data_utils.get_data_timestep_as_str(data)
+    if time_step == "15m":
+        original_data = data.clone()
+        data = data.group_by_dynamic("time", every="1h").agg(pl.col(target_gauge_col).sum())
+        time_multiplier = 4  # 4x 15-min periods per hour
+    else:
+        time_multiplier = 1
 
     # 1. Get accumulation threshold from ETCCDI SDII value, if not given
     if not accumulation_threshold:
-        accumulation_threshold = get_accumulation_threshold_from_etccdi(
+        hourly_accumulation_threshold = get_accumulation_threshold_from_etccdi(
             data, target_gauge_col, gauge_lat, gauge_lon, wet_day_threshold=1.0, accumulation_multiplying_factor=2.0
         )
+        accumulation_threshold = hourly_accumulation_threshold / time_multiplier
 
     # 2. Get streaks of repeated values
     streak_data = get_streaks_of_repeated_values(data, target_gauge_col)
@@ -306,15 +314,15 @@ def check_streaks(
     streak_flag3 = flag_streaks_exceeding_smallest_measurable_rainfall_amount(
         streak_data,
         target_gauge_col,
-        streak_length=12,
+        streak_length=12 * time_multiplier,
         smallest_measurable_rainfall_amount=smallest_measurable_rainfall_amount,
     )
 
     # 5. Flag streaks of 24 or more greater than zero
-    streak_flag4 = flag_streaks_exceeding_zero(streak_data, target_gauge_col, streak_length=24)
+    streak_flag4 = flag_streaks_exceeding_zero(streak_data, target_gauge_col, streak_length=24*time_multiplier)
 
     # 6. Flag periods of zeros bounded by streaks of multiples of 24
-    streak_flag5 = flag_streaks_of_zero_bounded_by_days(streak_data, target_gauge_col)
+    streak_flag5 = flag_streaks_of_zero_bounded_by_days(streak_data, target_gauge_col, time_res=time_step)
 
     # 7. Join flags together
     data_w_streak_flags = data.with_columns(
@@ -326,18 +334,18 @@ def check_streaks(
     return data_w_streak_flags.select(["time", "streak_flag1", "streak_flag3", "streak_flag4", "streak_flag5"])
 
 
-def flag_streaks_of_zero_bounded_by_days(data: pl.DataFrame, target_gauge_col: str) -> pl.DataFrame:
+def flag_streaks_of_zero_bounded_by_days(data: pl.DataFrame, target_gauge_col: str, time_res: str) -> pl.DataFrame:
     """
     Flag streak of zeros bounded by record that are a multiple of 24 hours.
-
-    TODO: make work for daily using: DAILY_DIVIDING_FACTOR
 
     Parameters
     ----------
     data :
-        Hourly data with rainfall.
+        Hourly, 15-min or daily data with rainfall.
     target_gauge_col :
         Column with rainfall data.
+    time_res :
+        Time resolution: "1h", "15m", "1d", or "hourly", "daily"
 
     Returns
     -------
@@ -345,6 +353,11 @@ def flag_streaks_of_zero_bounded_by_days(data: pl.DataFrame, target_gauge_col: s
         Data with streak flag 5.
 
     """
+    # 0. Check time resolution is expected
+    if time_res not in DAILY_DIVIDING_FACTOR:
+        raise ValueError(f"Unsupported time resolution: {time_res}. Use one of {list(DAILY_DIVIDING_FACTOR.keys())}")
+
+    intervals_per_day = DAILY_DIVIDING_FACTOR[time_res]
     # 1. group of streaks
     data_streak_groups = (
         data.group_by("streak_id")
@@ -358,13 +371,13 @@ def flag_streaks_of_zero_bounded_by_days(data: pl.DataFrame, target_gauge_col: s
     # 3. Flag streaks of multiples of 1 day
     streaks_w_flag5 = streak_w_dry_spells.with_columns(
         (
-            pl.when((pl.col("is_dry") == 1) & (pl.col("streak_len") % 24 == 0) & (pl.col("streak_len").shift(-1) >= 24))
+            pl.when((pl.col("is_dry") == 1) & (pl.col("streak_len") % intervals_per_day == 0) & (pl.col("streak_len").shift(-1) >= intervals_per_day))
             .then(1)
             .otherwise(0)
             .alias("streak_flag5_next")
         ),
         (
-            pl.when((pl.col("is_dry") == 1) & (pl.col("streak_len") % 24 == 0) & (pl.col("streak_len").shift(1) >= 24))
+            pl.when((pl.col("is_dry") == 1) & (pl.col("streak_len") % intervals_per_day == 0) & (pl.col("streak_len").shift(1) >= intervals_per_day))
             .then(1)
             .otherwise(0)
             .alias("streak_flag5_prev")
