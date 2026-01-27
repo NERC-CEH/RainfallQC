@@ -73,11 +73,20 @@ def check_wet_neighbours(
 
     # 1. Resample to daily
     if time_res == "hourly":
-        rain_cols = neighbour_data.columns[1:]  # get rain columns
-        original_hourly_neighbour_data = neighbour_data.clone()
+        rain_cols = neighbour_data.columns[1:]
+        original_neighbour_data = neighbour_data.clone()
         neighbour_data = data_readers.convert_data_hourly_to_daily(
             neighbour_data, rain_cols=rain_cols, hour_offset=hour_offset
         )
+
+    if time_res == "15m":
+        rain_cols = neighbour_data.columns[1:]
+        original_neighbour_data = neighbour_data.clone()
+        neighbour_data = neighbour_data.group_by_dynamic("time", every="1h", closed="left")
+        neighbour_data = data_readers.convert_data_hourly_to_daily(
+            neighbour_data, rain_cols=rain_cols, hour_offset=hour_offset
+        )
+
 
     # 2. Loop through each neighbour and get wet_flags
     list_of_nearest_stations_iterable = list_of_nearest_stations_new.copy()  # make copy again to allow removal in loop
@@ -119,7 +128,7 @@ def check_wet_neighbours(
     # 6. If hourly data join back and backward flood fill
     if time_res == "hourly":
         hourly_neighbour_data_w_wet_flags = data_utils.downsample_and_fill_columns(
-            high_res_data=original_hourly_neighbour_data,
+            high_res_data=original_neighbour_data,
             low_res_data=neighbour_data_w_wet_flags,
             data_cols="majority_wet_flag",
             fill_limit=23,
@@ -130,6 +139,19 @@ def check_wet_neighbours(
             {"majority_wet_flag": f"wet_spell_flag_{time_res}"}
         )
         return hourly_neighbour_data_w_wet_flags.select(["time", f"wet_spell_flag_{time_res}"])
+    if time_res == "15m":
+        min15_neighbour_data_w_wet_flags = data_utils.downsample_and_fill_columns(
+            high_res_data=original_neighbour_data,
+            low_res_data=neighbour_data_w_wet_flags,
+            data_cols="majority_wet_flag",
+            fill_limit=95,
+            fill_method="backward"
+        )
+
+        min15_neighbour_data_w_wet_flags = min15_neighbour_data_w_wet_flags.rename(
+            {"majority_wet_flag": f"wet_spell_flag_{time_res}"}
+        )
+        return min15_neighbour_data_w_wet_flags.select(["time", f"wet_spell_flag_{time_res}"])
     else:
         neighbour_data_w_wet_flags = neighbour_data_w_wet_flags.rename(
             {"majority_wet_flag": f"wet_spell_flag_{time_res}"}
@@ -205,10 +227,10 @@ def check_dry_neighbours(
     if time_res == "15m":
         rain_cols = neighbour_data.columns[1:]  # get rain columns
         original_neighbour_data = neighbour_data.clone()
+        neighbour_data = neighbour_data.group_by_dynamic("time", every="1h", closed="left")
         neighbour_data = data_readers.convert_data_hourly_to_daily(
             neighbour_data, rain_cols=rain_cols, hour_offset=hour_offset
         )
-
 
     # 3. Loop through each neighbour and get dry_flags
     list_of_nearest_stations_iterable = list_of_nearest_stations_new.copy()  # make copy again to allow removal in loop
@@ -276,6 +298,19 @@ def check_dry_neighbours(
             {"majority_dry_flag": f"dry_spell_flag_{time_res}"}
         )
         return hourly_neighbour_data_w_dry_flags.select(["time", f"dry_spell_flag_{time_res}"])
+    if time_res == "15m":
+        min15_neighbour_data_w_dry_flags = data_utils.downsample_and_fill_columns(
+            high_res_data=original_neighbour_data,
+            low_res_data=neighbour_data_w_dry_flags,
+            data_cols="majority_dry_flag",
+            fill_limit=95,
+            fill_method="backward"
+        )
+
+        min15_neighbour_data_w_dry_flags = min15_neighbour_data_w_dry_flags.rename(
+            {"majority_dry_flag": f"dry_spell_flag_{time_res}"}
+        )
+        return min15_neighbour_data_w_dry_flags.select(["time", f"dry_spell_flag_{time_res}"])
     else:
         neighbour_data_w_dry_flags = neighbour_data_w_dry_flags.rename(
             {"majority_dry_flag": f"dry_spell_flag_{time_res}"}

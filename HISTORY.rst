@@ -5,7 +5,7 @@ History
 0.4.0 (2025-01-27)
 ------------------
 * Add support for 15 min data resolution
-
+* Change group_by_dynamic to include 'closed='left'' and 'label' parameters for better resampling control
 
 0.3.2 (2025-01-22)
 ------------------

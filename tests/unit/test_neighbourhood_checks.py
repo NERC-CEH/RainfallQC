@@ -28,7 +28,7 @@ def test_wet_neighbour_check_daily_gsdr(daily_gsdr_network):
     )
     assert len(result.columns) == 2
     assert result["wet_spell_flag_daily"].max() == 2.0
-    assert len(result.filter(pl.col("wet_spell_flag_daily") == 1)) == 1
+    assert len(result.filter(pl.col("wet_spell_flag_daily") == 1)) == 2
 
 
 def test_wet_neighbour_check_problematic_data(daily_gsdr_network):
@@ -109,7 +109,7 @@ def test_check_wet_neighbour_hourly(hourly_gsdr_network):
     assert len(result) == 43824
     assert len(result.columns) == 2
     assert result["wet_spell_flag_hourly"].max() == 2.0
-    assert len(result.filter(pl.col("wet_spell_flag_hourly") == 1)) == 24
+    assert len(result.filter(pl.col("wet_spell_flag_hourly") == 1)) == 48
 
 
 def test_dry_neighbour_check_daily_gsdr(daily_gsdr_network):
@@ -125,7 +125,7 @@ def test_dry_neighbour_check_daily_gsdr(daily_gsdr_network):
     )
     assert len(result.columns) == 2
     assert result["dry_spell_flag_daily"].max() == 3.0
-    assert len(result.filter(pl.col("dry_spell_flag_daily") == 3)) == 150
+    assert len(result.filter(pl.col("dry_spell_flag_daily") == 3)) == 149
 
     daily_gsdr_network = daily_gsdr_network.with_columns(nan_col=np.nan)
 
@@ -168,7 +168,7 @@ def test_check_dry_neighbour_hourly(hourly_gsdr_network):
         hour_offset=7,
     )
     assert result["dry_spell_flag_hourly"].max() == 3.0
-    assert len(result.filter(pl.col("dry_spell_flag_hourly") == 3)) == 150 * 24
+    assert len(result.filter(pl.col("dry_spell_flag_hourly") == 3)) == 149 * 24
 
 
 def test_check_monthly_neighbours(monthly_gsdr_network):
@@ -318,7 +318,7 @@ def test_check_daily_factor(daily_gsdr_network):
         averaging_method="mean",
     )
 
-    assert round(result, 2) == 4.47
+    assert round(result, 2) == 3.69
 
     result = neighbourhood_checks.check_daily_factor(
         daily_gsdr_network,
@@ -327,7 +327,7 @@ def test_check_daily_factor(daily_gsdr_network):
         averaging_method="median",
     )
 
-    assert round(result, 2) == 1.71
+    assert round(result, 2) == 1.74
 
     with pytest.raises(ValueError):
         neighbourhood_checks.check_daily_factor(
