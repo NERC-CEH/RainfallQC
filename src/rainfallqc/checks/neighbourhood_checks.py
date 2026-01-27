@@ -116,15 +116,14 @@ def check_wet_neighbours(
     # 5. Clean up data for return
     neighbour_data_w_wet_flags = neighbour_data_w_wet_flags.select(["time", "majority_wet_flag"])
 
-    # 6. If hourly data join back and forward flood fill
+    # 6. If hourly data join back and backward flood fill
     if time_res == "hourly":
-        # 6.1 Join flags back to original hourly data
-        hourly_neighbour_data_w_wet_flags = original_hourly_neighbour_data.join(
-            neighbour_data_w_wet_flags[["time", "majority_wet_flag"]], on="time", how="left"
-        )
-        # 6.2 Forward flood-fill data to convert the flags back to hourly
-        hourly_neighbour_data_w_wet_flags = hourly_neighbour_data_w_wet_flags.with_columns(
-            pl.col("majority_wet_flag").forward_fill(limit=23)  # hours
+        hourly_neighbour_data_w_wet_flags = data_utils.downsample_and_fill_columns(
+            high_res_data=original_hourly_neighbour_data,
+            low_res_data=neighbour_data_w_wet_flags,
+            data_cols="majority_wet_flag",
+            fill_limit=23,
+            fill_method="backward"
         )
 
         hourly_neighbour_data_w_wet_flags = hourly_neighbour_data_w_wet_flags.rename(
@@ -256,16 +255,16 @@ def check_dry_neighbours(
         neighbour_data_w_dry_flags, flag_column="majority_dry_flag", num_days=(dry_period_days - 1)
     )
 
-    # 8. If hourly data join back and forward flood fill
+    # 8. If hourly data join back and backward flood fill
     if time_res == "hourly":
-        # 8.1 Join flags back to original hourly data
-        hourly_neighbour_data_w_dry_flags = original_hourly_neighbour_data.join(
-            neighbour_data_w_dry_flags[["time", "majority_dry_flag"]], on="time", how="left"
+        hourly_neighbour_data_w_dry_flags = data_utils.downsample_and_fill_columns(
+            high_res_data=original_hourly_neighbour_data,
+            low_res_data=neighbour_data_w_dry_flags,
+            data_cols="majority_dry_flag",
+            fill_limit=23,
+            fill_method="backward"
         )
-        # 8.2 Forward flood-fill data to convert the flags back to hourly
-        hourly_neighbour_data_w_dry_flags = hourly_neighbour_data_w_dry_flags.with_columns(
-            pl.col("majority_dry_flag").forward_fill(limit=23)  # hours
-        )
+
         hourly_neighbour_data_w_dry_flags = hourly_neighbour_data_w_dry_flags.rename(
             {"majority_dry_flag": f"dry_spell_flag_{time_res}"}
         )
