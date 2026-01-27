@@ -128,6 +128,16 @@ def test_monthly_accumulations(hourly_gsdr_data, gsdr_metadata):
     assert len(result.filter(pl.col("monthly_accumulation") == 2)) == 23
 
 
+def test_monthly_accumulations_15min_data(min15_gsdr_data, gsdr_metadata):
+    result = timeseries_checks.check_monthly_accumulations(
+        min15_gsdr_data,
+        target_gauge_col=DEFAULT_RAIN_COL,
+        gauge_lat=gsdr_metadata["latitude"],
+        gauge_lon=gsdr_metadata["longitude"],
+    )
+    assert len(result.filter(pl.col("monthly_accumulation") == 2)) == 22
+
+
 def test_monthly_accumulations_daily_data(daily_gsdr_data, gsdr_metadata):
     result = timeseries_checks.check_monthly_accumulations(
         daily_gsdr_data,
