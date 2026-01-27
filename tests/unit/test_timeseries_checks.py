@@ -81,6 +81,16 @@ def test_daily_accumulations(hourly_gsdr_data, gsdr_metadata):
     assert len(result.filter(pl.col("daily_accumulation") == 1)) == 2472
 
 
+def test_daily_accumulations_15min(min15_gsdr_data, gsdr_metadata):
+    result = timeseries_checks.check_daily_accumulations(
+        min15_gsdr_data[1000:1500],
+        target_gauge_col=DEFAULT_RAIN_COL,
+        gauge_lat=gsdr_metadata["latitude"],
+        gauge_lon=gsdr_metadata["longitude"],
+    )
+    assert len(result.filter(pl.col("daily_accumulation") == 1)) == 96
+
+
 def test_get_accumulation_threshold():
     result = timeseries_checks.get_accumulation_threshold(2, 1, 1)
     assert result == 2

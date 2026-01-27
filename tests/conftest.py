@@ -57,6 +57,15 @@ def get_hourly_gsdr_network(
 
 
 @pytest.fixture
+def min15_gsdr_data() -> pl.DataFrame:
+    data_path = "./tests/data/GSDR/DE_02483.txt"  # TODO: maybe randomise this with every call? Or use parameterise
+    data = data_readers.read_gsdr_data_from_file(data_path, raw_data_time_res="hourly", rain_col_prefix="rain")
+    return data.upsample("time", every="15m").with_columns(
+        [pl.col(DEFAULT_RAIN_COL).forward_fill(limit=3)]  # hours
+    )
+
+
+@pytest.fixture
 def hourly_gsdr_data() -> pl.DataFrame:
     data_path = "./tests/data/GSDR/DE_02483.txt"  # TODO: maybe randomise this with every call? Or use parameterise
     return data_readers.read_gsdr_data_from_file(data_path, raw_data_time_res="hourly", rain_col_prefix="rain")
