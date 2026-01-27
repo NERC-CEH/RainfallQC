@@ -282,9 +282,9 @@ def downsample_and_fill_columns(
         Lower resolution data with columns to join (e.g., hourly)
     data_cols :
         Column name(s) to join and fill. Can be:
-        - Single column name: "streak_flag1"
-        - List of columns: ["streak_flag1", "streak_flag3"]
-        - Regex pattern: "^streak_flag.*$"
+        - Single column name: "rainfall"
+        - List of columns: ["rain1", "rain2"]
+        - Regex pattern: "^rain.*$"
     fill_limit :
         Maximum number of intervals to fill
     fill_method :

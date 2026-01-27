@@ -61,7 +61,7 @@ def min15_gsdr_data() -> pl.DataFrame:
     data_path = "./tests/data/GSDR/DE_02483.txt"  # TODO: maybe randomise this with every call? Or use parameterise
     data = data_readers.read_gsdr_data_from_file(data_path, raw_data_time_res="hourly", rain_col_prefix="rain")
     return data.upsample("time", every="15m").with_columns(
-        [pl.col(DEFAULT_RAIN_COL).forward_fill(limit=3)]  # hours
+        [pl.col(DEFAULT_RAIN_COL).backward_fill(limit=3)]  # hours
     )
 
 
@@ -149,7 +149,7 @@ def mins15_gsdr_network() -> pl.DataFrame:
     hourly_gsdr_network = get_hourly_gsdr_network(path_to_gsdr_dir="./tests/data/GSDR/", target_id="DE_00310")
     mins15_gsdr_network = hourly_gsdr_network.upsample("time", every="15m")
     mins15_gsdr_network = mins15_gsdr_network.with_columns(
-        [pl.col(col).forward_fill(limit=3) for col in mins15_gsdr_network.columns[1:]]  # hours
+        [pl.col(col).backward_fill(limit=3) for col in mins15_gsdr_network.columns[1:]]  # hours
     )
     mins15_gsdr_network = mins15_gsdr_network[50000:]
     return mins15_gsdr_network

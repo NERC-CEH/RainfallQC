@@ -148,13 +148,12 @@ def check_daily_accumulations(
 
     # 4. Convert back to 15-min data if needed
     if time_step == "15m":
-        # 4.1 Join flags back to original hourly data
-        data = original_data.join(
-            data[["time", "daily_accumulation"]], on="time", how="left"
-        )
-        # 4.2 backward flood-fill data to convert the flags back to hourly
-        data = data.with_columns(
-            pl.col("daily_accumulation").backward_fill(limit=3)  # hours
+        data = data_utils.downsample_and_fill_columns(
+            high_res_data=original_data,
+            low_res_data=data,
+            data_cols="daily_accumulation",
+            fill_limit=3,
+            fill_method="backward"
         )
 
     # 5. Remove unnecessary columns
@@ -267,7 +266,7 @@ def check_streaks(
     Parameters
     ----------
     data :
-        Hourly data with rainfall.
+        Hourly or 15-min data with rainfall.
     target_gauge_col :
         Column with rainfall data.
     gauge_lat :
@@ -331,6 +330,17 @@ def check_streaks(
         streak_flag4=streak_flag4["streak_flag4"],
         streak_flag5=streak_flag5["streak_flag5"],
     )
+
+    # 8. Convert back to 15-min data if needed
+    if time_step == "15m":
+        data_w_streak_flags = data_utils.downsample_and_fill_columns(
+            high_res_data=original_data,
+            low_res_data=data_w_streak_flags,
+            data_cols="^streak_flag.*$",
+            fill_limit=3,
+            fill_method="backward"
+        )
+
     return data_w_streak_flags.select(["time", "streak_flag1", "streak_flag3", "streak_flag4", "streak_flag5"])
 
 
