@@ -83,12 +83,12 @@ def test_daily_accumulations(hourly_gsdr_data, gsdr_metadata):
 
 def test_daily_accumulations_15min(min15_gsdr_data, gsdr_metadata):
     result = timeseries_checks.check_daily_accumulations(
-        min15_gsdr_data[:2000],
+        min15_gsdr_data,
         target_gauge_col=DEFAULT_RAIN_COL,
         gauge_lat=gsdr_metadata["latitude"],
         gauge_lon=gsdr_metadata["longitude"],
     )
-    assert len(result.filter(pl.col("daily_accumulation") == 1)) == 96
+    assert len(result.filter(pl.col("daily_accumulation") == 1)) == 2304
 
 
 def test_get_accumulation_threshold():
@@ -160,6 +160,20 @@ def test_streaks_check(hourly_gsdr_data, gsdr_metadata):
     assert len(result.filter(pl.col("streak_flag3") == 3)) == 455
     assert len(result.filter(pl.col("streak_flag4") == 4)) == 432
     assert len(result.filter(pl.col("streak_flag5") == 5)) == 120
+
+
+def test_streaks_check_15min(min15_gsdr_data, gsdr_metadata):
+    result = timeseries_checks.check_streaks(
+        min15_gsdr_data,
+        target_gauge_col=DEFAULT_RAIN_COL,
+        gauge_lat=gsdr_metadata["latitude"],
+        gauge_lon=gsdr_metadata["longitude"],
+        smallest_measurable_rainfall_amount=gsdr_metadata["resolution"],
+    )
+    assert len(result.filter(pl.col("streak_flag1") == 1)) == 1440
+    assert len(result.filter(pl.col("streak_flag3") == 3)) == 760
+    assert len(result.filter(pl.col("streak_flag4") == 4)) == 0
+    assert len(result.filter(pl.col("streak_flag5") == 5)) == 0
 
 
 def test_get_streaks_of_repeated_values(hourly_gsdr_data):

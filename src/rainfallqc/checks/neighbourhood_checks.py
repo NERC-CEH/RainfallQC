@@ -126,6 +126,7 @@ def check_wet_neighbours(
         hourly_neighbour_data_w_wet_flags = hourly_neighbour_data_w_wet_flags.with_columns(
             pl.col("majority_wet_flag").forward_fill(limit=23)  # hours
         )
+
         hourly_neighbour_data_w_wet_flags = hourly_neighbour_data_w_wet_flags.rename(
             {"majority_wet_flag": f"wet_spell_flag_{time_res}"}
         )
