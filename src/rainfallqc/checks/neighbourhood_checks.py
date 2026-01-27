@@ -82,7 +82,8 @@ def check_wet_neighbours(
     if time_res == "15m":
         rain_cols = neighbour_data.columns[1:]
         original_neighbour_data = neighbour_data.clone()
-        neighbour_data = neighbour_data.group_by_dynamic("time", every="1h", closed="left")
+        rain_agg_expressions = [pl.col(col).sum().round(1).alias(col) for col in rain_cols]
+        neighbour_data = neighbour_data.group_by_dynamic("time", every="1h", closed="left").agg(rain_agg_expressions)
         neighbour_data = data_readers.convert_data_hourly_to_daily(
             neighbour_data, rain_cols=rain_cols, hour_offset=hour_offset
         )
@@ -227,7 +228,8 @@ def check_dry_neighbours(
     if time_res == "15m":
         rain_cols = neighbour_data.columns[1:]  # get rain columns
         original_neighbour_data = neighbour_data.clone()
-        neighbour_data = neighbour_data.group_by_dynamic("time", every="1h", closed="left")
+        rain_agg_expressions = [pl.col(col).sum().round(1).alias(col) for col in rain_cols]
+        neighbour_data = neighbour_data.group_by_dynamic("time", every="1h", closed="left").agg(rain_agg_expressions)
         neighbour_data = data_readers.convert_data_hourly_to_daily(
             neighbour_data, rain_cols=rain_cols, hour_offset=hour_offset
         )
