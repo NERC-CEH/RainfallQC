@@ -50,7 +50,7 @@ def test_check_for_negative_values(daily_gsdr_data):
 
 def test_convert_daily_data_to_monthly(daily_gsdr_data, daily_gpcc_data, hourly_gsdr_data):
     result = data_utils.convert_daily_data_to_monthly(daily_gsdr_data, rain_cols=[DEFAULT_RAIN_COL])
-    assert round(np.nanmean(result[DEFAULT_RAIN_COL]), 1) == 277.9
+    assert round(np.nanmean(result[DEFAULT_RAIN_COL]), 1) == 278.0
     assert len(result.filter(pl.col(DEFAULT_RAIN_COL).is_nan())) == 17
     data_time_steps = data_utils.get_data_timesteps(result)
     data_time_steps_str = [data_utils.format_timedelta_duration(td) for td in data_time_steps]
@@ -76,6 +76,36 @@ def test_check_data_is_monthly(hourly_gsdr_data, monthly_gsdr_network, monthly_g
         data_utils.check_data_is_monthly(hourly_gsdr_data)
     with pytest.raises(ValueError):
         data_utils.check_data_is_monthly(hourly_gsdr_data.filter(pl.col("time") is None))
+
+
+def test_downsample_and_fill_columns(hourly_gsdr_network, daily_gsdr_network):
+    result = data_utils.downsample_and_fill_columns(
+            high_res_data=hourly_gsdr_network,
+            low_res_data=daily_gsdr_network,
+            data_cols=[f"{DEFAULT_RAIN_COL}_DE_00390", f"{DEFAULT_RAIN_COL}_DE_00310"],
+            fill_limit=23,
+            fill_method="forward",
+            time_col="time",
+    )
+    data_utils.check_data_is_specific_time_res(result, time_res="1h")
+
+    data_utils.downsample_and_fill_columns(
+            high_res_data=hourly_gsdr_network,
+            low_res_data=daily_gsdr_network,
+            data_cols=[f"{DEFAULT_RAIN_COL}_DE_00390", f"{DEFAULT_RAIN_COL}_DE_00310"],
+            fill_limit=23,
+            fill_method="none",
+            time_col="time",
+    )
+    with pytest.raises(ValueError):
+        data_utils.downsample_and_fill_columns(
+               high_res_data=hourly_gsdr_network,
+               low_res_data=daily_gsdr_network,
+               data_cols=[f"{DEFAULT_RAIN_COL}_DE_00390", f"{DEFAULT_RAIN_COL}_DE_00310"],
+               fill_limit=23,
+               fill_method="both",
+               time_col="time",
+        )
 
 
 def test_get_dry_spells(hourly_gsdr_data):

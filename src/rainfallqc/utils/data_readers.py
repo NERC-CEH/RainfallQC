@@ -20,7 +20,8 @@ import xarray as xr
 
 from rainfallqc.utils import data_utils, neighbourhood_utils
 
-MULTIPLYING_FACTORS = {"hourly": 24, "daily": 1}  # compared to daily reference
+DAILY_MULTIPLYING_FACTORS = {"15m": 96, "hourly": 24, "daily": 1}
+MONTHLY_MULTIPLYING_FACTORS = {"15m": 96 * 24, "hourly": 30 * 24, "daily": 30, "monthly": 1}
 GSDR_TIME_RES_CONVERSION = {"1hr": "hourly", "1d": "daily", "1mo": "monthly"}
 GPCC_TIME_RES_CONVERSION = {"tw": "daily", "mw": "monthly"}
 GPCC_HOUR_OFFSET = 7  # Apparently the GSDR data runs from 7am to 7am, so this converts it for comparison
@@ -170,7 +171,7 @@ def read_gsdr_data_from_file(
 
     # 3. add datetime column to data
     gsdr_data = add_datetime_to_gsdr_data(
-        gsdr_data, gsdr_metadata, multiplying_factor=MULTIPLYING_FACTORS[raw_data_time_res]
+        gsdr_data, gsdr_metadata, multiplying_factor=DAILY_MULTIPLYING_FACTORS[raw_data_time_res]
     )
     gsdr_data = data_utils.replace_missing_vals_with_nan(
         gsdr_data, target_gauge_col=rain_col_name, missing_val=int(gsdr_metadata["no_data_value"])
@@ -321,33 +322,39 @@ def add_datetime_to_gsdr_data(
     return gsdr_data
 
 
-def convert_data_hourly_to_daily(hourly_data: pl.DataFrame, rain_cols: List[str], hour_offset: int) -> pl.DataFrame:
+def resample_data_by_time_step(
+    data: pl.DataFrame, rain_cols: List[str], time_col: str, time_step: str, min_count: int, hour_offset: int
+) -> pl.DataFrame:
     """
     Group hourly data into daily and check for at least 24 daily time steps per day.
 
     Parameters
     ----------
-    hourly_data :
-        Hourly rainfall data
+    data :
+        Rainfall data to resample
     rain_cols :
         List of column with rainfall data
+    time_col :
+        Name of time column
+    time_step :
+        Time step to resample into (e.g. '1d' for daily, '1h' for hourly, '15m' for 15 minute)
+    min_count :
+        Minimum number of time steps needed per time period
     hour_offset :
-        Time offset in hours
+        Time offset in hours (needed if data is not aligned to midnight)
 
     Returns
     -------
-    daily_data :
-        Daily rainfall data
+    resampled_data :
+        Rainfall data grouped into a given time step
 
     """
-    agg_expressions = [pl.len().alias("n_hours")]
-    agg_expressions += [pl.col(col).sum().round(1).alias(col) for col in rain_cols]
     # resample into daily (also round to 1 decimal place)
-    return (
-        hourly_data.group_by_dynamic("time", every="1d", offset=f"{hour_offset}h", closed="right")
-        .agg(agg_expressions)
-        .filter(pl.col("n_hours") == 24)
-        .drop("n_hours")
+    return data.group_by_dynamic(time_col, every=time_step, closed="left", label="left", offset=f"{hour_offset}h").agg(
+        [
+            pl.when(pl.col(col).count() >= min_count).then(pl.col(col).sum()).otherwise(None).alias(col)
+            for col in rain_cols
+        ]
     )
 
 

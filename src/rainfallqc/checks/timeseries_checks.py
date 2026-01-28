@@ -14,7 +14,7 @@ import xarray as xr
 from rainfallqc.core.all_qc_checks import qc_check
 from rainfallqc.utils import data_readers, data_utils, neighbourhood_utils, spatial_utils, stats
 
-DAILY_DIVIDING_FACTOR = {"15m": 96, "hourly": 24, "daily": 1}
+DAILY_DIVIDING_FACTOR = {"15m": 96, "1h": 24, "1d": 1, "hourly": 24, "daily": 1}
 
 
 @qc_check("check_dry_period_cdd", require_non_negative=True)
@@ -100,7 +100,7 @@ def check_daily_accumulations(
     Parameters
     ----------
     data :
-        Hourly rainfall data
+        Hourly or 15-min rainfall data
     target_gauge_col :
         Column with rainfall data
     gauge_lat :
@@ -125,13 +125,25 @@ def check_daily_accumulations(
     IntenseQC. This decision was taken as the IntenseQC python package only returns 0 and 1 flags.
 
     """
-    # 0. Check data is hourly
-    data_utils.check_data_is_specific_time_res(data, time_res=["1h"])
+    # 0. Check data is 15 min or hourly
+    data_utils.check_data_is_specific_time_res(data, time_res=["15m", "1h"])
+    time_step = data_utils.get_data_timestep_as_str(data)
+    if time_step == "15m":
+        original_data = data.clone()
+        data = data_readers.resample_data_by_time_step(
+            data, rain_cols=[target_gauge_col], time_col="time", time_step="1h", min_count=2, hour_offset=0
+        )
 
     # 1. Get accumulation threshold from ETCCDI SDII value, if not given
     if not accumulation_threshold:
         accumulation_threshold = get_accumulation_threshold_from_etccdi(
-            data, target_gauge_col, gauge_lat, gauge_lon, wet_day_threshold, accumulation_multiplying_factor
+            data,
+            target_gauge_col,
+            time_res=time_step,
+            gauge_lat=gauge_lat,
+            gauge_lon=gauge_lon,
+            wet_day_threshold=wet_day_threshold,
+            accumulation_multiplying_factor=accumulation_multiplying_factor,
         )
 
     # 2. Flag daily (24 hour) accumulations in hourly data based on SDII threshold
@@ -142,7 +154,17 @@ def check_daily_accumulations(
     # 3. Add daily_accumulation column
     data = data.with_columns(daily_accumulation=pl.Series(da_flags))
 
-    # 4. Remove unnecessary columns
+    # 4. Convert back to 15-min data if needed
+    if time_step == "15m":
+        data = data_utils.downsample_and_fill_columns(
+            high_res_data=original_data,
+            low_res_data=data,
+            data_cols="daily_accumulation",
+            fill_limit=3,
+            fill_method="backward",
+        )
+
+    # 5. Remove unnecessary columns
     return data.select(["time", "daily_accumulation"])
 
 
@@ -207,7 +229,13 @@ def check_monthly_accumulations(
     # 1. Get accumulation threshold from ETCCDI SDII value, if not given
     if not accumulation_threshold:
         accumulation_threshold = get_accumulation_threshold_from_etccdi(
-            data, target_gauge_col, gauge_lat, gauge_lon, wet_day_threshold, accumulation_multiplying_factor
+            data,
+            target_gauge_col,
+            time_res=time_step,
+            gauge_lat=gauge_lat,
+            gauge_lon=gauge_lon,
+            wet_day_threshold=wet_day_threshold,
+            accumulation_multiplying_factor=accumulation_multiplying_factor,
         )
 
     # 2. Get info about dry spells in rainfall record
@@ -241,7 +269,7 @@ def check_streaks(
     """
     Check for suspected repeated values.
 
-    Flags (TODO: change numbers as original includes unuseful 2):
+    Flags (TODO: could change numbers as original includes unhelpful 2):
     1, if streaks of 2 or more repeated values exceeding 2* mean wet day rainfall
     3, if streaks of 12 or more greater than smallest measurable rainfall amount
     4, if streaks of 24 or more greater than zero
@@ -252,7 +280,7 @@ def check_streaks(
     Parameters
     ----------
     data :
-        Hourly data with rainfall.
+        Hourly or 15-min data with rainfall.
     target_gauge_col :
         Column with rainfall data.
     gauge_lat :
@@ -270,14 +298,28 @@ def check_streaks(
         Data with streak flags.
 
     """
-    # 0. Check data is hourly
-    data_utils.check_data_is_specific_time_res(data, time_res=["1h"])
+    # 0. Check data is 15 min or hourly
+    data_utils.check_data_is_specific_time_res(data, time_res=["15m", "1h"])
+    time_step = data_utils.get_data_timestep_as_str(data)
+    if time_step == "15m":
+        original_data = data.clone()
+        data = data.group_by_dynamic("time", every="1h").agg(pl.col(target_gauge_col).sum())
+        time_multiplier = 4  # 4x 15-min periods per hour
+    else:
+        time_multiplier = 1
 
     # 1. Get accumulation threshold from ETCCDI SDII value, if not given
     if not accumulation_threshold:
-        accumulation_threshold = get_accumulation_threshold_from_etccdi(
-            data, target_gauge_col, gauge_lat, gauge_lon, wet_day_threshold=1.0, accumulation_multiplying_factor=2.0
+        hourly_accumulation_threshold = get_accumulation_threshold_from_etccdi(
+            data,
+            target_gauge_col,
+            time_res=time_step,
+            gauge_lat=gauge_lat,
+            gauge_lon=gauge_lon,
+            wet_day_threshold=1.0,
+            accumulation_multiplying_factor=2.0,
         )
+        accumulation_threshold = hourly_accumulation_threshold / time_multiplier
 
     # 2. Get streaks of repeated values
     streak_data = get_streaks_of_repeated_values(data, target_gauge_col)
@@ -291,15 +333,15 @@ def check_streaks(
     streak_flag3 = flag_streaks_exceeding_smallest_measurable_rainfall_amount(
         streak_data,
         target_gauge_col,
-        streak_length=12,
+        streak_length=12 * time_multiplier,
         smallest_measurable_rainfall_amount=smallest_measurable_rainfall_amount,
     )
 
     # 5. Flag streaks of 24 or more greater than zero
-    streak_flag4 = flag_streaks_exceeding_zero(streak_data, target_gauge_col, streak_length=24)
+    streak_flag4 = flag_streaks_exceeding_zero(streak_data, target_gauge_col, streak_length=24 * time_multiplier)
 
     # 6. Flag periods of zeros bounded by streaks of multiples of 24
-    streak_flag5 = flag_streaks_of_zero_bounded_by_days(streak_data, target_gauge_col)
+    streak_flag5 = flag_streaks_of_zero_bounded_by_days(streak_data, target_gauge_col, time_res=time_step)
 
     # 7. Join flags together
     data_w_streak_flags = data.with_columns(
@@ -308,21 +350,32 @@ def check_streaks(
         streak_flag4=streak_flag4["streak_flag4"],
         streak_flag5=streak_flag5["streak_flag5"],
     )
+
+    # 8. Convert back to 15-min data if needed
+    if time_step == "15m":
+        data_w_streak_flags = data_utils.downsample_and_fill_columns(
+            high_res_data=original_data,
+            low_res_data=data_w_streak_flags,
+            data_cols="^streak_flag.*$",
+            fill_limit=3,
+            fill_method="backward",
+        )
+
     return data_w_streak_flags.select(["time", "streak_flag1", "streak_flag3", "streak_flag4", "streak_flag5"])
 
 
-def flag_streaks_of_zero_bounded_by_days(data: pl.DataFrame, target_gauge_col: str) -> pl.DataFrame:
+def flag_streaks_of_zero_bounded_by_days(data: pl.DataFrame, target_gauge_col: str, time_res: str) -> pl.DataFrame:
     """
     Flag streak of zeros bounded by record that are a multiple of 24 hours.
-
-    TODO: make work for daily using: DAILY_DIVIDING_FACTOR
 
     Parameters
     ----------
     data :
-        Hourly data with rainfall.
+        Hourly, 15-min or daily data with rainfall.
     target_gauge_col :
         Column with rainfall data.
+    time_res :
+        Time resolution: "1h", "15m", "1d", or "hourly", "daily"
 
     Returns
     -------
@@ -330,6 +383,11 @@ def flag_streaks_of_zero_bounded_by_days(data: pl.DataFrame, target_gauge_col: s
         Data with streak flag 5.
 
     """
+    # 0. Check time resolution is expected
+    if time_res not in DAILY_DIVIDING_FACTOR:
+        raise ValueError(f"Unsupported time resolution: {time_res}. Use one of {list(DAILY_DIVIDING_FACTOR.keys())}")
+
+    intervals_per_day = DAILY_DIVIDING_FACTOR[time_res]
     # 1. group of streaks
     data_streak_groups = (
         data.group_by("streak_id")
@@ -343,13 +401,21 @@ def flag_streaks_of_zero_bounded_by_days(data: pl.DataFrame, target_gauge_col: s
     # 3. Flag streaks of multiples of 1 day
     streaks_w_flag5 = streak_w_dry_spells.with_columns(
         (
-            pl.when((pl.col("is_dry") == 1) & (pl.col("streak_len") % 24 == 0) & (pl.col("streak_len").shift(-1) >= 24))
+            pl.when(
+                (pl.col("is_dry") == 1)
+                & (pl.col("streak_len") % intervals_per_day == 0)
+                & (pl.col("streak_len").shift(-1) >= intervals_per_day)
+            )
             .then(1)
             .otherwise(0)
             .alias("streak_flag5_next")
         ),
         (
-            pl.when((pl.col("is_dry") == 1) & (pl.col("streak_len") % 24 == 0) & (pl.col("streak_len").shift(1) >= 24))
+            pl.when(
+                (pl.col("is_dry") == 1)
+                & (pl.col("streak_len") % intervals_per_day == 0)
+                & (pl.col("streak_len").shift(1) >= intervals_per_day)
+            )
             .then(1)
             .otherwise(0)
             .alias("streak_flag5_prev")
@@ -647,7 +713,7 @@ def get_possible_accumulations(
     return gauge_data_possible_accumulations
 
 
-def get_daily_non_wr_data(data: pl.DataFrame, target_gauge_col: str) -> pl.DataFrame:
+def get_daily_non_wr_data(data: pl.DataFrame, target_gauge_col: str, time_res: str) -> pl.DataFrame:
     """
     Get daily non-world record data.
 
@@ -657,6 +723,8 @@ def get_daily_non_wr_data(data: pl.DataFrame, target_gauge_col: str) -> pl.DataF
         Hourly rainfall data
     target_gauge_col :
         Column with rainfall data
+    time_res :
+        Temporal resolution of the time series either '15m', 'daily' or 'hourly
 
     Returns
     -------
@@ -665,9 +733,11 @@ def get_daily_non_wr_data(data: pl.DataFrame, target_gauge_col: str) -> pl.DataF
 
     """
     # 1. Filter out hourly world records
-    data_not_wr = stats.filter_out_rain_world_records(data, target_gauge_col, time_res="hourly")
+    data_not_wr = stats.filter_out_rain_world_records(data, target_gauge_col, time_res=time_res)
     # 2. Group into daily resolution
-    daily_data = data_not_wr.group_by_dynamic("time", every="1d").agg(pl.col(target_gauge_col).sum())
+    daily_data = data_readers.resample_data_by_time_step(
+        data_not_wr, rain_cols=[target_gauge_col], time_col="time", time_step="1d", min_count=0, hour_offset=0
+    )
     # 3. Filter out daily world records
     daily_data_not_wr = stats.filter_out_rain_world_records(daily_data, target_gauge_col, time_res="daily")
     return daily_data_not_wr
@@ -810,6 +880,7 @@ def get_accumulation_threshold(
 def get_accumulation_threshold_from_etccdi(
     data: pl.DataFrame,
     target_gauge_col: str,
+    time_res: str,
     gauge_lat: int | float,
     gauge_lon: int | float,
     wet_day_threshold: float,
@@ -824,6 +895,8 @@ def get_accumulation_threshold_from_etccdi(
         Rainfall data.
     target_gauge_col :
         Column with rainfall data.
+    time_res :
+        Temporal resolution of the time series either '15m', 'daily' or 'hourly'
     gauge_lat :
         latitude of the rain gauge.
     gauge_lon :
@@ -842,7 +915,7 @@ def get_accumulation_threshold_from_etccdi(
     # 1. Get local mean ETCCDI SDII value (this is the default for SDII in this method)
     etccdi_sdii = get_local_etccdi_sdii_mean(gauge_lat, gauge_lon)
     # 2. Filter out world records
-    daily_data_non_wr = get_daily_non_wr_data(data, target_gauge_col)
+    daily_data_non_wr = get_daily_non_wr_data(data, target_gauge_col, time_res)
     # 3. Calculate simple precipitation intensity index from daily data
     gauge_sdii = stats.simple_precip_intensity_index(daily_data_non_wr, target_gauge_col, wet_day_threshold)
     # 4. Get rain gauge accumulation threshold

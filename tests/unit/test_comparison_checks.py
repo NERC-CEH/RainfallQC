@@ -33,7 +33,7 @@ def test_check_daily_exceedance_of_rainfall_world_record(daily_gsdr_data):
     result = comparison_checks.check_exceedance_of_rainfall_world_record(
         daily_gsdr_data, target_gauge_col=DEFAULT_RAIN_COL, time_res="daily"
     )
-    assert len(result.filter(pl.col("world_record_check") == 0)) == 1756
+    assert len(result.filter(pl.col("world_record_check") == 0)) == 1759
 
 
 def test_check_hourly_exceedance_of_rainfall_world_record(hourly_gsdr_data):
