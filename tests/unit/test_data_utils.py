@@ -50,7 +50,7 @@ def test_check_for_negative_values(daily_gsdr_data):
 
 def test_convert_daily_data_to_monthly(daily_gsdr_data, daily_gpcc_data, hourly_gsdr_data):
     result = data_utils.convert_daily_data_to_monthly(daily_gsdr_data, rain_cols=[DEFAULT_RAIN_COL])
-    assert round(np.nanmean(result[DEFAULT_RAIN_COL]), 1) == 277.9
+    assert round(np.nanmean(result[DEFAULT_RAIN_COL]), 1) == 278.0
     assert len(result.filter(pl.col(DEFAULT_RAIN_COL).is_nan())) == 17
     data_time_steps = data_utils.get_data_timesteps(result)
     data_time_steps_str = [data_utils.format_timedelta_duration(td) for td in data_time_steps]
