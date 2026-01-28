@@ -91,8 +91,8 @@ def daily_gsdr_data() -> pl.DataFrame:
     data_path = "./tests/data/GSDR/DE_02483.txt"
     gsdr_data = data_readers.read_gsdr_data_from_file(data_path, raw_data_time_res="hourly", rain_col_prefix="rain")
     # convert to daily
-    gsdr_data_daily = data_readers.convert_data_hourly_to_daily(
-        gsdr_data, rain_cols=[DEFAULT_RAIN_COL], hour_offset=DEFAULT_GSDR_OFFSET
+    gsdr_data_daily = data_readers.resample_data_by_time_step(
+        gsdr_data, rain_cols=[DEFAULT_RAIN_COL], time_col='time', time_step='1d', min_count=2, hour_offset=DEFAULT_GSDR_OFFSET
     )
     return gsdr_data_daily
 
@@ -172,8 +172,8 @@ def daily_gsdr_network() -> pl.DataFrame:
     gsdr_network = get_hourly_gsdr_network(path_to_gsdr_dir="./tests/data/GSDR/", target_id="DE_00310")
 
     # convert to daily
-    daily_gsdr_network = data_readers.convert_data_hourly_to_daily(
-        gsdr_network, rain_cols=gsdr_network.columns[1:], hour_offset=DEFAULT_GSDR_OFFSET
+    daily_gsdr_network = data_readers.resample_data_by_time_step(
+        gsdr_network, rain_cols=gsdr_network.columns[1:], time_col='time', time_step='1d', min_count=2, hour_offset=DEFAULT_GSDR_OFFSET
     )
     return daily_gsdr_network
 
@@ -183,8 +183,8 @@ def monthly_gsdr_network() -> pl.DataFrame:
     gsdr_network = get_hourly_gsdr_network(path_to_gsdr_dir="./tests/data/GSDR/", target_id="DE_00310")
 
     # convert to daily
-    daily_gsdr_network = data_readers.convert_data_hourly_to_daily(
-        gsdr_network, rain_cols=gsdr_network.columns[1:], hour_offset=DEFAULT_GSDR_OFFSET
+    daily_gsdr_network = data_readers.resample_data_by_time_step(
+        gsdr_network, rain_cols=gsdr_network.columns[1:], time_col='time', time_step='1d', min_count=2, hour_offset=DEFAULT_GSDR_OFFSET
     )
 
     # convert to monthly

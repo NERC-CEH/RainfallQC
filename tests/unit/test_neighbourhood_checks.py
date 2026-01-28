@@ -15,7 +15,7 @@ OVERLAP_THRESHOLD = 365 * 3  # three years
 
 
 def test_wet_neighbour_check_daily_gsdr(daily_gsdr_network):
-    assert len(daily_gsdr_network) == 1825
+    assert len(daily_gsdr_network) == 1827
     all_neighbour_cols = daily_gsdr_network.columns[1:]  # exclude time
 
     result = neighbourhood_checks.check_wet_neighbours(
@@ -28,11 +28,11 @@ def test_wet_neighbour_check_daily_gsdr(daily_gsdr_network):
     )
     assert len(result.columns) == 2
     assert result["wet_spell_flag_daily"].max() == 2.0
-    assert len(result.filter(pl.col("wet_spell_flag_daily") == 1)) == 2
+    assert len(result.filter(pl.col("wet_spell_flag_daily") == 1)) == 1
 
 
 def test_wet_neighbour_check_problematic_data(daily_gsdr_network):
-    assert len(daily_gsdr_network) == 1825
+    assert len(daily_gsdr_network) == 1827
     daily_gsdr_network = daily_gsdr_network.with_columns(rain_mm_DE_test=0.0)
     all_neighbour_cols = daily_gsdr_network.columns[1:]  # exclude time
     result = neighbourhood_checks.check_wet_neighbours(
@@ -109,7 +109,7 @@ def test_check_wet_neighbour_hourly(hourly_gsdr_network):
     assert len(result) == 43824
     assert len(result.columns) == 2
     assert result["wet_spell_flag_hourly"].max() == 2.0
-    assert len(result.filter(pl.col("wet_spell_flag_hourly") == 1)) == 48
+    assert len(result.filter(pl.col("wet_spell_flag_hourly") == 1)) == 24
 
 
 def test_check_wet_neighbour_15min(mins15_gsdr_network):
@@ -201,7 +201,6 @@ def test_check_dry_neighbour_15min(mins15_gsdr_network):
         dry_period_days=15,
         hour_offset=7,
     )
-    print(result)
     assert result["dry_spell_flag_15m"].max() == 3.0
     assert len(result.filter(pl.col("dry_spell_flag_15m") == 3)) == 149 * 96
 
@@ -215,9 +214,36 @@ def test_check_monthly_neighbours(monthly_gsdr_network):
         list_of_nearest_stations=all_neighbour_cols,
         min_n_neighbours=3,
         n_neighbours_ignored=0,
+        time_res="monthly",
     )
     assert len(result.filter(pl.col("majority_monthly_flag") == 1)) == 1
     assert len(result.filter(pl.col("majority_monthly_flag") == 5)) == 9
+
+
+def test_check_monthly_neighbours_non_montly_input(mins15_gsdr_network, hourly_gsdr_network):
+    all_neighbour_cols = hourly_gsdr_network.columns[1:]  # exclude time
+
+    result = neighbourhood_checks.check_monthly_neighbours(
+        hourly_gsdr_network,
+        target_gauge_col=f"{DEFAULT_RAIN_COL}_DE_00310",
+        list_of_nearest_stations=all_neighbour_cols,
+        min_n_neighbours=3,
+        n_neighbours_ignored=0,
+        time_res="hourly",
+    )
+    assert len(result.filter(pl.col("majority_monthly_flag") == 1)) == 1
+    assert len(result.filter(pl.col("majority_monthly_flag") == 5)) == 5
+
+    result = neighbourhood_checks.check_monthly_neighbours(
+        mins15_gsdr_network,
+        target_gauge_col=f"{DEFAULT_RAIN_COL}_DE_00310",
+        list_of_nearest_stations=all_neighbour_cols,
+        min_n_neighbours=3,
+        n_neighbours_ignored=0,
+        time_res="15m",
+    )
+    assert len(result.filter(pl.col("majority_monthly_flag") == 1)) == 1
+    assert len(result.filter(pl.col("majority_monthly_flag") == 5)) == 5
 
 
 def test_check_monthly_neighbours_gpcc(monthly_gpcc_network):
@@ -232,6 +258,7 @@ def test_check_monthly_neighbours_gpcc(monthly_gpcc_network):
             list_of_nearest_stations=all_neighbour_cols,
             min_n_neighbours=3,
             n_neighbours_ignored=1,
+            time_res="monthly",
         )
 
     monthly_gpcc_network = monthly_gpcc_network.with_columns(
@@ -244,6 +271,7 @@ def test_check_monthly_neighbours_gpcc(monthly_gpcc_network):
         list_of_nearest_stations=all_neighbour_cols,
         min_n_neighbours=3,
         n_neighbours_ignored=1,
+        time_res="monthly",
     )
     assert len(result.filter(pl.col("majority_monthly_flag") > 0)) == 12
 
@@ -353,7 +381,7 @@ def test_check_daily_factor(daily_gsdr_network):
         averaging_method="mean",
     )
 
-    assert round(result, 2) == 3.69
+    assert round(result, 2) == 3.7
 
     result = neighbourhood_checks.check_daily_factor(
         daily_gsdr_network,

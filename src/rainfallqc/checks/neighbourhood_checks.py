@@ -26,6 +26,7 @@ def check_wet_neighbours(
     min_n_neighbours: int,
     n_neighbours_ignored: int = 0,
     hour_offset: int = 0,
+    min_count: int = None,
 ) -> pl.DataFrame:
     """
     Identify suspicious large values by comparison to neighbour for hourly or daily data.
@@ -56,7 +57,8 @@ def check_wet_neighbours(
         Number of zero flags allowed for majority voting (default: 0)
     hour_offset :
         Time offset of hourly data in hours (i.e. if 7am-7am, then set this to 7) (default: 0)
-
+    min_count :
+        Minimum number of time steps needed per time period (default: 2)
     Returns
     -------
     data_w_wet_flags :
@@ -72,22 +74,14 @@ def check_wet_neighbours(
     check_nearest_neighbour_columns(neighbour_data, target_gauge_col, list_of_nearest_stations_new)
 
     # 1. Resample to daily
-    if time_res == "hourly":
-        rain_cols = neighbour_data.columns[1:]
+    if time_res in ["15m", "hourly"]:
+        rain_cols = neighbour_data.columns[1:]  # get rain columns
         original_neighbour_data = neighbour_data.clone()
-        neighbour_data = data_readers.convert_data_hourly_to_daily(
-            neighbour_data, rain_cols=rain_cols, hour_offset=hour_offset
+        if not min_count:
+            min_count = np.ceil(data_readers.DAILY_MULTIPLYING_FACTORS[time_res]/2)
+        neighbour_data = data_readers.resample_data_by_time_step(
+            neighbour_data, rain_cols=rain_cols, time_col='time', time_step='1d', min_count=min_count, hour_offset=hour_offset
         )
-
-    if time_res == "15m":
-        rain_cols = neighbour_data.columns[1:]
-        original_neighbour_data = neighbour_data.clone()
-        rain_agg_expressions = [pl.col(col).sum().round(1).alias(col) for col in rain_cols]
-        neighbour_data = neighbour_data.group_by_dynamic("time", every="1h", closed="left").agg(rain_agg_expressions)
-        neighbour_data = data_readers.convert_data_hourly_to_daily(
-            neighbour_data, rain_cols=rain_cols, hour_offset=hour_offset
-        )
-
 
     # 2. Loop through each neighbour and get wet_flags
     list_of_nearest_stations_iterable = list_of_nearest_stations_new.copy()  # make copy again to allow removal in loop
@@ -170,6 +164,7 @@ def check_dry_neighbours(
     dry_period_days: int = 15,
     n_neighbours_ignored: int = 0,
     hour_offset: int = 0,
+    min_count: int = None,
 ) -> pl.DataFrame:
     """
     Identify suspicious dry periods by comparison to neighbour for hourly or daily data.
@@ -200,6 +195,8 @@ def check_dry_neighbours(
         Number of zero flags allowed for majority voting (default: 0)
     hour_offset :
         Time offset of hourly data in hours (i.e. if 7am-7am, then set this to 7) (default: 0)
+    min_count :
+        Minimum number of time steps needed per time period (default: 1)
 
     Returns
     -------
@@ -219,19 +216,13 @@ def check_dry_neighbours(
     dry_period_proportions = data_utils.get_dry_period_proportions(dry_period_days)
 
     # 2. Resample to daily
-    if time_res == "hourly":
+    if time_res in ["15m", "hourly"]:
+        if not min_count:
+            min_count = np.ceil(data_readers.DAILY_MULTIPLYING_FACTORS[time_res]/2)
         rain_cols = neighbour_data.columns[1:]  # get rain columns
         original_neighbour_data = neighbour_data.clone()
-        neighbour_data = data_readers.convert_data_hourly_to_daily(
-            neighbour_data, rain_cols=rain_cols, hour_offset=hour_offset
-        )
-    if time_res == "15m":
-        rain_cols = neighbour_data.columns[1:]  # get rain columns
-        original_neighbour_data = neighbour_data.clone()
-        rain_agg_expressions = [pl.col(col).sum().round(1).alias(col) for col in rain_cols]
-        neighbour_data = neighbour_data.group_by_dynamic("time", every="1h", closed="left").agg(rain_agg_expressions)
-        neighbour_data = data_readers.convert_data_hourly_to_daily(
-            neighbour_data, rain_cols=rain_cols, hour_offset=hour_offset
+        neighbour_data = data_readers.resample_data_by_time_step(
+            neighbour_data, rain_cols=rain_cols, time_col='time', time_step='1d', min_count=min_count, hour_offset=hour_offset
         )
 
     # 3. Loop through each neighbour and get dry_flags
@@ -322,11 +313,14 @@ def check_dry_neighbours(
 
 @qc_check("check_monthly_neighbours", require_non_negative=True)
 def check_monthly_neighbours(
-    monthly_neighbour_data: pl.DataFrame,
+    neighbour_data: pl.DataFrame,
     target_gauge_col: str,
     list_of_nearest_stations: List[str],
+    time_res: str,
     min_n_neighbours: int,
     n_neighbours_ignored: int = 0,
+    hour_offset: int = 0,
+    min_count: int = None,
 ) -> pl.DataFrame:
     """
     Identify suspicious monthly totals by comparison to neighbouring monthly gauges.
@@ -349,16 +343,22 @@ def check_monthly_neighbours(
 
     Parameters
     ----------
-    monthly_neighbour_data :
-        Monthly rainfall data of neighbouring gauges with time col
+    neighbour_data :
+        Rainfall data of neighbouring gauges with time col
     target_gauge_col :
         Target gauge column
     list_of_nearest_stations:
         List of columns with neighbouring gauges
+    time_res :
+        Time resolution of data (e.g. 'monthly' or 'daily', 'hourly' or '15m' - will be resampled to monthly)
     min_n_neighbours :
         Minimum number of neighbours needed to be checked for flag
     n_neighbours_ignored :
         Number of zero flags allowed for majority voting (default: 0)
+    hour_offset :
+        Time offset of hourly data in hours (i.e. if 7am-7am, then set this to 7) (default: 0)
+    min_count :
+        Minimum number of time steps needed per time period (default: will be half of possible time steps)
 
     Returns
     -------
@@ -366,7 +366,18 @@ def check_monthly_neighbours(
         Target data with monthly flags
 
     """
-    # 0. Initial checks
+    # 0. Resample to monthly
+    if time_res in ["15m", "hourly", "daily"]:
+        data_utils.check_data_is_specific_time_res(neighbour_data, time_res=["15m", "1h", "1d"])
+        rain_cols = neighbour_data.columns[1:]  # get rain columns
+        original_neighbour_data = neighbour_data.clone()
+        if not min_count:
+            min_count = np.ceil(data_readers.MONTHLY_MULTIPLYING_FACTORS[time_res]/2)
+        monthly_neighbour_data = data_readers.resample_data_by_time_step(
+            neighbour_data, rain_cols=rain_cols, time_col='time', time_step='1mo', min_count=min_count, hour_offset=hour_offset
+        )
+    monthly_neighbour_data = neighbour_data if time_res == "monthly" else monthly_neighbour_data
+
     data_utils.check_data_is_monthly(monthly_neighbour_data)
     list_of_nearest_stations_new = list_of_nearest_stations.copy()  # make copy
     if target_gauge_col in list_of_nearest_stations_new:
@@ -653,11 +664,11 @@ def check_monthly_factor(neighbour_data: pl.DataFrame, target_gauge_col: str, ne
     monthly_factor = stats.factor_diff(neighbour_data, target_col=target_gauge_col, other_col=nearest_neighbour)
 
     # 2. Flag factor difference
-    monthly_factor_flags = flag_monthly_factor_differences(monthly_factor, target_gauge_col=nearest_neighbour)
+    monthly_factor_flags = flag_monthly_factor_differences(monthly_factor)
     return monthly_factor_flags.select(["time", "monthly_factor_flag"])
 
 
-def flag_monthly_factor_differences(monthly_factor: pl.DataFrame, target_gauge_col: str) -> pl.DataFrame:
+def flag_monthly_factor_differences(monthly_factor: pl.DataFrame) -> pl.DataFrame:
     """
     Flag monthly difference flag after IntenseQC framework for QC25.
 

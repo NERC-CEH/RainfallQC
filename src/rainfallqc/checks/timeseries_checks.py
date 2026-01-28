@@ -130,12 +130,14 @@ def check_daily_accumulations(
     time_step = data_utils.get_data_timestep_as_str(data)
     if time_step == "15m":
         original_data = data.clone()
-        data = data.group_by_dynamic("time", every="1h").agg(pl.col(target_gauge_col).sum())
+        data = data_readers.resample_data_by_time_step(
+            data, rain_cols=[target_gauge_col], time_col="time", time_step="1h", min_count=2, hour_offset=0
+        )
 
     # 1. Get accumulation threshold from ETCCDI SDII value, if not given
     if not accumulation_threshold:
         accumulation_threshold = get_accumulation_threshold_from_etccdi(
-            data, target_gauge_col, gauge_lat, gauge_lon, wet_day_threshold, accumulation_multiplying_factor
+            data, target_gauge_col, time_res=time_step, gauge_lat=gauge_lat, gauge_lon=gauge_lon, wet_day_threshold=wet_day_threshold, accumulation_multiplying_factor=accumulation_multiplying_factor
         )
 
     # 2. Flag daily (24 hour) accumulations in hourly data based on SDII threshold
@@ -221,7 +223,7 @@ def check_monthly_accumulations(
     # 1. Get accumulation threshold from ETCCDI SDII value, if not given
     if not accumulation_threshold:
         accumulation_threshold = get_accumulation_threshold_from_etccdi(
-            data, target_gauge_col, gauge_lat, gauge_lon, wet_day_threshold, accumulation_multiplying_factor
+            data, target_gauge_col, time_res=time_step, gauge_lat=gauge_lat, gauge_lon=gauge_lon, wet_day_threshold=wet_day_threshold,  accumulation_multiplying_factor=accumulation_multiplying_factor
         )
 
     # 2. Get info about dry spells in rainfall record
@@ -297,7 +299,7 @@ def check_streaks(
     # 1. Get accumulation threshold from ETCCDI SDII value, if not given
     if not accumulation_threshold:
         hourly_accumulation_threshold = get_accumulation_threshold_from_etccdi(
-            data, target_gauge_col, gauge_lat, gauge_lon, wet_day_threshold=1.0, accumulation_multiplying_factor=2.0
+            data, target_gauge_col, time_res=time_step, gauge_lat=gauge_lat, gauge_lon=gauge_lon, wet_day_threshold=1.0, accumulation_multiplying_factor=2.0
         )
         accumulation_threshold = hourly_accumulation_threshold / time_multiplier
 
@@ -685,7 +687,7 @@ def get_possible_accumulations(
     return gauge_data_possible_accumulations
 
 
-def get_daily_non_wr_data(data: pl.DataFrame, target_gauge_col: str) -> pl.DataFrame:
+def get_daily_non_wr_data(data: pl.DataFrame, target_gauge_col: str, time_res: str) -> pl.DataFrame:
     """
     Get daily non-world record data.
 
@@ -695,6 +697,8 @@ def get_daily_non_wr_data(data: pl.DataFrame, target_gauge_col: str) -> pl.DataF
         Hourly rainfall data
     target_gauge_col :
         Column with rainfall data
+    time_res :
+        Temporal resolution of the time series either '15m', 'daily' or 'hourly
 
     Returns
     -------
@@ -703,9 +707,9 @@ def get_daily_non_wr_data(data: pl.DataFrame, target_gauge_col: str) -> pl.DataF
 
     """
     # 1. Filter out hourly world records
-    data_not_wr = stats.filter_out_rain_world_records(data, target_gauge_col, time_res="hourly")
+    data_not_wr = stats.filter_out_rain_world_records(data, target_gauge_col, time_res=time_res)
     # 2. Group into daily resolution
-    daily_data = data_not_wr.group_by_dynamic("time", every="1d").agg(pl.col(target_gauge_col).sum())
+    daily_data = data_readers.resample_data_by_time_step(data_not_wr, rain_cols=[target_gauge_col], time_col='time', time_step='1d', min_count=0, hour_offset=0)
     # 3. Filter out daily world records
     daily_data_not_wr = stats.filter_out_rain_world_records(daily_data, target_gauge_col, time_res="daily")
     return daily_data_not_wr
@@ -848,6 +852,7 @@ def get_accumulation_threshold(
 def get_accumulation_threshold_from_etccdi(
     data: pl.DataFrame,
     target_gauge_col: str,
+    time_res: str,
     gauge_lat: int | float,
     gauge_lon: int | float,
     wet_day_threshold: float,
@@ -862,6 +867,8 @@ def get_accumulation_threshold_from_etccdi(
         Rainfall data.
     target_gauge_col :
         Column with rainfall data.
+    time_res :
+        Temporal resolution of the time series either '15m', 'daily' or 'hourly'
     gauge_lat :
         latitude of the rain gauge.
     gauge_lon :
@@ -880,7 +887,7 @@ def get_accumulation_threshold_from_etccdi(
     # 1. Get local mean ETCCDI SDII value (this is the default for SDII in this method)
     etccdi_sdii = get_local_etccdi_sdii_mean(gauge_lat, gauge_lon)
     # 2. Filter out world records
-    daily_data_non_wr = get_daily_non_wr_data(data, target_gauge_col)
+    daily_data_non_wr = get_daily_non_wr_data(data, target_gauge_col, time_res)
     # 3. Calculate simple precipitation intensity index from daily data
     gauge_sdii = stats.simple_precip_intensity_index(daily_data_non_wr, target_gauge_col, wet_day_threshold)
     # 4. Get rain gauge accumulation threshold

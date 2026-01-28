@@ -145,7 +145,7 @@ def check_exceedance_of_rainfall_world_record(data: pl.DataFrame, target_gauge_c
 
 @qc_check("check_hourly_exceedance_etccdi_rx1day", require_non_negative=True)
 def check_hourly_exceedance_etccdi_rx1day(
-    data: pl.DataFrame, target_gauge_col: str, gauge_lat: int | float, gauge_lon: int | float
+    data: pl.DataFrame, target_gauge_col: str, gauge_lat: int | float, gauge_lon: int | float,
 ) -> pl.DataFrame:
     """
     Check exceedance of hourly day rainfall 1-day record.
@@ -176,7 +176,9 @@ def check_hourly_exceedance_etccdi_rx1day(
     data_hourly = data
     time_step = data_utils.get_data_timestep_as_str(data)
     if time_step == "15m":
-        data_hourly = data_hourly.group_by_dynamic("time", every="1h").agg(pl.col(target_gauge_col).sum())
+        data_hourly = data_readers.resample_data_by_time_step(
+            data, rain_cols=[target_gauge_col], time_col="time", time_step="1h", min_count=2, hour_offset=0
+        )
 
     # 2. Load Rx1day data
     etccdi_rx1day = data_readers.load_etccdi_data(etccdi_var="Rx1day")
