@@ -220,7 +220,7 @@ def test_check_monthly_neighbours(monthly_gsdr_network):
     assert len(result.filter(pl.col("majority_monthly_flag") == 5)) == 9
 
 
-def test_check_monthly_neighbours_non_montly_input(mins15_gsdr_network, hourly_gsdr_network):
+def test_check_monthly_neighbours_hourly(hourly_gsdr_network):
     all_neighbour_cols = hourly_gsdr_network.columns[1:]  # exclude time
 
     result = neighbourhood_checks.check_monthly_neighbours(
@@ -231,8 +231,12 @@ def test_check_monthly_neighbours_non_montly_input(mins15_gsdr_network, hourly_g
         n_neighbours_ignored=0,
         time_res="hourly",
     )
-    assert len(result.filter(pl.col("majority_monthly_flag") == 1)) == 1
-    assert len(result.filter(pl.col("majority_monthly_flag") == 5)) == 5
+    assert len(result.filter(pl.col("majority_monthly_flag") == 1)) == 720
+    assert len(result.filter(pl.col("majority_monthly_flag") == 5)) == 3648
+
+
+def test_check_monthly_neighbours_15min(mins15_gsdr_network):
+    all_neighbour_cols = mins15_gsdr_network.columns[1:]  # exclude time
 
     result = neighbourhood_checks.check_monthly_neighbours(
         mins15_gsdr_network,
@@ -242,8 +246,8 @@ def test_check_monthly_neighbours_non_montly_input(mins15_gsdr_network, hourly_g
         n_neighbours_ignored=0,
         time_res="15m",
     )
-    assert len(result.filter(pl.col("majority_monthly_flag") == 1)) == 1
-    assert len(result.filter(pl.col("majority_monthly_flag") == 5)) == 5
+    assert len(result.filter(pl.col("majority_monthly_flag") == 1)) == 720*4
+    assert len(result.filter(pl.col("majority_monthly_flag") == 5)) == 3648*4
 
 
 def test_check_monthly_neighbours_gpcc(monthly_gpcc_network):
