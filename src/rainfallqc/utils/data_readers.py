@@ -20,8 +20,8 @@ import xarray as xr
 
 from rainfallqc.utils import data_utils, neighbourhood_utils
 
-DAILY_MULTIPLYING_FACTORS = {"15m": 96, "hourly": 24, "daily": 1} 
-MONTHLY_MULTIPLYING_FACTORS = {"15m": 96*24, "hourly": 30*24, "daily": 30, "monthly": 1} 
+DAILY_MULTIPLYING_FACTORS = {"15m": 96, "hourly": 24, "daily": 1}
+MONTHLY_MULTIPLYING_FACTORS = {"15m": 96 * 24, "hourly": 30 * 24, "daily": 30, "monthly": 1}
 GSDR_TIME_RES_CONVERSION = {"1hr": "hourly", "1d": "daily", "1mo": "monthly"}
 GPCC_TIME_RES_CONVERSION = {"tw": "daily", "mw": "monthly"}
 GPCC_HOUR_OFFSET = 7  # Apparently the GSDR data runs from 7am to 7am, so this converts it for comparison
@@ -322,7 +322,9 @@ def add_datetime_to_gsdr_data(
     return gsdr_data
 
 
-def resample_data_by_time_step(data: pl.DataFrame, rain_cols: List[str], time_col: str, time_step: str, min_count: int, hour_offset: int) -> pl.DataFrame:
+def resample_data_by_time_step(
+    data: pl.DataFrame, rain_cols: List[str], time_col: str, time_step: str, min_count: int, hour_offset: int
+) -> pl.DataFrame:
     """
     Group hourly data into daily and check for at least 24 daily time steps per day.
 
@@ -348,12 +350,9 @@ def resample_data_by_time_step(data: pl.DataFrame, rain_cols: List[str], time_co
 
     """
     # resample into daily (also round to 1 decimal place)
-    return data.group_by_dynamic(time_col, every=time_step, closed='left', label='left', offset=f"{hour_offset}h").agg(
+    return data.group_by_dynamic(time_col, every=time_step, closed="left", label="left", offset=f"{hour_offset}h").agg(
         [
-            pl.when(pl.col(col).count() >= min_count)
-            .then(pl.col(col).sum())
-            .otherwise(None)
-            .alias(col)
+            pl.when(pl.col(col).count() >= min_count).then(pl.col(col).sum()).otherwise(None).alias(col)
             for col in rain_cols
         ]
     )

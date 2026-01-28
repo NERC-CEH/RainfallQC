@@ -193,6 +193,13 @@ def test_flag_streaks_of_zero_bounded_by_days(hourly_gsdr_data, min15_gsdr_data)
     )
     assert len(result.filter(pl.col("streak_flag5") > 0)) == 120
 
+    with pytest.raises(ValueError):
+        timeseries_checks.flag_streaks_of_zero_bounded_by_days(
+            streak_data,
+            target_gauge_col=DEFAULT_RAIN_COL,
+            time_res="10min",
+        )
+
     streak_data = timeseries_checks.get_streaks_of_repeated_values(min15_gsdr_data, DEFAULT_RAIN_COL)
     result = timeseries_checks.flag_streaks_of_zero_bounded_by_days(
         streak_data,

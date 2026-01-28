@@ -263,6 +263,7 @@ def convert_daily_data_to_monthly(
 
     return monthly_data
 
+
 def downsample_and_fill_columns(
     high_res_data: pl.DataFrame,
     low_res_data: pl.DataFrame,
@@ -296,6 +297,7 @@ def downsample_and_fill_columns(
     -------
     high_res_data_filled :
         High resolution data with filled columns
+
     """
     # Normalize data_cols to ensure it works with pl.col()
     if isinstance(data_cols, str):
@@ -313,19 +315,13 @@ def downsample_and_fill_columns(
 
     # Apply fill method
     if fill_method == "backward":
-        result = result.with_columns(
-            pl.col(data_cols).backward_fill(limit=fill_limit)
-        )
+        result = result.with_columns(pl.col(data_cols).backward_fill(limit=fill_limit))
     elif fill_method == "forward":
-        result = result.with_columns(
-            pl.col(data_cols).forward_fill(limit=fill_limit)
-        )
+        result = result.with_columns(pl.col(data_cols).forward_fill(limit=fill_limit))
     elif fill_method == "none":
         pass  # No filling
     else:
-        raise ValueError(
-            f"fill_method must be 'forward', 'backward', or 'none', got '{fill_method}'"
-        )
+        raise ValueError(f"fill_method must be 'forward', 'backward', or 'none', got '{fill_method}'")
 
     return result
 

@@ -78,6 +78,28 @@ def test_check_data_is_monthly(hourly_gsdr_data, monthly_gsdr_network, monthly_g
         data_utils.check_data_is_monthly(hourly_gsdr_data.filter(pl.col("time") is None))
 
 
+def test_downsample_and_fill_columns(hourly_gsdr_network, daily_gsdr_network):
+    result = data_utils.downsample_and_fill_columns(
+            high_res_data=hourly_gsdr_network,
+            low_res_data=daily_gsdr_network,
+            data_cols=[f"{DEFAULT_RAIN_COL}_DE_00390", f"{DEFAULT_RAIN_COL}_DE_00310"],
+            fill_limit=23,
+            fill_method="forward",
+            time_col="time",
+    )
+    data_utils.check_data_is_specific_time_res(result, time_res="1h")
+
+    with pytest.raises(ValueError):
+        data_utils.downsample_and_fill_columns(
+               high_res_data=hourly_gsdr_network,
+               low_res_data=daily_gsdr_network,
+               data_cols=[f"{DEFAULT_RAIN_COL}_DE_00390", f"{DEFAULT_RAIN_COL}_DE_00310"],
+               fill_limit=23,
+               fill_method="both",
+               time_col="time",
+        )
+
+
 def test_get_dry_spells(hourly_gsdr_data):
     result = data_utils.get_dry_spells(hourly_gsdr_data, target_gauge_col=DEFAULT_RAIN_COL)
     assert "is_dry" in result

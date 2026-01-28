@@ -59,6 +59,7 @@ def check_wet_neighbours(
         Time offset of hourly data in hours (i.e. if 7am-7am, then set this to 7) (default: 0)
     min_count :
         Minimum number of time steps needed per time period (default: 2)
+
     Returns
     -------
     data_w_wet_flags :
@@ -78,9 +79,14 @@ def check_wet_neighbours(
         rain_cols = neighbour_data.columns[1:]  # get rain columns
         original_neighbour_data = neighbour_data.clone()
         if not min_count:
-            min_count = np.ceil(data_readers.DAILY_MULTIPLYING_FACTORS[time_res]/2)
+            min_count = np.ceil(data_readers.DAILY_MULTIPLYING_FACTORS[time_res] / 2)
         neighbour_data = data_readers.resample_data_by_time_step(
-            neighbour_data, rain_cols=rain_cols, time_col='time', time_step='1d', min_count=min_count, hour_offset=hour_offset
+            neighbour_data,
+            rain_cols=rain_cols,
+            time_col="time",
+            time_step="1d",
+            min_count=min_count,
+            hour_offset=hour_offset,
         )
 
     # 2. Loop through each neighbour and get wet_flags
@@ -127,7 +133,7 @@ def check_wet_neighbours(
             low_res_data=neighbour_data_w_wet_flags,
             data_cols="majority_wet_flag",
             fill_limit=23,
-            fill_method="backward"
+            fill_method="backward",
         )
 
         hourly_neighbour_data_w_wet_flags = hourly_neighbour_data_w_wet_flags.rename(
@@ -140,7 +146,7 @@ def check_wet_neighbours(
             low_res_data=neighbour_data_w_wet_flags,
             data_cols="majority_wet_flag",
             fill_limit=95,
-            fill_method="backward"
+            fill_method="backward",
         )
 
         min15_neighbour_data_w_wet_flags = min15_neighbour_data_w_wet_flags.rename(
@@ -218,11 +224,16 @@ def check_dry_neighbours(
     # 2. Resample to daily
     if time_res in ["15m", "hourly"]:
         if not min_count:
-            min_count = np.ceil(data_readers.DAILY_MULTIPLYING_FACTORS[time_res]/2)
+            min_count = np.ceil(data_readers.DAILY_MULTIPLYING_FACTORS[time_res] / 2)
         rain_cols = neighbour_data.columns[1:]  # get rain columns
         original_neighbour_data = neighbour_data.clone()
         neighbour_data = data_readers.resample_data_by_time_step(
-            neighbour_data, rain_cols=rain_cols, time_col='time', time_step='1d', min_count=min_count, hour_offset=hour_offset
+            neighbour_data,
+            rain_cols=rain_cols,
+            time_col="time",
+            time_step="1d",
+            min_count=min_count,
+            hour_offset=hour_offset,
         )
 
     # 3. Loop through each neighbour and get dry_flags
@@ -284,7 +295,7 @@ def check_dry_neighbours(
             low_res_data=neighbour_data_w_dry_flags,
             data_cols="majority_dry_flag",
             fill_limit=23,
-            fill_method="backward"
+            fill_method="backward",
         )
 
         hourly_neighbour_data_w_dry_flags = hourly_neighbour_data_w_dry_flags.rename(
@@ -297,7 +308,7 @@ def check_dry_neighbours(
             low_res_data=neighbour_data_w_dry_flags,
             data_cols="majority_dry_flag",
             fill_limit=95,
-            fill_method="backward"
+            fill_method="backward",
         )
 
         min15_neighbour_data_w_dry_flags = min15_neighbour_data_w_dry_flags.rename(
@@ -372,9 +383,14 @@ def check_monthly_neighbours(
         rain_cols = neighbour_data.columns[1:]  # get rain columns
         original_neighbour_data = neighbour_data.clone()
         if not min_count:
-            min_count = np.ceil(data_readers.MONTHLY_MULTIPLYING_FACTORS[time_res]/2)
+            min_count = np.ceil(data_readers.MONTHLY_MULTIPLYING_FACTORS[time_res] / 2)
         monthly_neighbour_data = data_readers.resample_data_by_time_step(
-            neighbour_data, rain_cols=rain_cols, time_col='time', time_step='1mo', min_count=min_count, hour_offset=hour_offset
+            neighbour_data,
+            rain_cols=rain_cols,
+            time_col="time",
+            time_step="1mo",
+            min_count=min_count,
+            hour_offset=hour_offset,
         )
     monthly_neighbour_data = neighbour_data if time_res == "monthly" else monthly_neighbour_data
 
