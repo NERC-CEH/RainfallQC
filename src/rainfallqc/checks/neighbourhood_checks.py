@@ -127,37 +127,19 @@ def check_wet_neighbours(
     neighbour_data_w_wet_flags = neighbour_data_w_wet_flags.select(["time", "majority_wet_flag"])
 
     # 6. If hourly data join back and backward flood fill
-    if time_res == "hourly":
-        hourly_neighbour_data_w_wet_flags = data_utils.downsample_and_fill_columns(
+    if time_res in ["15m", "hourly"]:
+        neighbour_data_w_wet_flags = data_utils.downsample_and_fill_columns(
             high_res_data=original_neighbour_data,
             low_res_data=neighbour_data_w_wet_flags,
             data_cols="majority_wet_flag",
-            fill_limit=23,
+            fill_limit=data_readers.DAILY_MULTIPLYING_FACTORS[time_res] - 1,
             fill_method="backward",
         )
 
-        hourly_neighbour_data_w_wet_flags = hourly_neighbour_data_w_wet_flags.rename(
-            {"majority_wet_flag": f"wet_spell_flag_{time_res}"}
-        )
-        return hourly_neighbour_data_w_wet_flags.select(["time", f"wet_spell_flag_{time_res}"])
-    if time_res == "15m":
-        min15_neighbour_data_w_wet_flags = data_utils.downsample_and_fill_columns(
-            high_res_data=original_neighbour_data,
-            low_res_data=neighbour_data_w_wet_flags,
-            data_cols="majority_wet_flag",
-            fill_limit=95,
-            fill_method="backward",
-        )
-
-        min15_neighbour_data_w_wet_flags = min15_neighbour_data_w_wet_flags.rename(
-            {"majority_wet_flag": f"wet_spell_flag_{time_res}"}
-        )
-        return min15_neighbour_data_w_wet_flags.select(["time", f"wet_spell_flag_{time_res}"])
-    else:
-        neighbour_data_w_wet_flags = neighbour_data_w_wet_flags.rename(
-            {"majority_wet_flag": f"wet_spell_flag_{time_res}"}
-        )
-        return neighbour_data_w_wet_flags
+    neighbour_data_w_wet_flags = neighbour_data_w_wet_flags.rename(
+        {"majority_wet_flag": f"wet_spell_flag_{time_res}"}
+    )
+    return neighbour_data_w_wet_flags.select(["time", f"wet_spell_flag_{time_res}"])
 
 
 @qc_check("check_dry_neighbours", require_non_negative=True)
@@ -283,43 +265,26 @@ def check_dry_neighbours(
 
     # 6. Clean up data for return
     neighbour_data_w_dry_flags = neighbour_data_w_dry_flags.select(["time", "majority_dry_flag"])
+    
     # 7. Backwards propagate dry flags into dry period
     neighbour_data_w_dry_flags = data_utils.back_propagate_daily_data_flags(
         neighbour_data_w_dry_flags, flag_column="majority_dry_flag", num_days=(dry_period_days - 1)
     )
 
     # 8. If hourly data join back and backward flood fill
-    if time_res == "hourly":
-        hourly_neighbour_data_w_dry_flags = data_utils.downsample_and_fill_columns(
+    if time_res in ["15m", "hourly"]:
+        neighbour_data_w_dry_flags = data_utils.downsample_and_fill_columns(
             high_res_data=original_neighbour_data,
             low_res_data=neighbour_data_w_dry_flags,
             data_cols="majority_dry_flag",
-            fill_limit=23,
+            fill_limit=data_readers.DAILY_MULTIPLYING_FACTORS[time_res] - 1,
             fill_method="backward",
         )
 
-        hourly_neighbour_data_w_dry_flags = hourly_neighbour_data_w_dry_flags.rename(
-            {"majority_dry_flag": f"dry_spell_flag_{time_res}"}
-        )
-        return hourly_neighbour_data_w_dry_flags.select(["time", f"dry_spell_flag_{time_res}"])
-    if time_res == "15m":
-        min15_neighbour_data_w_dry_flags = data_utils.downsample_and_fill_columns(
-            high_res_data=original_neighbour_data,
-            low_res_data=neighbour_data_w_dry_flags,
-            data_cols="majority_dry_flag",
-            fill_limit=95,
-            fill_method="backward",
-        )
-
-        min15_neighbour_data_w_dry_flags = min15_neighbour_data_w_dry_flags.rename(
-            {"majority_dry_flag": f"dry_spell_flag_{time_res}"}
-        )
-        return min15_neighbour_data_w_dry_flags.select(["time", f"dry_spell_flag_{time_res}"])
-    else:
-        neighbour_data_w_dry_flags = neighbour_data_w_dry_flags.rename(
-            {"majority_dry_flag": f"dry_spell_flag_{time_res}"}
-        )
-        return neighbour_data_w_dry_flags
+    neighbour_data_w_dry_flags = neighbour_data_w_dry_flags.rename(
+        {"majority_dry_flag": f"dry_spell_flag_{time_res}"}
+    )
+    return neighbour_data_w_dry_flags.select(["time", f"dry_spell_flag_{time_res}"])
 
 
 @qc_check("check_monthly_neighbours", require_non_negative=True)
@@ -438,6 +403,14 @@ def check_monthly_neighbours(
     monthly_neighbour_data_w_flags = upgrade_monthly_flag_using_neighbour_max_climatology(
         monthly_neighbour_data_w_flags, target_gauge_col, min_n_neighbours
     )
+
+    # 8. If hourly data join back and backward flood fill
+    if time_res in ["15m", "hourly", "daily"]:
+        monthly_neighbour_data_w_flags = data_utils.downsample_monthly_data(
+            sub_monthly_data=original_neighbour_data,
+            monthly_data=monthly_neighbour_data_w_flags,
+            data_cols="majority_monthly_flag",
+        )
 
     return monthly_neighbour_data_w_flags.select(["time", "majority_monthly_flag"])
 

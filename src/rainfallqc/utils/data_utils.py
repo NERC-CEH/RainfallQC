@@ -326,6 +326,57 @@ def downsample_and_fill_columns(
     return result
 
 
+def downsample_monthly_data(
+    sub_monthly_data: pl.DataFrame,
+    monthly_data: pl.DataFrame,
+    data_cols: str | list[str],
+    time_col: str = "time",
+) -> pl.DataFrame:
+    """
+    Join monthly data to hourly and fill only within same month.
+    
+    Parameters
+    ----------
+    sub_monthly_data :
+        Sub-monthly data (e.g., hourly)
+    monthly_data :
+        Monthly data with columns to join
+    data_cols :
+        Column name(s) to join and fill. Can be:
+        - Single column name: "rainfall"
+        - List of columns: ["rain1", "rain2"]
+    time_col :
+        Name of time column (default: 'time')
+
+    Returns
+    -------
+    result :
+        Sub-monthly data with monthly columns joined and filled within month
+
+    """
+    # Add month start column to both dataframes
+    data_with_month = sub_monthly_data.with_columns(
+        pl.col(time_col).dt.truncate("1mo").alias("_month_start")
+    )
+    monthly_with_month = monthly_data.with_columns(
+        pl.col(time_col).dt.truncate("1mo").alias("_month_start")
+    )
+
+    # Join on month start instead of exact time
+    result = data_with_month.join(
+        monthly_with_month.select(["_month_start", pl.col(data_cols)]),
+        on="_month_start",
+        how="left"
+    )
+
+    # backward fill within each month
+    result = result.with_columns(pl.col(data_cols).backward_fill().over("_month_start"))
+
+    # Drop temporary column
+    result = result.drop("_month_start")
+    return result
+
+
 def extract_negative_values_from_data(data: pl.DataFrame, cols_to_extract_from: list) -> pl.DataFrame:
     """
     Extract negative values from data.
