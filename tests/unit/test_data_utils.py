@@ -88,7 +88,6 @@ def test_downsample_and_fill_columns(hourly_gsdr_network, daily_gsdr_network):
             time_col="time",
     )
     data_utils.check_data_is_specific_time_res(result, time_res="1h")
-
     with pytest.raises(ValueError):
         data_utils.downsample_and_fill_columns(
                high_res_data=hourly_gsdr_network,
