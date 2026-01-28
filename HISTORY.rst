@@ -2,6 +2,14 @@
 History
 =======
 
+0.4.0 (2025-01-27)
+------------------
+* Add support for 15 min data resolution
+* Change group_by_dynamic to include 'closed='left'' and 'label' parameters for better resampling control
+* Add resample_data_by_time_step utility function
+* Set default min_count to 50% of expected values when resampling data
+* Update neighbourhood checks to handle 15 min data and resampling
+
 0.3.2 (2025-01-22)
 ------------------
 * Bug fix, return only neighbours when calculating nearest neighbour ids

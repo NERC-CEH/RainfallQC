@@ -12,7 +12,7 @@ import scipy.stats
 
 from rainfallqc.utils import data_utils
 
-RAINFALL_WORLD_RECORDS = {"15m": 198.0, "hourly": 401.0, "daily": 1825.0}  # mm
+RAINFALL_WORLD_RECORDS = {"15m": 198.0, "1h": 401.0, "1d": 1825.0, "hourly": 401.0, "daily": 1825.0}  # mm
 
 
 def affinity_index(data: pl.DataFrame, binary_col: str, return_match_and_diff: bool = False) -> tuple | float:

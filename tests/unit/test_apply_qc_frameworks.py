@@ -76,6 +76,7 @@ def test_apply_qc_frameworks_hourly(hourly_gsdr_network, gsdr_metadata):
         "QC15",
         "QC17",
         "QC19",
+        "QC20",
         "QC21",
         "QC22",
         "QC23",
@@ -100,7 +101,7 @@ def test_apply_qc_frameworks_hourly(hourly_gsdr_network, gsdr_metadata):
     result = apply_qc_framework.run_qc_framework(
         hourly_gsdr_network, qc_framework="IntenseQC", qc_methods_to_run=qc_methods_to_run, qc_kwargs=qc_kwargs
     )
-    assert len(result.keys()) == 14
+    assert len(result.keys()) == 15
     assert len(result["QC15"].filter(pl.col("streak_flag1") > 0)) == 0
     assert result["QC21"] == 0  # timing offset
     assert round(result["QC22"], 2) == 0.81  # affinity index
@@ -118,6 +119,7 @@ def test_apply_qc_frameworks_15min(mins15_gsdr_network, gsdr_metadata):
         "QC14",
         "QC17",
         "QC19",
+        "QC20",
         "QC21",
         "QC22",
         "QC23",
@@ -142,7 +144,7 @@ def test_apply_qc_frameworks_15min(mins15_gsdr_network, gsdr_metadata):
     result = apply_qc_framework.run_qc_framework(
         mins15_gsdr_network, qc_framework="IntenseQC", qc_methods_to_run=qc_methods_to_run, qc_kwargs=qc_kwargs
     )
-    assert len(result.keys()) == 12
+    assert len(result.keys()) == 13
     assert result["QC21"] == 0  # timing offset
     assert round(result["QC22"], 2) == 0.8  # affinity index
     assert round(result["QC23"], 2) == 0.31  # correlation

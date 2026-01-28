@@ -50,7 +50,7 @@ def test_dry_period_cdd_check_daily_gsdr(daily_gsdr_data, gsdr_metadata):
         gauge_lat=gsdr_metadata["latitude"],
         gauge_lon=gsdr_metadata["longitude"],
     )
-    assert len(result.filter(pl.col("dry_spell_flag") == 4)) == 91
+    assert len(result.filter(pl.col("dry_spell_flag") == 4)) == 90
 
 
 def test_daily_accumulations(hourly_gsdr_data, gsdr_metadata):
@@ -79,6 +79,16 @@ def test_daily_accumulations(hourly_gsdr_data, gsdr_metadata):
         accumulation_threshold=0.5,
     )
     assert len(result.filter(pl.col("daily_accumulation") == 1)) == 2472
+
+
+def test_daily_accumulations_15min(min15_gsdr_data, gsdr_metadata):
+    result = timeseries_checks.check_daily_accumulations(
+        min15_gsdr_data,
+        target_gauge_col=DEFAULT_RAIN_COL,
+        gauge_lat=gsdr_metadata["latitude"],
+        gauge_lon=gsdr_metadata["longitude"],
+    )
+    assert len(result.filter(pl.col("daily_accumulation") == 1)) == 2304
 
 
 def test_get_accumulation_threshold():
@@ -118,6 +128,16 @@ def test_monthly_accumulations(hourly_gsdr_data, gsdr_metadata):
     assert len(result.filter(pl.col("monthly_accumulation") == 2)) == 23
 
 
+def test_monthly_accumulations_15min_data(min15_gsdr_data, gsdr_metadata):
+    result = timeseries_checks.check_monthly_accumulations(
+        min15_gsdr_data,
+        target_gauge_col=DEFAULT_RAIN_COL,
+        gauge_lat=gsdr_metadata["latitude"],
+        gauge_lon=gsdr_metadata["longitude"],
+    )
+    assert len(result.filter(pl.col("monthly_accumulation") == 2)) == 22
+
+
 def test_monthly_accumulations_daily_data(daily_gsdr_data, gsdr_metadata):
     result = timeseries_checks.check_monthly_accumulations(
         daily_gsdr_data,
@@ -125,7 +145,7 @@ def test_monthly_accumulations_daily_data(daily_gsdr_data, gsdr_metadata):
         gauge_lat=gsdr_metadata["latitude"],
         gauge_lon=gsdr_metadata["longitude"],
     )
-    assert len(result.filter(pl.col("monthly_accumulation") > 0)) == 36
+    assert len(result.filter(pl.col("monthly_accumulation") > 0)) == 35
 
 
 def test_streaks_check(hourly_gsdr_data, gsdr_metadata):
@@ -142,12 +162,51 @@ def test_streaks_check(hourly_gsdr_data, gsdr_metadata):
     assert len(result.filter(pl.col("streak_flag5") == 5)) == 120
 
 
+def test_streaks_check_15min(min15_gsdr_data, gsdr_metadata):
+    result = timeseries_checks.check_streaks(
+        min15_gsdr_data,
+        target_gauge_col=DEFAULT_RAIN_COL,
+        gauge_lat=gsdr_metadata["latitude"],
+        gauge_lon=gsdr_metadata["longitude"],
+        smallest_measurable_rainfall_amount=gsdr_metadata["resolution"],
+    )
+    assert len(result.filter(pl.col("streak_flag1") == 1)) == 1440
+    assert len(result.filter(pl.col("streak_flag3") == 3)) == 760
+    assert len(result.filter(pl.col("streak_flag4") == 4)) == 0
+    assert len(result.filter(pl.col("streak_flag5") == 5)) == 0
+
+
 def test_get_streaks_of_repeated_values(hourly_gsdr_data):
     result = timeseries_checks.get_streaks_of_repeated_values(
         hourly_gsdr_data,
         data_col=DEFAULT_RAIN_COL,
     )
     assert result["streak_id"].unique().len() == 8775
+
+
+def test_flag_streaks_of_zero_bounded_by_days(hourly_gsdr_data, min15_gsdr_data):
+    streak_data = timeseries_checks.get_streaks_of_repeated_values(hourly_gsdr_data, DEFAULT_RAIN_COL)
+    result = timeseries_checks.flag_streaks_of_zero_bounded_by_days(
+        streak_data,
+        target_gauge_col=DEFAULT_RAIN_COL,
+        time_res="hourly",
+    )
+    assert len(result.filter(pl.col("streak_flag5") > 0)) == 120
+
+    with pytest.raises(ValueError):
+        timeseries_checks.flag_streaks_of_zero_bounded_by_days(
+            streak_data,
+            target_gauge_col=DEFAULT_RAIN_COL,
+            time_res="10min",
+        )
+
+    streak_data = timeseries_checks.get_streaks_of_repeated_values(min15_gsdr_data, DEFAULT_RAIN_COL)
+    result = timeseries_checks.flag_streaks_of_zero_bounded_by_days(
+        streak_data,
+        target_gauge_col=DEFAULT_RAIN_COL,
+        time_res="15m",
+    )
+    assert len(result.filter(pl.col("streak_flag5") > 0)) == 480
 
 
 def test_flag_streaks_exceeding_smallest_measurable_rainfall_amount(hourly_gsdr_data, gsdr_metadata):

@@ -145,7 +145,10 @@ def check_exceedance_of_rainfall_world_record(data: pl.DataFrame, target_gauge_c
 
 @qc_check("check_hourly_exceedance_etccdi_rx1day", require_non_negative=True)
 def check_hourly_exceedance_etccdi_rx1day(
-    data: pl.DataFrame, target_gauge_col: str, gauge_lat: int | float, gauge_lon: int | float
+    data: pl.DataFrame,
+    target_gauge_col: str,
+    gauge_lat: int | float,
+    gauge_lon: int | float,
 ) -> pl.DataFrame:
     """
     Check exceedance of hourly day rainfall 1-day record.
@@ -176,7 +179,9 @@ def check_hourly_exceedance_etccdi_rx1day(
     data_hourly = data
     time_step = data_utils.get_data_timestep_as_str(data)
     if time_step == "15m":
-        data_hourly = data_hourly.group_by_dynamic("time", every="1h").agg(pl.col(target_gauge_col).sum())
+        data_hourly = data_readers.resample_data_by_time_step(
+            data, rain_cols=[target_gauge_col], time_col="time", time_step="1h", min_count=2, hour_offset=0
+        )
 
     # 2. Load Rx1day data
     etccdi_rx1day = data_readers.load_etccdi_data(etccdi_var="Rx1day")
@@ -193,13 +198,14 @@ def check_hourly_exceedance_etccdi_rx1day(
     data_w_flags = flag_exceedance_of_ref_val_as_col(
         data_hourly, target_gauge_col, ref_val=max_nearby_etccdi_rx1day, new_col_name="rx1day_check"
     )
-    # 6. Return data (forward fill if 15 min resolution)
+    # 6. Return data (backward fill if 15 min resolution)
     if time_step == "15m":
-        # 6.1 Join flags back to original hourly data
-        data_w_flags = data.join(data_w_flags[["time", "rx1day_check"]], on="time", how="left")
-        # 6.2 Forward flood-fill data to convert the flags back to 15 mins
-        data_w_flags = data_w_flags.with_columns(
-            pl.col("rx1day_check").forward_fill(limit=3)  # 15 min groups
+        data_w_flags = data_utils.downsample_and_fill_columns(
+            high_res_data=data,
+            low_res_data=data_w_flags,
+            data_cols="rx1day_check",
+            fill_limit=3,
+            fill_method="backward",
         )
 
     return data_w_flags.select(["time", "rx1day_check"])

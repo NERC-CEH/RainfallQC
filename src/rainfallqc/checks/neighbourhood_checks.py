@@ -26,6 +26,7 @@ def check_wet_neighbours(
     min_n_neighbours: int,
     n_neighbours_ignored: int = 0,
     hour_offset: int = 0,
+    min_count: int = None,
 ) -> pl.DataFrame:
     """
     Identify suspicious large values by comparison to neighbour for hourly or daily data.
@@ -56,6 +57,8 @@ def check_wet_neighbours(
         Number of zero flags allowed for majority voting (default: 0)
     hour_offset :
         Time offset of hourly data in hours (i.e. if 7am-7am, then set this to 7) (default: 0)
+    min_count :
+        Minimum number of time steps needed per time period (default: 2)
 
     Returns
     -------
@@ -72,11 +75,18 @@ def check_wet_neighbours(
     check_nearest_neighbour_columns(neighbour_data, target_gauge_col, list_of_nearest_stations_new)
 
     # 1. Resample to daily
-    if time_res == "hourly":
+    if time_res in ["15m", "hourly"]:
         rain_cols = neighbour_data.columns[1:]  # get rain columns
-        original_hourly_neighbour_data = neighbour_data.clone()
-        neighbour_data = data_readers.convert_data_hourly_to_daily(
-            neighbour_data, rain_cols=rain_cols, hour_offset=hour_offset
+        original_neighbour_data = neighbour_data.clone()
+        if not min_count:
+            min_count = np.ceil(data_readers.DAILY_MULTIPLYING_FACTORS[time_res] / 2)
+        neighbour_data = data_readers.resample_data_by_time_step(
+            neighbour_data,
+            rain_cols=rain_cols,
+            time_col="time",
+            time_step="1d",
+            min_count=min_count,
+            hour_offset=hour_offset,
         )
 
     # 2. Loop through each neighbour and get wet_flags
@@ -116,25 +126,18 @@ def check_wet_neighbours(
     # 5. Clean up data for return
     neighbour_data_w_wet_flags = neighbour_data_w_wet_flags.select(["time", "majority_wet_flag"])
 
-    # 6. If hourly data join back and forward flood fill
-    if time_res == "hourly":
-        # 6.1 Join flags back to original hourly data
-        hourly_neighbour_data_w_wet_flags = original_hourly_neighbour_data.join(
-            neighbour_data_w_wet_flags[["time", "majority_wet_flag"]], on="time", how="left"
+    # 6. If hourly data join back and backward flood fill
+    if time_res in ["15m", "hourly"]:
+        neighbour_data_w_wet_flags = data_utils.downsample_and_fill_columns(
+            high_res_data=original_neighbour_data,
+            low_res_data=neighbour_data_w_wet_flags,
+            data_cols="majority_wet_flag",
+            fill_limit=data_readers.DAILY_MULTIPLYING_FACTORS[time_res] - 1,
+            fill_method="backward",
         )
-        # 6.2 Forward flood-fill data to convert the flags back to hourly
-        hourly_neighbour_data_w_wet_flags = hourly_neighbour_data_w_wet_flags.with_columns(
-            pl.col("majority_wet_flag").forward_fill(limit=23)  # hours
-        )
-        hourly_neighbour_data_w_wet_flags = hourly_neighbour_data_w_wet_flags.rename(
-            {"majority_wet_flag": f"wet_spell_flag_{time_res}"}
-        )
-        return hourly_neighbour_data_w_wet_flags.select(["time", f"wet_spell_flag_{time_res}"])
-    else:
-        neighbour_data_w_wet_flags = neighbour_data_w_wet_flags.rename(
-            {"majority_wet_flag": f"wet_spell_flag_{time_res}"}
-        )
-        return neighbour_data_w_wet_flags
+
+    neighbour_data_w_wet_flags = neighbour_data_w_wet_flags.rename({"majority_wet_flag": f"wet_spell_flag_{time_res}"})
+    return neighbour_data_w_wet_flags.select(["time", f"wet_spell_flag_{time_res}"])
 
 
 @qc_check("check_dry_neighbours", require_non_negative=True)
@@ -147,6 +150,7 @@ def check_dry_neighbours(
     dry_period_days: int = 15,
     n_neighbours_ignored: int = 0,
     hour_offset: int = 0,
+    min_count: int = None,
 ) -> pl.DataFrame:
     """
     Identify suspicious dry periods by comparison to neighbour for hourly or daily data.
@@ -177,6 +181,8 @@ def check_dry_neighbours(
         Number of zero flags allowed for majority voting (default: 0)
     hour_offset :
         Time offset of hourly data in hours (i.e. if 7am-7am, then set this to 7) (default: 0)
+    min_count :
+        Minimum number of time steps needed per time period (default: 1)
 
     Returns
     -------
@@ -196,11 +202,18 @@ def check_dry_neighbours(
     dry_period_proportions = data_utils.get_dry_period_proportions(dry_period_days)
 
     # 2. Resample to daily
-    if time_res == "hourly":
+    if time_res in ["15m", "hourly"]:
+        if not min_count:
+            min_count = np.ceil(data_readers.DAILY_MULTIPLYING_FACTORS[time_res] / 2)
         rain_cols = neighbour_data.columns[1:]  # get rain columns
-        original_hourly_neighbour_data = neighbour_data.clone()
-        neighbour_data = data_readers.convert_data_hourly_to_daily(
-            neighbour_data, rain_cols=rain_cols, hour_offset=hour_offset
+        original_neighbour_data = neighbour_data.clone()
+        neighbour_data = data_readers.resample_data_by_time_step(
+            neighbour_data,
+            rain_cols=rain_cols,
+            time_col="time",
+            time_step="1d",
+            min_count=min_count,
+            hour_offset=hour_offset,
         )
 
     # 3. Loop through each neighbour and get dry_flags
@@ -250,39 +263,36 @@ def check_dry_neighbours(
 
     # 6. Clean up data for return
     neighbour_data_w_dry_flags = neighbour_data_w_dry_flags.select(["time", "majority_dry_flag"])
+
     # 7. Backwards propagate dry flags into dry period
     neighbour_data_w_dry_flags = data_utils.back_propagate_daily_data_flags(
         neighbour_data_w_dry_flags, flag_column="majority_dry_flag", num_days=(dry_period_days - 1)
     )
 
-    # 8. If hourly data join back and forward flood fill
-    if time_res == "hourly":
-        # 8.1 Join flags back to original hourly data
-        hourly_neighbour_data_w_dry_flags = original_hourly_neighbour_data.join(
-            neighbour_data_w_dry_flags[["time", "majority_dry_flag"]], on="time", how="left"
+    # 8. If hourly data join back and backward flood fill
+    if time_res in ["15m", "hourly"]:
+        neighbour_data_w_dry_flags = data_utils.downsample_and_fill_columns(
+            high_res_data=original_neighbour_data,
+            low_res_data=neighbour_data_w_dry_flags,
+            data_cols="majority_dry_flag",
+            fill_limit=data_readers.DAILY_MULTIPLYING_FACTORS[time_res] - 1,
+            fill_method="backward",
         )
-        # 8.2 Forward flood-fill data to convert the flags back to hourly
-        hourly_neighbour_data_w_dry_flags = hourly_neighbour_data_w_dry_flags.with_columns(
-            pl.col("majority_dry_flag").forward_fill(limit=23)  # hours
-        )
-        hourly_neighbour_data_w_dry_flags = hourly_neighbour_data_w_dry_flags.rename(
-            {"majority_dry_flag": f"dry_spell_flag_{time_res}"}
-        )
-        return hourly_neighbour_data_w_dry_flags.select(["time", f"dry_spell_flag_{time_res}"])
-    else:
-        neighbour_data_w_dry_flags = neighbour_data_w_dry_flags.rename(
-            {"majority_dry_flag": f"dry_spell_flag_{time_res}"}
-        )
-        return neighbour_data_w_dry_flags
+
+    neighbour_data_w_dry_flags = neighbour_data_w_dry_flags.rename({"majority_dry_flag": f"dry_spell_flag_{time_res}"})
+    return neighbour_data_w_dry_flags.select(["time", f"dry_spell_flag_{time_res}"])
 
 
 @qc_check("check_monthly_neighbours", require_non_negative=True)
 def check_monthly_neighbours(
-    monthly_neighbour_data: pl.DataFrame,
+    neighbour_data: pl.DataFrame,
     target_gauge_col: str,
     list_of_nearest_stations: List[str],
+    time_res: str,
     min_n_neighbours: int,
     n_neighbours_ignored: int = 0,
+    hour_offset: int = 0,
+    min_count: int = None,
 ) -> pl.DataFrame:
     """
     Identify suspicious monthly totals by comparison to neighbouring monthly gauges.
@@ -305,16 +315,22 @@ def check_monthly_neighbours(
 
     Parameters
     ----------
-    monthly_neighbour_data :
-        Monthly rainfall data of neighbouring gauges with time col
+    neighbour_data :
+        Rainfall data of neighbouring gauges with time col
     target_gauge_col :
         Target gauge column
     list_of_nearest_stations:
         List of columns with neighbouring gauges
+    time_res :
+        Time resolution of data (e.g. 'monthly' or 'daily', 'hourly' or '15m' - will be resampled to monthly)
     min_n_neighbours :
         Minimum number of neighbours needed to be checked for flag
     n_neighbours_ignored :
         Number of zero flags allowed for majority voting (default: 0)
+    hour_offset :
+        Time offset of hourly data in hours (i.e. if 7am-7am, then set this to 7) (default: 0)
+    min_count :
+        Minimum number of time steps needed per time period (default: will be half of possible time steps)
 
     Returns
     -------
@@ -322,7 +338,23 @@ def check_monthly_neighbours(
         Target data with monthly flags
 
     """
-    # 0. Initial checks
+    # 0. Resample to monthly
+    if time_res in ["15m", "hourly", "daily"]:
+        data_utils.check_data_is_specific_time_res(neighbour_data, time_res=["15m", "1h", "1d"])
+        rain_cols = neighbour_data.columns[1:]  # get rain columns
+        original_neighbour_data = neighbour_data.clone()
+        if not min_count:
+            min_count = np.ceil(data_readers.MONTHLY_MULTIPLYING_FACTORS[time_res] / 2)
+        monthly_neighbour_data = data_readers.resample_data_by_time_step(
+            neighbour_data,
+            rain_cols=rain_cols,
+            time_col="time",
+            time_step="1mo",
+            min_count=min_count,
+            hour_offset=hour_offset,
+        )
+    monthly_neighbour_data = neighbour_data if time_res == "monthly" else monthly_neighbour_data
+
     data_utils.check_data_is_monthly(monthly_neighbour_data)
     list_of_nearest_stations_new = list_of_nearest_stations.copy()  # make copy
     if target_gauge_col in list_of_nearest_stations_new:
@@ -367,6 +399,14 @@ def check_monthly_neighbours(
     monthly_neighbour_data_w_flags = upgrade_monthly_flag_using_neighbour_max_climatology(
         monthly_neighbour_data_w_flags, target_gauge_col, min_n_neighbours
     )
+
+    # 8. If hourly data join back and backward flood fill
+    if time_res in ["15m", "hourly", "daily"]:
+        monthly_neighbour_data_w_flags = data_utils.downsample_monthly_data(
+            sub_monthly_data=original_neighbour_data,
+            monthly_data=monthly_neighbour_data_w_flags,
+            data_cols="majority_monthly_flag",
+        )
 
     return monthly_neighbour_data_w_flags.select(["time", "majority_monthly_flag"])
 
@@ -609,11 +649,11 @@ def check_monthly_factor(neighbour_data: pl.DataFrame, target_gauge_col: str, ne
     monthly_factor = stats.factor_diff(neighbour_data, target_col=target_gauge_col, other_col=nearest_neighbour)
 
     # 2. Flag factor difference
-    monthly_factor_flags = flag_monthly_factor_differences(monthly_factor, target_gauge_col=nearest_neighbour)
+    monthly_factor_flags = flag_monthly_factor_differences(monthly_factor)
     return monthly_factor_flags.select(["time", "monthly_factor_flag"])
 
 
-def flag_monthly_factor_differences(monthly_factor: pl.DataFrame, target_gauge_col: str) -> pl.DataFrame:
+def flag_monthly_factor_differences(monthly_factor: pl.DataFrame) -> pl.DataFrame:
     """
     Flag monthly difference flag after IntenseQC framework for QC25.
 
