@@ -6,6 +6,8 @@ History
 ------------------
 * Add support for 15 min data resolution
 * Change group_by_dynamic to include 'closed='left'' and 'label' parameters for better resampling control
+* Add resample_data_by_time_step utility function
+* Update neighbourhood checks to handle 15 min data and resampling
 
 0.3.2 (2025-01-22)
 ------------------
