@@ -136,9 +136,7 @@ def check_wet_neighbours(
             fill_method="backward",
         )
 
-    neighbour_data_w_wet_flags = neighbour_data_w_wet_flags.rename(
-        {"majority_wet_flag": f"wet_spell_flag_{time_res}"}
-    )
+    neighbour_data_w_wet_flags = neighbour_data_w_wet_flags.rename({"majority_wet_flag": f"wet_spell_flag_{time_res}"})
     return neighbour_data_w_wet_flags.select(["time", f"wet_spell_flag_{time_res}"])
 
 
@@ -265,7 +263,7 @@ def check_dry_neighbours(
 
     # 6. Clean up data for return
     neighbour_data_w_dry_flags = neighbour_data_w_dry_flags.select(["time", "majority_dry_flag"])
-    
+
     # 7. Backwards propagate dry flags into dry period
     neighbour_data_w_dry_flags = data_utils.back_propagate_daily_data_flags(
         neighbour_data_w_dry_flags, flag_column="majority_dry_flag", num_days=(dry_period_days - 1)
@@ -281,9 +279,7 @@ def check_dry_neighbours(
             fill_method="backward",
         )
 
-    neighbour_data_w_dry_flags = neighbour_data_w_dry_flags.rename(
-        {"majority_dry_flag": f"dry_spell_flag_{time_res}"}
-    )
+    neighbour_data_w_dry_flags = neighbour_data_w_dry_flags.rename({"majority_dry_flag": f"dry_spell_flag_{time_res}"})
     return neighbour_data_w_dry_flags.select(["time", f"dry_spell_flag_{time_res}"])
 
 

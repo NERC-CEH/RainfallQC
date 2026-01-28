@@ -334,7 +334,7 @@ def downsample_monthly_data(
 ) -> pl.DataFrame:
     """
     Join monthly data to hourly and fill only within same month.
-    
+
     Parameters
     ----------
     sub_monthly_data :
@@ -355,18 +355,12 @@ def downsample_monthly_data(
 
     """
     # Add month start column to both dataframes
-    data_with_month = sub_monthly_data.with_columns(
-        pl.col(time_col).dt.truncate("1mo").alias("_month_start")
-    )
-    monthly_with_month = monthly_data.with_columns(
-        pl.col(time_col).dt.truncate("1mo").alias("_month_start")
-    )
+    data_with_month = sub_monthly_data.with_columns(pl.col(time_col).dt.truncate("1mo").alias("_month_start"))
+    monthly_with_month = monthly_data.with_columns(pl.col(time_col).dt.truncate("1mo").alias("_month_start"))
 
     # Join on month start instead of exact time
     result = data_with_month.join(
-        monthly_with_month.select(["_month_start", pl.col(data_cols)]),
-        on="_month_start",
-        how="left"
+        monthly_with_month.select(["_month_start", pl.col(data_cols)]), on="_month_start", how="left"
     )
 
     # backward fill within each month
