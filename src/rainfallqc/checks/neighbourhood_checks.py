@@ -80,7 +80,7 @@ def check_wet_neighbours(
         original_neighbour_data = neighbour_data.clone()
         if not min_count:
             min_count = np.ceil(data_readers.DAILY_MULTIPLYING_FACTORS[time_res] / 2)
-        neighbour_data = data_readers.resample_data_by_time_step(
+        neighbour_data = data_utils.resample_data_by_time_step(
             neighbour_data,
             rain_cols=rain_cols,
             time_col="time",
@@ -207,7 +207,7 @@ def check_dry_neighbours(
             min_count = np.ceil(data_readers.DAILY_MULTIPLYING_FACTORS[time_res] / 2)
         rain_cols = neighbour_data.columns[1:]  # get rain columns
         original_neighbour_data = neighbour_data.clone()
-        neighbour_data = data_readers.resample_data_by_time_step(
+        neighbour_data = data_utils.resample_data_by_time_step(
             neighbour_data,
             rain_cols=rain_cols,
             time_col="time",
@@ -345,7 +345,7 @@ def check_monthly_neighbours(
         original_neighbour_data = neighbour_data.clone()
         if not min_count:
             min_count = np.ceil(data_readers.MONTHLY_MULTIPLYING_FACTORS[time_res] / 2)
-        monthly_neighbour_data = data_readers.resample_data_by_time_step(
+        monthly_neighbour_data = data_utils.resample_data_by_time_step(
             neighbour_data,
             rain_cols=rain_cols,
             time_col="time",

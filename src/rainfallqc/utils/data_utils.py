@@ -8,6 +8,7 @@ Classes and functions ordered alphabetically.
 import calendar
 import datetime
 from collections.abc import Sequence
+from typing import List
 
 import numpy as np
 import polars as pl
@@ -707,3 +708,39 @@ def replace_missing_vals_with_nan(
             .otherwise(pl.col(target_gauge_col))
             .alias(target_gauge_col)
         )
+
+
+def resample_data_by_time_step(
+    data: pl.DataFrame, rain_cols: List[str], time_col: str, time_step: str, min_count: int, hour_offset: int
+) -> pl.DataFrame:
+    """
+    Group hourly data into daily and check for at least 24 daily time steps per day.
+
+    Parameters
+    ----------
+    data :
+        Rainfall data to resample
+    rain_cols :
+        List of column with rainfall data
+    time_col :
+        Name of time column
+    time_step :
+        Time step to resample into (e.g. '1d' for daily, '1h' for hourly, '15m' for 15 minute)
+    min_count :
+        Minimum number of time steps needed per time period
+    hour_offset :
+        Time offset in hours (needed if data is not aligned to midnight)
+
+    Returns
+    -------
+    resampled_data :
+        Rainfall data grouped into a given time step
+
+    """
+    # resample into daily (also round to 1 decimal place)
+    return data.group_by_dynamic(time_col, every=time_step, closed="left", label="left", offset=f"{hour_offset}h").agg(
+        [
+            pl.when(pl.col(col).count() >= min_count).then(pl.col(col).sum()).otherwise(None).alias(col)
+            for col in rain_cols
+        ]
+    )

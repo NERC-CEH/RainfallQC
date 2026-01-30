@@ -130,7 +130,7 @@ def check_daily_accumulations(
     time_step = data_utils.get_data_timestep_as_str(data)
     if time_step == "15m":
         original_data = data.clone()
-        data = data_readers.resample_data_by_time_step(
+        data = data_utils.resample_data_by_time_step(
             data, rain_cols=[target_gauge_col], time_col="time", time_step="1h", min_count=2, hour_offset=0
         )
 
@@ -735,7 +735,7 @@ def get_daily_non_wr_data(data: pl.DataFrame, target_gauge_col: str, time_res: s
     # 1. Filter out hourly world records
     data_not_wr = stats.filter_out_rain_world_records(data, target_gauge_col, time_res=time_res)
     # 2. Group into daily resolution
-    daily_data = data_readers.resample_data_by_time_step(
+    daily_data = data_utils.resample_data_by_time_step(
         data_not_wr, rain_cols=[target_gauge_col], time_col="time", time_step="1d", min_count=0, hour_offset=0
     )
     # 3. Filter out daily world records
