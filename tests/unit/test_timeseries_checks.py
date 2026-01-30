@@ -109,7 +109,7 @@ def test_monthly_accumulations(hourly_gsdr_data, gsdr_metadata):
         wet_day_threshold=1.0,
     )
     assert len(result.filter(pl.col("monthly_accumulation") == 1)) == 0
-    assert len(result.filter(pl.col("monthly_accumulation") == 3)) == 3
+    assert len(result.filter(pl.col("monthly_accumulation") == 3)) == 2214
     result = timeseries_checks.check_monthly_accumulations(
         hourly_gsdr_data,
         target_gauge_col=DEFAULT_RAIN_COL,
@@ -117,7 +117,7 @@ def test_monthly_accumulations(hourly_gsdr_data, gsdr_metadata):
         gauge_lon=gsdr_metadata["longitude"],
         accumulation_threshold=5.0,
     )
-    assert len(result.filter(pl.col("monthly_accumulation") == 3)) == 3
+    assert len(result.filter(pl.col("monthly_accumulation") == 3)) == 2214
 
     result = timeseries_checks.check_monthly_accumulations(
         hourly_gsdr_data,
@@ -137,7 +137,7 @@ def test_monthly_accumulations_15min_data(min15_gsdr_data, gsdr_metadata):
         gauge_lat=gsdr_metadata["latitude"],
         gauge_lon=gsdr_metadata["longitude"],
     )
-    assert len(result.filter(pl.col("monthly_accumulation") > 0)) == 3
+    assert len(result.filter(pl.col("monthly_accumulation") == 3)) == 8844
 
 
 def test_monthly_accumulations_daily_data(daily_gsdr_data, gsdr_metadata):
@@ -147,7 +147,7 @@ def test_monthly_accumulations_daily_data(daily_gsdr_data, gsdr_metadata):
         gauge_lat=gsdr_metadata["latitude"],
         gauge_lon=gsdr_metadata["longitude"],
     )
-    assert len(result.filter(pl.col("monthly_accumulation") > 0)) == 2
+    assert len(result.filter(pl.col("monthly_accumulation") > 0)) == 93
 
 
 def test_streaks_check(hourly_gsdr_data, gsdr_metadata):

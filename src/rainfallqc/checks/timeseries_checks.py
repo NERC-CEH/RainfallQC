@@ -256,6 +256,7 @@ def check_monthly_accumulations(
     # 5. Fill in monthly accumulation flags
     gauge_data_monthly_accumulations = fill_in_monthly_accumulation_flags(
         gauge_data_monthly_accumulations,
+        time_step=time_step,
         min_dry_spell_duration=min_dry_spell_duration,
         max_dry_spell_duration=max_dry_spell_duration,
     )
@@ -663,7 +664,10 @@ def flag_accumulation_based_on_next_dry_spell_duration(
 
 
 def fill_in_monthly_accumulation_flags(
-    monthly_accumulation_flags: pl.DataFrame, min_dry_spell_duration: int | float, max_dry_spell_duration: int | float
+    monthly_accumulation_flags: pl.DataFrame,
+    time_step: str,
+    min_dry_spell_duration: int | float,
+    max_dry_spell_duration: int | float,
 ) -> pl.DataFrame:
     """
     Fill in flags preceeding monthly accumulation.
@@ -672,6 +676,8 @@ def fill_in_monthly_accumulation_flags(
     ----------
     monthly_accumulation_flags :
         Rainfall data with monthly accumulation flag and dry spell info
+    time_step :
+        Time step of data i.e. '1h', '1d', '15m'.
     min_dry_spell_duration :
         Minimum dry spell duration
     max_dry_spell_duration :
@@ -679,10 +685,38 @@ def fill_in_monthly_accumulation_flags(
 
     Returns
     -------
-    data_w_flag :
+    monthly_accumulation_flags :
         Data with accumulation flag filled in
 
     """
+    data_utils.check_data_is_specific_time_res(monthly_accumulation_flags, time_res=["15m", "1h", "1d"])
+
+    # 1. Set duration for month, if the preceeding dry spell is longer than a month
+    if time_step == "15m":
+        duration_to_remove = pl.duration(hours=max_dry_spell_duration / 4)
+    elif time_step == "1h":
+        duration_to_remove = pl.duration(hours=max_dry_spell_duration)
+    else:
+        duration_to_remove = pl.duration(days=max_dry_spell_duration)
+    # 2. get monthly flag rows
+    flagged_rows = monthly_accumulation_flags.filter(pl.col("monthly_accumulation") > 0)
+    # 3. Fill in rows preceeding
+    for row in flagged_rows.iter_rows(named=True):
+        # Check dry spell is at least minimum for a month
+        if row["dry_spell_length"] >= min_dry_spell_duration:
+            # Check dry spell is at not over maximum for a month
+            if row["dry_spell_length"] <= max_dry_spell_duration:
+                dry_spell_start = row["dry_spell_start"]
+            else:
+                # fill in up to the maximum amount for the month
+                dry_spell_start = pl.select(row["dry_spell_end"] - duration_to_remove).item()
+            # Fill in values preceeding
+            monthly_accumulation_flags = monthly_accumulation_flags.with_columns(
+                pl.when((pl.col("time") <= row["dry_spell_end"]) & (pl.col("time") >= dry_spell_start))
+                .then(row["monthly_accumulation"])
+                .otherwise(pl.col("monthly_accumulation"))
+                .alias("monthly_accumulation")
+            )
     return monthly_accumulation_flags
 
 
