@@ -641,13 +641,13 @@ def flag_accumulation_based_on_next_dry_spell_duration(
     return data.with_columns(
         pl.when(
             (pl.col("possible_accumulation") == 1)
-            & (pl.col("dry_spell_length").fill_null(0.0) <= min_dry_spell_duration)
+            & (pl.col("dry_spell_length").fill_null(0.0) >= min_dry_spell_duration)
             & (pl.col("next_dry_spell").is_not_null())
         )
-        .then(2)
+        .then(3)
         .when(
             (pl.col("possible_accumulation") == 1)
-            & (pl.col("dry_spell_length").fill_null(0.0) <= min_dry_spell_duration)
+            & (pl.col("dry_spell_length").fill_null(0.0) >= min_dry_spell_duration)
         )
         .then(1)
         .otherwise(0)
