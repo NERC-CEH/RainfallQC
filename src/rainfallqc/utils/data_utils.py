@@ -469,7 +469,7 @@ def get_data_timestep_as_str(data: pl.DataFrame) -> str:
     Returns
     -------
     time_step :
-        Time step of data i.e. '1h', '1d', '15mi'.
+        Time step of data i.e. '1h', '1d', '15m'.
 
     """
     check_data_has_consistent_time_step(data)

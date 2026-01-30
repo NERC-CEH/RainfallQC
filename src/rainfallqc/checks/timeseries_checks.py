@@ -174,6 +174,7 @@ def check_monthly_accumulations(
     target_gauge_col: str,
     gauge_lat: int | float,
     gauge_lon: int | float,
+    min_dry_spell_duration_in_days: int = 28,
     wet_day_threshold: int | float = 1.0,
     accumulation_multiplying_factor: int | float = 2.0,
     accumulation_threshold: float = None,
@@ -199,6 +200,8 @@ def check_monthly_accumulations(
         latitude of the rain gauge
     gauge_lon :
         longitude of the rain gauge
+    min_dry_spell_duration_in_days :
+        Minimum number of days in dry spell preceeding monthly accumulation (default is 28 i.e. Feb)
     wet_day_threshold :
         Threshold for rainfall intensity in one day (default is 1 mm)
     accumulation_multiplying_factor :
@@ -219,12 +222,9 @@ def check_monthly_accumulations(
     # 0. Check time step of data
     data_utils.check_data_is_specific_time_res(data, time_res=["15m", "1h", "1d"])
     time_step = data_utils.get_data_timestep_as_str(data)
-    if time_step == "15m":
-        min_dry_spell_duration = 2880  # roughly 2880 15-minutes in month
-    elif time_step == "1h":
-        min_dry_spell_duration = 720  # roughly 720 hours in month
-    else:
-        min_dry_spell_duration = 30  # roughly 30 days in month
+    # Set min and max amount of time steps to be a 'monthly' accumulation (-1 to remove rainfall accumulation)
+    min_dry_spell_duration = min_dry_spell_duration_in_days * DAILY_DIVIDING_FACTOR[time_step] - 1
+    max_dry_spell_duration = 31 * DAILY_DIVIDING_FACTOR[time_step] - 1
 
     # 1. Get accumulation threshold from ETCCDI SDII value, if not given
     if not accumulation_threshold:
@@ -253,7 +253,14 @@ def check_monthly_accumulations(
         accumulation_col_name="monthly_accumulation",
     )
 
-    # 5. Remove unnecessary columns
+    # 5. Fill in monthly accumulation flags
+    gauge_data_monthly_accumulations = fill_in_monthly_accumulation_flags(
+        gauge_data_monthly_accumulations,
+        min_dry_spell_duration=min_dry_spell_duration,
+        max_dry_spell_duration=max_dry_spell_duration,
+    )
+
+    # 6. Remove unnecessary columns
     return gauge_data_monthly_accumulations.select(["time", "monthly_accumulation"])
 
 
@@ -619,7 +626,7 @@ def flag_accumulation_based_on_next_dry_spell_duration(
     Flag possible accumulation based on subsequent minimum dry spell duration.
 
     Flags:
-    2, if dry spell followed with high value then wet period (wet)
+    3, if dry spell followed with high value then wet period (wet)
     1, if dry spell followed with high value then no rain for next 23 hours (dry)
     0, if neither
 
@@ -653,6 +660,30 @@ def flag_accumulation_based_on_next_dry_spell_duration(
         .otherwise(0)
         .alias(accumulation_col_name)
     )
+
+
+def fill_in_monthly_accumulation_flags(
+    monthly_accumulation_flags: pl.DataFrame, min_dry_spell_duration: int | float, max_dry_spell_duration: int | float
+) -> pl.DataFrame:
+    """
+    Fill in flags preceeding monthly accumulation.
+
+    Parameters
+    ----------
+    monthly_accumulation_flags :
+        Rainfall data with monthly accumulation flag and dry spell info
+    min_dry_spell_duration :
+        Minimum dry spell duration
+    max_dry_spell_duration :
+        Maximum dry spell duration
+
+    Returns
+    -------
+    data_w_flag :
+        Data with accumulation flag filled in
+
+    """
+    return monthly_accumulation_flags
 
 
 def get_surrounding_dry_spell_lengths(data: pl.DataFrame) -> pl.DataFrame:
