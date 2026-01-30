@@ -2,6 +2,12 @@
 History
 =======
 
+0.4.1 (2025-01-30)
+------------------
+* Move resample_data_by_time_step to data_utils
+* Fix bug with monthly_accumulation where '>=' is flipped
+* Add fill flag method for monthly_accumulation
+
 0.4.0 (2025-01-27)
 ------------------
 * Add support for 15 min data resolution
