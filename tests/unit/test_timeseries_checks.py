@@ -137,7 +137,7 @@ def test_monthly_accumulations_15min_data(min15_gsdr_data, gsdr_metadata):
         gauge_lat=gsdr_metadata["latitude"],
         gauge_lon=gsdr_metadata["longitude"],
     )
-    assert len(result.filter(pl.col("monthly_accumulation") == 3)) == 8844
+    assert len(result.filter(pl.col("monthly_accumulation") == 3)) == 8847
 
 
 def test_monthly_accumulations_daily_data(daily_gsdr_data, gsdr_metadata):

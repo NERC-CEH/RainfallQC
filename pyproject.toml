@@ -37,24 +37,35 @@ dependencies = [
   "geopy",
   "poligrain",
   "pypwsqc",
+  "matplotlib",
 ]
 
-[project.optional-dependencies]
-test = ["pytest", "pytest-cov"]
-docs = ["sphinx", "sphinx-copybutton", "sphinx-rtd-theme"]
-lint = ["mypy", "ruff"]
+[dependency-groups]
 dev = [
-  "pip",
-  "numpy",
-  "bump-my-version",
-  "ruff",
-  "black",
-  "pre_commit",
-  "pylint",
-  "pytest",
-  "pytest-cov",
-  "matplotlib",
+    { include-group = "lint" },
+    { include-group = "test" },
+    { include-group = "typecheck" },
+    { include-group = "analysis" },
+]
+lint = [
+    "mypy",
+    "ruff"
+]
+test = [
+    "coverage",
+    "pytest",
+    "pytest-cov"
+]
+typecheck = [
+    "ty",
+]
+analysis = [
+    "jupyterlab"
+]
+docs = [
   "sphinx",
+  "sphinx-copybutton",
+  "sphinx-rtd-theme"
 ]
 
 [project.urls]
