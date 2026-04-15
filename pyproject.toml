@@ -37,6 +37,7 @@ dependencies = [
   "geopy",
   "poligrain",
   "pypwsqc",
+  "matplotlib",
 ]
 
 [dependency-groups]
