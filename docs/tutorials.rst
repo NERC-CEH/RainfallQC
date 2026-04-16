@@ -319,13 +319,13 @@ To do this we can use the nearby_metadata calculated above and the ``compute_km_
 
         # get nearest neighbour
         nearby_gauge_distances = compute_km_distances_from_target_id(nearby_metadata, target_id=target_station_id, station_id_col='station_id')
-        nearest_gauge_id = nearby_gauge_distances.sort('distance')[0]['station_id'].item()
+        nearest_neighbour_id = nearby_gauge_distances.sort('distance')[0]['station_id'].item()
 
         # run QC check
         neighbour_correlation = neighbourhood_checks.check_neighbour_correlation(
                                         nearby_rainfall_data,
                                         target_gauge_col=target_station_id,
-                                        nearest_neighbour=nearest_gauge_id
+                                        nearest_neighbour=nearest_neighbour_id
                                         )
 
 
@@ -645,13 +645,12 @@ My plan is to update this example after some feedback.
 
             # get nearest neighbour
             nearby_gauge_distances = compute_km_distances_from_target_id(nearby_metadata, target_id=target_station_id, station_id_col='station_id')
-            nearest_gauge_id = nearby_gauge_distances.sort('distance')[0]['station_id'].item()
-            neighbouring_gauge_col = nearest_gauge_id
+            nearest_neighbour_id = nearby_gauge_distances.sort('distance')[0]['station_id'].item()
 
             # Update all the shared keyword arguments
             qc_kwargs["shared"]["rain_col"] = target_gauge_col
             qc_kwargs["shared"]["target_gauge_col"] = target_gauge_col
-            qc_kwargs["shared"]["nearest_neighbour"] = neighbouring_gauge_col
+            qc_kwargs["shared"]["nearest_neighbour"] = nearest_neighbour_id
             qc_kwargs["shared"]["list_of_nearest_stations"] = nearby_rainfall_data.columns[1:]
             qc_kwargs["shared"]["gauge_lat"] = nearby_metadata.filter(pl.col("station_id") == target_gauge_col)['latitude']
             qc_kwargs["shared"]["gauge_lon"] = nearby_metadata.filter(pl.col("station_id") == target_gauge_col)['longitude']
