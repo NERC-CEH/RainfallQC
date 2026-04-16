@@ -645,6 +645,9 @@ My plan is to update this example after some feedback.
 
             # get nearest neighbour
             nearby_gauge_distances = compute_km_distances_from_target_id(nearby_metadata, target_id=target_station_id, station_id_col='station_id')
+            if len(nearby_gauge_distances) == 0:
+                print(station_id, "no neighbours skipping")
+                continue
             nearest_neighbour_id = nearby_gauge_distances.sort('distance')[0]['station_id'].item()
 
             # Update all the shared keyword arguments
