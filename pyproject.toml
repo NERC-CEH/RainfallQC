@@ -46,6 +46,7 @@ dev = [
     { include-group = "test" },
     { include-group = "typecheck" },
     { include-group = "analysis" },
+    "bump-my-version",
 ]
 lint = [
     "mypy",
@@ -79,7 +80,7 @@ homepage = "https://github.com/thomasjkeel/RainfallQC"
 target-version = ["py310", "py311", "py312", "py313"]
 
 [tool.bumpversion]
-current_version = "0.4.1"
+current_version = "0.4.2"
 commit = true
 message = "Bump version: {current_version} → {new_version}"
 commit_args = ""

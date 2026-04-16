@@ -2,13 +2,17 @@
 History
 =======
 
-0.4.1 (2025-01-30)
+0.4.2 (2026-04-16)
+------------------
+* Fix bug in the tutorials
+
+0.4.1 (2026-01-30)
 ------------------
 * Move resample_data_by_time_step to data_utils
 * Fix bug with monthly_accumulation where '>=' is flipped
 * Add fill flag method for monthly_accumulation
 
-0.4.0 (2025-01-27)
+0.4.0 (2026-01-27)
 ------------------
 * Add support for 15 min data resolution
 * Change group_by_dynamic to include 'closed='left'' and 'label' parameters for better resampling control
@@ -16,7 +20,7 @@ History
 * Set default min_count to 50% of expected values when resampling data
 * Update neighbourhood checks to handle 15 min data and resampling
 
-0.3.2 (2025-01-22)
+0.3.2 (2026-01-22)
 ------------------
 * Bug fix, return only neighbours when calculating nearest neighbour ids
 

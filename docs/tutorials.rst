@@ -166,8 +166,8 @@ The code for that check looks like:
         data = pl.read_csv("hourly_rain_gauge_data_gauge_1.csv")
         metadata = pl.read_csv("rain_gauge_metadata.csv")
 
-        target_gauge_id = "rain_mm_gauge_1"
-        target_metadata = metadata.filter(pl.col("station_id") == target_gauge_id)
+        target_station_id = "rain_mm_gauge_1"
+        target_metadata = metadata.filter(pl.col("station_id") == target_station_id)
 
         rx1day_check = comparison_checks.check_hourly_exceedance_etccdi_rx1day(
              data,
@@ -273,11 +273,11 @@ See an example below where we assume all the CSVs look like example data 1 and t
         data = pl.read_csv("hourly_rain_gauge_network.csv")
         metadata = pl.read_csv("rain_gauge_metadata.csv")
 
-        target_gauge_id = "rain_mm_gauge_1"
+        target_station_id = "rain_mm_gauge_1"
 
         ten_nearest_neighbour_ids = get_ids_of_n_nearest_overlapping_neighbouring_gauges(
             metadata,
-            target_id=target_gauge_id,
+            target_id=target_station_id,
             distance_threshold=50,  # in km
             min_overlap_days=365*5,  # in days
             n_closest=10,  # number of neighbours to return
@@ -286,7 +286,7 @@ See an example below where we assume all the CSVs look like example data 1 and t
         )
 
         nearby_metadata = metadata.filter((pl.col('station_id').is_in(ten_nearest_neighbour_ids)) |
-                                        (pl.col('station_id') == target_gauge_id))
+                                        (pl.col('station_id') == target_station_id))
 
         nearby_rainfall_data_list = []
         for path in nearby_metadata['path']:
@@ -318,14 +318,14 @@ To do this we can use the nearby_metadata calculated above and the ``compute_km_
         from rainfallqc.utils.neighbourhood_utils import compute_km_distances_from_target_id
 
         # get nearest neighbour
-        nearby_gauge_distances = compute_km_distances_from_target_id(nearby_metadata, target_id=target_gauge_id, station_id_col='station_id')
-        nearest_gauge_id = nearby_gauge_distances.sort('distance')[0]['station_id'].item()
+        nearby_gauge_distances = compute_km_distances_from_target_id(nearby_metadata, target_id=target_station_id, station_id_col='station_id')
+        nearest_neighbour_id = nearby_gauge_distances.sort('distance')[0]['station_id'].item()
 
         # run QC check
         neighbour_correlation = neighbourhood_checks.check_neighbour_correlation(
                                         nearby_rainfall_data,
-                                        target_gauge_col=target_gauge_id,
-                                        nearest_neighbour=nearest_gauge_id
+                                        target_gauge_col=target_station_id,
+                                        nearest_neighbour=nearest_neighbour_id
                                         )
 
 
@@ -580,14 +580,16 @@ Please note that this makes very specific assumptions about the format of the da
 
 .. code-block:: python
     :caption: Code for loading neighbouring metadata and rainfall amount to a given target gauge ID
+    
+    from functools import reduce
 
-    def load_gauge_neighbour_metadata_and_data(target_gauge_id, metadata):
+    def load_gauge_neighbour_metadata_and_data(target_station_id, metadata):
         """
         Loads metadata and rainfall data from 10 nearest neighbours to a given target gauge
         """
         ten_nearest_neighbour_ids = get_ids_of_n_nearest_overlapping_neighbouring_gauges(
             metadata,
-            target_id=target_gauge_id,
+            target_id=target_station_id,
             distance_threshold=50,  # in km
             min_overlap_days=365*5,  # in days
             n_closest=10,  # number of neighbours to return
@@ -596,7 +598,7 @@ Please note that this makes very specific assumptions about the format of the da
         )
 
         nearby_metadata = metadata.filter((pl.col('station_id').is_in(ten_nearest_neighbour_ids)) |
-                                        (pl.col('station_id') == target_gauge_id))
+                                        (pl.col('station_id') == target_station_id))
 
         nearby_rainfall_data_list = []
         for path in nearby_metadata['path']:
@@ -637,19 +639,21 @@ My plan is to update this example after some feedback.
 
         # begin loop
         for station_id in metadata['station_id'].unique():
-            nearby_metadata, nearby_rainfall_data = load_gauge_neighbour_metadata_and_data(target_gauge_id=station_id, metadata=metadata)
+            nearby_metadata, nearby_rainfall_data = load_gauge_neighbour_metadata_and_data(target_station_id=station_id, metadata=metadata)
 
             target_gauge_col = station_id
 
             # get nearest neighbour
-            nearby_gauge_distances = compute_km_distances_from_target_id(nearby_metadata, target_id=target_gauge_id, station_id_col='station_id')
-            nearest_gauge_id = nearby_gauge_distances.sort('distance')[0]['station_id'].item()
-            neighbouring_gauge_col = nearest_gauge_id
+            nearby_gauge_distances = compute_km_distances_from_target_id(nearby_metadata, target_id=target_station_id, station_id_col='station_id')
+            if len(nearby_gauge_distances) == 0:
+                print(station_id, "no neighbours skipping")
+                continue
+            nearest_neighbour_id = nearby_gauge_distances.sort('distance')[0]['station_id'].item()
 
             # Update all the shared keyword arguments
             qc_kwargs["shared"]["rain_col"] = target_gauge_col
             qc_kwargs["shared"]["target_gauge_col"] = target_gauge_col
-            qc_kwargs["shared"]["nearest_neighbour"] = neighbouring_gauge_col
+            qc_kwargs["shared"]["nearest_neighbour"] = nearest_neighbour_id
             qc_kwargs["shared"]["list_of_nearest_stations"] = nearby_rainfall_data.columns[1:]
             qc_kwargs["shared"]["gauge_lat"] = nearby_metadata.filter(pl.col("station_id") == target_gauge_col)['latitude']
             qc_kwargs["shared"]["gauge_lon"] = nearby_metadata.filter(pl.col("station_id") == target_gauge_col)['longitude']
@@ -681,7 +685,7 @@ My plan is to update this example after some feedback.
             # Calculate summary statistics of flags
             all_flags['all_flags_by_row'] = all_flags['all_flags_by_row'].with_columns(
                 pl.when(
-                    pl.any_horizontal(pl.all().exclude(["time", target_gauge_col]).fill_null(0.0).map_elements(lambda col: col > 0, return_dtype=pl.Float32))
+                    pl.any_horizontal(pl.all().exclude(["time", target_gauge_col]).fill_null(0.0).map_elements(lambda col: col > 0))
                 )
                     .then(1)
                     .otherwise(0)
