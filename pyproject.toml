@@ -46,6 +46,7 @@ dev = [
     { include-group = "test" },
     { include-group = "typecheck" },
     { include-group = "analysis" },
+    "bump-my-version",
 ]
 lint = [
     "mypy",
