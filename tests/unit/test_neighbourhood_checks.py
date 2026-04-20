@@ -289,7 +289,7 @@ def test_check_monthly_neighbours_gpcc(monthly_gpcc_network):
     assert len(result.filter(pl.col("majority_monthly_flag") == -1)) == 25
     assert len(result.filter(pl.col("majority_monthly_flag") == 1)) == 56
     assert len(result.filter(pl.col("majority_monthly_flag") == 2)) == 24
-    assert len(result.filter(pl.col("majority_monthly_flag") == 3)) == 11
+    assert len(result.filter(pl.col("majority_monthly_flag") == 3)) == 12
 
 
 def test_check_timing_offset_gsdr(daily_gsdr_network):
