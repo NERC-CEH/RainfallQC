@@ -980,7 +980,9 @@ def flag_percentage_diff_of_neighbour(neighbour_data: pl.DataFrame, nearest_neig
 
     """
     return neighbour_data.with_columns(
-        pl.when((pl.col("perc_diff") <= -100.0))
+        pl.when(pl.col("perc_diff").is_null() | pl.col("perc_diff").is_nan())
+        .then(np.nan)
+        .when((pl.col("perc_diff") <= -100.0))
         .then(-3)
         .when((pl.col("perc_diff") <= -50.0) & (pl.col("perc_diff") > -100.0))
         .then(-2)

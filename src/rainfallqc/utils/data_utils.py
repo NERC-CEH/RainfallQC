@@ -422,7 +422,7 @@ def extract_positive_values_from_data(data: pl.DataFrame, cols_to_extract_from: 
         [
             "time",
             *[
-                pl.when(pl.col(col) >= 0).then(pl.col(col)).otherwise(None).alias(col)
+                pl.when(pl.col(col).is_null() | pl.col(col).is_nan()).then(np.nan).when(pl.col(col) >= 0).then(pl.col(col)).otherwise(None).alias(col)
                 for col in cols_to_extract_from
                 if col != "time"
             ],
