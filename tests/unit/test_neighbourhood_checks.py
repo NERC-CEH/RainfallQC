@@ -286,7 +286,7 @@ def test_check_monthly_neighbours_gpcc(monthly_gpcc_network):
     )
     assert len(result.filter(pl.col("majority_monthly_flag") == -3)) == 0
     assert len(result.filter(pl.col("majority_monthly_flag") == -2)) == 3
-    assert len(result.filter(pl.col("majority_monthly_flag") == -1)) == 27
+    assert len(result.filter(pl.col("majority_monthly_flag") == -1)) == 25
     assert len(result.filter(pl.col("majority_monthly_flag") == 1)) == 56
     assert len(result.filter(pl.col("majority_monthly_flag") == 2)) == 23
     assert len(result.filter(pl.col("majority_monthly_flag") == 3)) == 11

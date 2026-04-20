@@ -3459,7 +3459,7 @@ requires-dist = [
     { name = "netcdf4" },
     { name = "numpy" },
     { name = "pandas" },
-    { name = "polars", specifier = ">=1.30" },
+    { name = "polars" },
     { name = "poligrain" },
     { name = "pyarrow" },
     { name = "pypwsqc" },
