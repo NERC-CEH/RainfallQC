@@ -219,6 +219,8 @@ def test_check_monthly_neighbours(monthly_gsdr_network):
 
     assert len(result.filter(pl.col("majority_monthly_flag") == 1)) == 1
     assert len(result.filter(pl.col("majority_monthly_flag") == -1)) == 1
+    assert len(result.filter(pl.col("majority_monthly_flag") == -2)) == 0
+    assert len(result.filter(pl.col("majority_monthly_flag") == 2)) == 0
 
 
 def test_check_monthly_neighbours_hourly(hourly_gsdr_network):
@@ -282,7 +284,12 @@ def test_check_monthly_neighbours_gpcc(monthly_gpcc_network):
         n_neighbours_ignored=1,
         time_res="monthly",
     )
-    assert len(result.filter(pl.col("majority_monthly_flag") > 0)) == 300
+    assert len(result.filter(pl.col("majority_monthly_flag") == -3)) == 0
+    assert len(result.filter(pl.col("majority_monthly_flag") == -2)) == 3
+    assert len(result.filter(pl.col("majority_monthly_flag") == -1)) == 27
+    assert len(result.filter(pl.col("majority_monthly_flag") == 1)) == 56
+    assert len(result.filter(pl.col("majority_monthly_flag") == 2)) == 23
+    assert len(result.filter(pl.col("majority_monthly_flag") == 3)) == 11
 
 
 def test_check_timing_offset_gsdr(daily_gsdr_network):
