@@ -18,6 +18,11 @@ def test_compute_distance_from_target_id(gsdr_gauge_network):
     assert round(result.filter(pl.col("station_id") == "DE_02483")["distance"][0], 2) == 13.13
     assert len(result.filter(pl.col("station_id") == "DE_00310")) == 0.
 
+    with pytest.raises(AssertionError):
+        neighbourhood_utils.compute_km_distances_from_target_id(
+            gauge_network_metadata=gsdr_gauge_network, target_id="does_not_exist", station_id_col="station_id"
+        )
+
 
 def test_get_n_closest_neighbours(gsdr_gauge_network):
     neighbouring_gauges = neighbourhood_utils.compute_km_distances_from_target_id(
@@ -59,6 +64,16 @@ def test_compute_temporal_overlap_days_from_target_id(gsdr_gauge_network):
     )
     assert result.filter(pl.col("station_id") == "DE_02483")["overlap_days"][0] == 1825
     assert result.filter(pl.col("station_id") == "DE_00389")["overlap_days"][0] == 425
+
+    with pytest.raises(AssertionError):
+        result = neighbourhood_utils.compute_temporal_overlap_days_from_target_id(
+        gsdr_gauge_network,
+        target_id="does_not_exist",
+        station_id_col="station_id",
+        start_datetime_col="start_datetime",
+        end_datetime_col="end_datetime",
+    )
+
 
 
 def test_get_neighbours_with_min_overlap_days(gsdr_gauge_network):

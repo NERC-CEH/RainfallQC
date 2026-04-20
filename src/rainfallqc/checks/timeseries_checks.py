@@ -1045,7 +1045,9 @@ def flag_dry_spell_duration(
     """
     # May need to rethink how this is done uniformly (as could use day check)
     dry_spell_lengths_flags = dry_spell_lengths.with_columns(
-        pl.when(pl.col("dry_spell_length") / DAILY_DIVIDING_FACTOR[time_res] >= ref_dry_spell_length * 1.5)
+        pl.when(pl.col("dry_spell_length").is_null() | pl.col("dry_spell_length").is_nan())
+        .then(np.nan)
+        .when(pl.col("dry_spell_length") / DAILY_DIVIDING_FACTOR[time_res] >= ref_dry_spell_length * 1.5)
         .then(4)
         .when(pl.col("dry_spell_length") / DAILY_DIVIDING_FACTOR[time_res] >= ref_dry_spell_length * 1.33)
         .then(3)

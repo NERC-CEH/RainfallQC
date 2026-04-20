@@ -256,6 +256,10 @@ def compute_temporal_overlap_days_from_target_id(
     """
     # 1. Get target station and start and end date
     target_station = gauge_network_metadata.filter(pl.col(station_id_col) == target_id)
+    assert len(target_station) > 0, (
+        f"gauge_network_metadata does not contain value: '{target_id}' in column '{station_id_col}'"
+    )
+
     start_1, end_1 = (
         target_station[start_datetime_col].item(),
         target_station[end_datetime_col].item(),
@@ -328,6 +332,9 @@ def compute_km_distances_from_target_id(
     """
     # 1. Get target station lat and lon
     target_station = gauge_network_metadata.filter(pl.col(station_id_col) == target_id)
+    assert len(target_station) > 0, (
+        f"gauge_network_metadata does not contain value: '{target_id}' in column '{station_id_col}'"
+    )
     target_latlon = (
         target_station["latitude"].item(),
         target_station["longitude"].item(),
