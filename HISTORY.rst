@@ -4,6 +4,7 @@ History
 
 0.4.3 (2026-04-20)
 ------------------
+* Fix bug where values being flagged when np.nan
 * Fix bug in neighbourhood_utils if no station id in metadata
 * Applies to compute_km_distances_from_target_id and compute_temporal_overlap_days_from_target_id 
 
