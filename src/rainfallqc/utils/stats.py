@@ -126,7 +126,9 @@ def filter_out_rain_world_records(data: pl.DataFrame, target_gauge_col: str, tim
     rainfall_world_records = get_rainfall_world_records()
     # 2. Filter out world records
     data_not_wr = data.with_columns(
-        pl.when(pl.col(target_gauge_col).is_null() | pl.col(target_gauge_col).is_nan()).then(np.nan).when(pl.col(target_gauge_col) > rainfall_world_records[time_res])
+        pl.when(pl.col(target_gauge_col).is_null() | pl.col(target_gauge_col).is_nan())
+        .then(np.nan)
+        .when(pl.col(target_gauge_col) > rainfall_world_records[time_res])
         .then(np.nan)
         .otherwise(pl.col(target_gauge_col))
         .alias(target_gauge_col)
