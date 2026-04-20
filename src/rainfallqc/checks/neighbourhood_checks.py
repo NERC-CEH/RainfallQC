@@ -1183,7 +1183,9 @@ def add_wet_flags_to_data(
 
     """
     return neighbour_data_diff.with_columns(
-        pl.when(
+        pl.when(pl.col(target_gauge_col).is_null() | pl.col(target_gauge_col).is_nan())
+        .then(np.nan)
+        .when(
             (pl.col(target_gauge_col) >= wet_threshold)
             & (pl.col(f"diff_{nearest_neighbour}") <= expon_percentiles[0.95])
         )
