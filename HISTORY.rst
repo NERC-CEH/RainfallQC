@@ -2,6 +2,10 @@
 History
 =======
 
+0.4.4 (2026-??-??)
+------------------
+* Add IntenseQC rulebase-only framework
+
 0.4.3 (2026-04-20)
 ------------------
 * Fix bug where values being flagged when np.nan
