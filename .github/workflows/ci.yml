@@ -50,6 +50,15 @@ jobs:
         uses: astral-sh/ruff-action@v3
         with:
           args: "format --check"
+      - name: Mirror to Codeberg
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - uses: yesolutions/mirror-action@master
+        with:
+          REMOTE: 'https://codeberg.org/CEH-HOTDOG/RainfallQC.git'
+          GIT_USERNAME: Thomasjkeel
+          GIT_PASSWORD: ${{ secrets.GIT_PASSWORD }}
       # - name: Coveralls GitHub Action
       #   uses: coverallsapp/github-action@648a8eb78e6d50909eff900e4ec85cab4524a45b # v2.3.6
       #   with:
