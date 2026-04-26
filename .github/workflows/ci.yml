@@ -59,7 +59,3 @@ jobs:
           REMOTE: 'https://codeberg.org/CEH-HOTDOG/RainfallQC.git'
           GIT_USERNAME: Thomasjkeel
           GIT_PASSWORD: ${{ secrets.GIT_PASSWORD }}
-      # - name: Coveralls GitHub Action
-      #   uses: coverallsapp/github-action@648a8eb78e6d50909eff900e4ec85cab4524a45b # v2.3.6
-      #   with:
-      #     path-to-lcov: coverage.xml
