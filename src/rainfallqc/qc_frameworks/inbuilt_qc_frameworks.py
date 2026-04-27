@@ -75,3 +75,40 @@ PYPWSQC = {
 }
 
 INBUILT_QC_FRAMEWORKS = {"intenseqc": INTENSE_QC, "intenseqc_rulebase_only": INTENSE_RULEBASE_QC, "pypwsqc": PYPWSQC}
+
+
+# all checks that are computed as summary of overall data or once per year values
+NON_ROWWISE_QC_CHECKS = ["QC1", "QC2", "QC3", "QC4", "QC5", "QC7", "QC8", "QC9", "QC21", "QC22", "QC23"]
+NON_ROWWISE_QC_CHECKS_NAMES = [
+    "percentiles_zero",
+    "k-largest_zero",
+    "days_of_week",
+    "hours_of_day",
+    "intermittency",
+    "min_val_change",
+    "r99p",
+    "prcptot",
+    "timings_offset",
+    "affinity_index",
+    "pearson_corr",
+]
+NON_ROWWISE_QC_CONVERTER = dict(zip(NON_ROWWISE_QC_CHECKS, NON_ROWWISE_QC_CHECKS_NAMES, strict=True))
+
+
+def get_qc_name_from_qc_key(qc_key: str) -> str:
+    """
+    Return the name of a QC check.
+
+    Parameters
+    ----------
+    qc_key:
+        QC check ID
+
+    Returns
+    -------
+    qc_name:
+        QC check name
+
+    """
+    if qc_key in NON_ROWWISE_QC_CONVERTER.keys():
+        return NON_ROWWISE_QC_CONVERTER[qc_key]

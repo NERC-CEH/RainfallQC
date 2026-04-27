@@ -539,6 +539,7 @@ So first, we need to decide which checks will run, and which of those are row-wi
 
 .. code-block:: python
     :caption: Set up QC framework to loop over
+    from rainfallqc.qc_frameworks.inbuilt_qc_frameworks import NON_ROWWISE_QC_CHECKS, NON_ROWWISE_QC_CONVERTER
 
     DATA_RESOLUTION = 0.2
     MIN_N_NEIGHBOURS_FOR_CALC = 8
@@ -567,12 +568,9 @@ So first, we need to decide which checks will run, and which of those are row-wi
         }
     }
 
-    ## all checks that are computed as summary of overall data or once per year values
-    non_rowwise_checks = ['QC1', 'QC2', 'QC3', 'QC4', 'QC5', 'QC7', 'QC8', 'QC9', 'QC21', 'QC22', 'QC23']
-    non_rowwise_check_names = ['percentiles_zero', 'k-largest_zero', 'days_of_week', 'hours_of_day',
-                            'intermittency', 'min_val_change', 'r99p', 'prcptot','timings_offset',
-                            'affinity_index', 'pearson_corr']
-    non_rowwise_checks_converter = dict(zip(non_rowwise_checks, non_rowwise_check_names))
+    ## all checks that are computed as summary of overall data or once per year (so not one flag for every data point)
+    non_rowwise_checks = NON_ROWWISE_QC_CHECKS
+    non_rowwise_checks_converter = NON_ROWWISE_QC_CONVERTER
 
 
 We will also need a function/class that will load in our nearby_metadata for each gauge (based on code from Example 3).
