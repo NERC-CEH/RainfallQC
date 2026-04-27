@@ -537,9 +537,9 @@ Below, we give an example of storing a summary of the QC runs as the number of r
 Some of the checks from RainfallQC do not return rows, but instead numbers or lists.
 So first, we need to decide which checks will run, and which of those are row-wise.
 
-
 .. code-block:: python
     :caption: Set up QC framework to loop over
+
     from rainfallqc.qc_frameworks.inbuilt_qc_frameworks import NON_ROWWISE_QC_CHECKS, NON_ROWWISE_QC_CONVERTER
 
     DATA_RESOLUTION = 0.2
