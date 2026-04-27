@@ -2,6 +2,10 @@
 History
 =======
 
+0.5.1 (2026-04-27)
+------------------
+* *Hotfix*: add space between imports so codeblock renders
+
 0.5.0 (2026-04-27)
 ------------------
 * Mirror to Codeberg
