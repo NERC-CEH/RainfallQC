@@ -2,7 +2,12 @@
 History
 =======
 
-0.4.4 (2026-??-??)
+0.5.0 (2026-04-27)
+------------------
+* Mirror to Codeberg
+* Add get_qc_name_from_qc_key to simplify getting QC names
+
+0.4.4 (2026-04-24)
 ------------------
 * Add IntenseQC rulebase-only framework
 
