@@ -1,0 +1,32 @@
+name: Mirror to Codeberg
+on:
+  push:
+    branches:
+      - main
+      - dev
+  pull_request:
+    branches:
+      - main
+      - dev
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  build:
+    name: continuous-integration
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [ "3.13" ]
+    steps:
+    - name: Mirror to Codeberg
+      uses: actions/checkout@v3
+      with:
+        fetch-depth: 0
+    - uses: yesolutions/mirror-action@master
+      with:
+        REMOTE: 'https://codeberg.org/CEH-HOTDOG/RainfallQC.git'
+        GIT_USERNAME: Thomasjkeel
+        GIT_PASSWORD: ${{ secrets.GIT_PASSWORD }}

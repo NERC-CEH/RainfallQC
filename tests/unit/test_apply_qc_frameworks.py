@@ -7,7 +7,7 @@ import polars as pl
 import pytest
 
 from rainfallqc import gauge_checks
-from rainfallqc.qc_frameworks import apply_qc_framework
+from rainfallqc.qc_frameworks import apply_qc_framework, inbuilt_qc_frameworks
 
 TARGET_GPCC_ID = "tw_2483"
 TARGET_GSDR_ID = "DE_00310"
@@ -213,3 +213,9 @@ def test_apply_custom_framework(daily_gpcc_network):
     assert len(result.keys()) == 2
     assert len(result["QC7_pnt2"]) == 64
     assert len(result["QC7_pnt1"]) == 0
+
+
+def test_get_qc_name_from_qc_key():
+    assert inbuilt_qc_frameworks.get_qc_name_from_qc_key("QC2") == "k-largest_zero"
+    assert inbuilt_qc_frameworks.get_qc_name_from_qc_key("test") is None
+ 
