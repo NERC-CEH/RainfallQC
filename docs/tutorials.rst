@@ -568,7 +568,7 @@ So first, we need to decide which checks will run, and which of those are row-wi
         }
     }
 
-    ## all checks that are computed as summary of overall data or once per year values (so not one flag for every data point)
+    ## all checks that are computed as summary of overall data or once per year (so not one flag for every data point)
     non_rowwise_checks = NON_ROWWISE_QC_CHECKS
     non_rowwise_checks_converter = NON_ROWWISE_QC_CONVERTER
 
