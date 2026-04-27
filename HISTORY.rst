@@ -5,7 +5,7 @@ History
 0.5.0 (2026-04-27)
 ------------------
 * Mirror to Codeberg
-* Add get_qc_name_from_qc_key to simplify getting QC names
+* Add get_qc_name_from_qc_key to simplify getting QC names (and update tutorials.rst)
 
 0.4.4 (2026-04-24)
 ------------------
