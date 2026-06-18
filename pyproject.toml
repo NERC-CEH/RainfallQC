@@ -46,6 +46,7 @@ dev = [
     { include-group = "test" },
     { include-group = "typecheck" },
     { include-group = "analysis" },
+    { include-group = "docs" },
     "bump-my-version",
 ]
 lint = [
@@ -64,9 +65,16 @@ analysis = [
     "jupyterlab"
 ]
 docs = [
-  "sphinx",
-  "sphinx-copybutton",
-  "sphinx-rtd-theme"
+    "sphinx",
+    "shibuya>=2025.9.25",
+    "sphinx-copybutton",
+    "sphinx-design>=0.6.1",
+    "sphinx-iconify>=0.2.1",
+    "sphinx-autodoc-typehints",
+    "sphinx-autobuild",
+    "sphinx-contributors>=0.2.7",
+    "myst-parser",
+    "numpydoc",
 ]
 
 [project.urls]
