@@ -73,12 +73,6 @@ build:
 release:
     uv run scripts/release.py
 
-# Remove all build, test, coverage and Python artifacts
-clean:
-	clean-build
-	clean-pyc
-	clean-test
-
 # Remove build artifacts
 clean-build:
 	rm -fr build/
@@ -100,3 +94,6 @@ clean-test:
 	rm -f .coverage.*
 	rm -fr htmlcov/
 	rm -fr .pytest_cache
+
+# Remove all build, test, coverage and Python artifacts
+clean: clean-build clean-pyc clean-test
