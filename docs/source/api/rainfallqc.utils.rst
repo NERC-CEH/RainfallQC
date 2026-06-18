@@ -1,3 +1,6 @@
+.. _rainfallqc_utils_api:
+
+=============
 RainfallQC Utils
 ================
 

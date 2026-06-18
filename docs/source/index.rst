@@ -45,7 +45,7 @@
 
 .. container:: buttons
 
-    `Docs <installation.html>`_
+    `Docs <intro.html>`_
     `Usage <usage.html>`_
     `Codeberg <https://codeberg.org/CEH-HOTDOG/RainfallQC>`_
     `GitHub <https://github.com/NERC-CEH/RainfallQC>`_
@@ -127,8 +127,17 @@ This project is licensed under the `GNU GPL v3.0 <https://github.com/NERC-CEH/Ra
    :caption: User Guide
    :numbered:
 
-   tutorials
-   api
+   tutorials/tutorials
+
+.. toctree::
+    :hidden:
+    :maxdepth: 1
+    :caption: API reference
+
+    api/rainfallqc.checks
+    api/rainfallqc.utils
+    api/rainfallqc.qc_frameworks
+    api/rainfallqc.core
 
 .. toctree::
     :hidden:

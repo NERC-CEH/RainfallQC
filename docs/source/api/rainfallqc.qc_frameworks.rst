@@ -1,3 +1,6 @@
+.. _qc_framework_api:
+
+=============
 QC Frameworks
 =============
 
