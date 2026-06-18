@@ -39,8 +39,8 @@ Therefore, we have created a table that shows which checks are suitable for whic
 and which can be applied after aggregating data to a coarser temporal resolution.
 
 
-.. image:: https://raw.githubusercontent.com/NERC-CEH/RainfallQC/main/docs/images/qc_applicability_table.png
+.. image:: _static/qc_applicability_table.png
    :align: center
-   :height: 300px
-   :width: 200px
+   :height: 600px
+   :width: 500px
    :alt: Temporal applicability QC table

@@ -2,6 +2,9 @@
 # https://www.sphinx-doc.org/en/master/usage/configuration.html
 
 import datetime
+import os
+import sys
+
 from importlib.metadata import version as get_version
 
 # General information about the project.
@@ -40,6 +43,7 @@ exclude_patterns = ["_build", "Thumbs.db", ".DS_Store", "**.ipynb_checkpoints"]
 autosummary_generate = True
 autodoc_typehints = "description"
 autoclass_content = "class"
+viewcode_follow_imported_members = True
 
 # The master toctree document.
 master_doc = "index"
@@ -80,8 +84,8 @@ html_theme_options = {
     ],
 }
 
-html_logo = "_static/rainfallqc_logo_wide.png"
-html_favicon = "_static/rainfallqc_logo_wide.png"
+html_logo = "_static/rainfallqc_logo_grey.png"
+html_favicon = "_static/rainfallqc_logo_grey.png"
 
 
 # -- Napoleon settings -------------------------------------------------------

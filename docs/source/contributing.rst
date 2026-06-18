@@ -1,1 +1,6 @@
-.. include:: ../CONTRIBUTING.rst
+============
+Contributing
+============
+
+.. include:: ../../CONTRIBUTING.rst
+    :start-line: 6

@@ -728,7 +728,7 @@ QC check. That check will be ``check_min_val_change`` which flags when there is 
 
 .. figure:: https://thomasjkeel.github.io/UK-Rain-Gauge-Network/example_images/min_val_change.png
    :align: center
-   :height: 300px
+   :height: 300 px
    :width: 350 px
 
    **Figure 5.** Minimum non-zero rainfall amounts each year.

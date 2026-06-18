@@ -1,20 +1,32 @@
 API
 ===
 
-Subpackages
+.. currentmodule:: rainfallqc
+
+Sub-modules
 -----------
 
-.. toctree::
-   :maxdepth: 4
+.. autosummary::
+   :toctree: generated
+   :recursive:
 
    rainfallqc.checks
-   rainfallqc.qc_frameworks
+
+.. autosummary::
+   :toctree: generated
+   :recursive:
+
    rainfallqc.utils
 
-Module contents
----------------
+.. autosummary::
+   :toctree: generated
+   :recursive:
 
-.. automodule:: rainfallqc
-   :members:
-   :show-inheritance:
-   :undoc-members:
+   rainfallqc.qc_frameworks
+
+.. autosummary::
+   :toctree: generated
+   :recursive:
+
+   rainfallqc.core
+

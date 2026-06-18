@@ -1,10 +1,7 @@
-rainfallqc.utils package
-========================
+RainfallQC Utils
+================
 
-Submodules
-----------
-
-rainfallqc.utils.data\_readers module
+Data readers
 -------------------------------------
 
 .. automodule:: rainfallqc.utils.data_readers
@@ -12,42 +9,34 @@ rainfallqc.utils.data\_readers module
    :show-inheritance:
    :undoc-members:
 
-rainfallqc.utils.data\_utils module
------------------------------------
+Data utils
+----------
 
 .. automodule:: rainfallqc.utils.data_utils
    :members:
    :show-inheritance:
    :undoc-members:
 
-rainfallqc.utils.neighbourhood\_utils module
---------------------------------------------
+Neighbourhood utils
+-------------------
 
 .. automodule:: rainfallqc.utils.neighbourhood_utils
    :members:
    :show-inheritance:
    :undoc-members:
 
-rainfallqc.utils.spatial\_utils module
---------------------------------------
+Spatial utils
+-------------
 
 .. automodule:: rainfallqc.utils.spatial_utils
    :members:
    :show-inheritance:
    :undoc-members:
 
-rainfallqc.utils.stats module
------------------------------
+Stats utils
+-----------
 
 .. automodule:: rainfallqc.utils.stats
-   :members:
-   :show-inheritance:
-   :undoc-members:
-
-Module contents
----------------
-
-.. automodule:: rainfallqc.utils
    :members:
    :show-inheritance:
    :undoc-members:

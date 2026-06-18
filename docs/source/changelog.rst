@@ -1,1 +1,6 @@
-.. include:: ../CHANGELOG.rst
+=========
+Changelog
+=========
+
+.. include:: ../../CHANGELOG.rst
+    :start-line: 4

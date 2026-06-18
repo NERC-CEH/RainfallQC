@@ -6,7 +6,7 @@
 .. container::
     :name: home-head
 
-    .. image:: /_static/rainfallqc_logo_wide.png
+    .. image:: /_static/rainfallqc_logo_grey.png
         :alt: RainfallQC
         :width: 350
     
@@ -75,16 +75,13 @@ What is RainfallQC?
 ===================
 
 RainfallQC is a package for running quality control (QC) on rain gauge data in a flexible, user-driven way.
-
-At its core, the package offers:
+At its core, the package offers:  
 
 - 27 QC checks for rainfall data as of v0.2.5 (25 from `IntenseQC <https://www.sciencedirect.com/science/article/pii/S1364815221002127>`_ and 2 from `pyPWSQC <https://doi.org/10.5281/zenodo.4501919>`_)
 - Customizable parameters – adjust thresholds, streak or accumulation lengths, and distances to neighboring gauges
 - A modular QC framework – users can select which QC methods to apply, and configure them according to their project’s requirements
 
-This approach allows you to build a tailored QC pipeline: include only the checks you need, set thresholds that match your research purposes, and run consistent, reproducible quality control.
-It is designed to help everyone, from individual researchers to industrial-scale users, apply standardised QC checks to rainfall observations 
-
+It is designed to help everyone, from individual researchers to industrial-scale users, apply standardised QC checks to rainfall observations. 
 RainfallQC is built on top of `Polars <https://docs.pola.rs/>`_, which handles efficient DataFrame processes (like Pandas, but quicker).
 
 .. container:: image-row
@@ -144,26 +141,3 @@ This project is licensed under the `GNU GPL v3.0 <https://github.com/NERC-CEH/Ra
 
 
 .. Current version: |release|
-
-Welcome to RainfallQC's documentation!
-======================================
-
-RainfallQC is a package for running quality control (QC) on rain gauge data in a flexible, user-driven way.
-
-.. toctree::
-   :maxdepth: 2
-   :caption: Getting Started
-   :numbered:
-
-   intro
-   installation
-   quickstart
-
-
-
-
-Indices and tables
-==================
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`

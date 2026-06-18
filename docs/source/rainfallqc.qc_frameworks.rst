@@ -1,29 +1,18 @@
-rainfallqc.qc\_frameworks package
-=================================
+QC Frameworks
+=============
 
-Submodules
-----------
-
-rainfallqc.qc\_frameworks.apply\_qc\_framework module
------------------------------------------------------
+Apply QC Framework
+------------------
 
 .. automodule:: rainfallqc.qc_frameworks.apply_qc_framework
    :members:
    :show-inheritance:
    :undoc-members:
 
-rainfallqc.qc\_frameworks.inbuilt\_qc\_frameworks module
---------------------------------------------------------
+In-built QC Frameworks
+----------------------
 
 .. automodule:: rainfallqc.qc_frameworks.inbuilt_qc_frameworks
-   :members:
-   :show-inheritance:
-   :undoc-members:
-
-Module contents
----------------
-
-.. automodule:: rainfallqc.qc_frameworks
    :members:
    :show-inheritance:
    :undoc-members:

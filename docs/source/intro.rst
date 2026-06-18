@@ -25,7 +25,7 @@ The *RainfallQC* package breaks down the QC checks into four distinct types:
 
 These different types of rainfall checks are either rainfall-specific or not and need different amounts of data to run (Figure 1).
 
-.. figure:: images/rainfall_qc_quadrant.png
+.. figure:: _static/rainfall_qc_quadrant.png
    :align: center
    :alt: rainfallQC quadrant
 

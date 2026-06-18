@@ -1,53 +1,41 @@
-rainfallqc.checks package
-=========================
+All QC Checks
+=============
 
-Submodules
-----------
+Gauge QC Checks
+---------------
+.. automodule:: rainfallqc.checks.gauge_checks
+   :members:
+   :show-inheritance:
+   :undoc-members:
 
-rainfallqc.checks.comparison\_checks module
--------------------------------------------
+Comparison QC Checks
+--------------------
 
 .. automodule:: rainfallqc.checks.comparison_checks
    :members:
    :show-inheritance:
    :undoc-members:
 
-rainfallqc.checks.gauge\_checks module
---------------------------------------
-
-.. automodule:: rainfallqc.checks.gauge_checks
-   :members:
-   :show-inheritance:
-   :undoc-members:
-
-rainfallqc.checks.neighbourhood\_checks module
-----------------------------------------------
-
-.. automodule:: rainfallqc.checks.neighbourhood_checks
-   :members:
-   :show-inheritance:
-   :undoc-members:
-
-rainfallqc.checks.timeseries\_checks module
--------------------------------------------
+Timeseries QC checks
+--------------------
 
 .. automodule:: rainfallqc.checks.timeseries_checks
    :members:
    :show-inheritance:
    :undoc-members:
 
-rainfallqc.checks.pypwsqc\_filters module
--------------------------------------------
+Neighbourhood QC Checks
+-----------------------
 
-.. automodule:: rainfallqc.checks.pypwsqc_filters
+.. automodule:: rainfallqc.checks.neighbourhood_checks
    :members:
    :show-inheritance:
    :undoc-members:
 
-Module contents
+PyPWSqc Filters
 ---------------
 
-.. automodule:: rainfallqc.checks
+.. automodule:: rainfallqc.checks.pypwsqc_filters
    :members:
    :show-inheritance:
    :undoc-members:
