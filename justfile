@@ -61,7 +61,7 @@ docs-serve:
 
 # Build docs (strict mode, fails on warnings)
 docs-build:
-	$(MAKE) -C docs html
+	make -C docs html
 
 # Build the project, useful for checking that packaging is correct
 build:
