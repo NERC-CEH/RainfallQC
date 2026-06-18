@@ -1,1 +1,1 @@
-"""Core functions."""
+"""Core QC registry and utils."""

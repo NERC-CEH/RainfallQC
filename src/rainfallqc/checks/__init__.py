@@ -1,1 +1,1 @@
-"""All RainfallQC's quality checks."""
+"""Quality control checks."""

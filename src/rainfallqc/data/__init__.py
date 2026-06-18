@@ -1,1 +1,1 @@
-"""Data."""
+"""Data used for QC checks."""
