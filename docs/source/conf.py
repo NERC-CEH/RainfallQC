@@ -8,7 +8,7 @@ from importlib.metadata import version as get_version
 project = "RainfallQC"
 copyright = f"{datetime.datetime.now().year}, Tom Keel"
 author = "Tom Keel"
-release = get_version("rainfall_gridder")
+release = get_version("rainfallqc")
 version = release
 
 extensions = [
