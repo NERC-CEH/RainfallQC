@@ -78,9 +78,9 @@ docs = [
 ]
 
 [project.urls]
-bugs = "https://github.com/thomasjkeel/RainfallQC/issues"
-changelog = "https://github.com/thomasjkeel/RainfallQC/blob/master/changelog.md"
-homepage = "https://github.com/thomasjkeel/RainfallQC"
+bugs = "https://github.com/NERC-CEH/RainfallQC/issues"
+changelog = "https://github.com/NERC-CEH/RainfallQC/blob/main/CHANGELOG.rst"
+homepage = "https://github.com/NERC-CEH/RainfallQC"
 
 [tool]
 
