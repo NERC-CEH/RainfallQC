@@ -1,45 +1,21 @@
 .. _rainfallqc_utils_api:
 
-=============
+================
 RainfallQC Utils
 ================
 
-Data readers
--------------------------------------
+.. currentmodule:: rainfallqc
 
-.. automodule:: rainfallqc.utils.data_readers
-   :members:
-   :show-inheritance:
-   :undoc-members:
+.. automodule:: rainfallqc.utils
+    :no-members:
 
-Data utils
-----------
+.. autosummary::
+    :nosignatures:
+    :toctree: generated
+    :recursive:
 
-.. automodule:: rainfallqc.utils.data_utils
-   :members:
-   :show-inheritance:
-   :undoc-members:
-
-Neighbourhood utils
--------------------
-
-.. automodule:: rainfallqc.utils.neighbourhood_utils
-   :members:
-   :show-inheritance:
-   :undoc-members:
-
-Spatial utils
--------------
-
-.. automodule:: rainfallqc.utils.spatial_utils
-   :members:
-   :show-inheritance:
-   :undoc-members:
-
-Stats utils
------------
-
-.. automodule:: rainfallqc.utils.stats
-   :members:
-   :show-inheritance:
-   :undoc-members:
+    rainfallqc.utils.data_readers
+    rainfallqc.utils.data_utils
+    rainfallqc.utils.neighbourhood_utils
+    rainfallqc.utils.spatial_utils
+    rainfallqc.utils.stats

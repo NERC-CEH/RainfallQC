@@ -4,7 +4,14 @@
 Core functions
 ==============
 
-.. automodule:: rainfallqc.core.all_qc_checks
-   :members:
-   :show-inheritance:
-   :undoc-members:
+.. currentmodule:: rainfallqc
+
+.. automodule:: rainfallqc.core
+    :no-members:
+
+.. autosummary::
+    :nosignatures:
+    :toctree: generated
+    :recursive:
+
+    rainfallqc.core.all_qc_checks

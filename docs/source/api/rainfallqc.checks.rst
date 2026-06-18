@@ -1,44 +1,21 @@
 .. _checks_api:
 
-=============
-All QC Checks
-=============
-
+===============
 Gauge QC Checks
----------------
-.. automodule:: rainfallqc.checks.gauge_checks
-   :members:
-   :show-inheritance:
-   :undoc-members:
+===============
 
-Comparison QC Checks
---------------------
+.. currentmodule:: rainfallqc
 
-.. automodule:: rainfallqc.checks.comparison_checks
-   :members:
-   :show-inheritance:
-   :undoc-members:
+.. automodule:: rainfallqc.checks
+    :no-members:
 
-Timeseries QC checks
---------------------
+.. autosummary::
+    :nosignatures:
+    :toctree: generated
+    :recursive:
 
-.. automodule:: rainfallqc.checks.timeseries_checks
-   :members:
-   :show-inheritance:
-   :undoc-members:
-
-Neighbourhood QC Checks
------------------------
-
-.. automodule:: rainfallqc.checks.neighbourhood_checks
-   :members:
-   :show-inheritance:
-   :undoc-members:
-
-PyPWSqc Filters
----------------
-
-.. automodule:: rainfallqc.checks.pypwsqc_filters
-   :members:
-   :show-inheritance:
-   :undoc-members:
+    rainfallqc.checks.gauge_checks
+    rainfallqc.checks.comparison_checks
+    rainfallqc.checks.timeseries_checks
+    rainfallqc.checks.neighbourhood_checks
+    rainfallqc.checks.pypwsqc_filters
