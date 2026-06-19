@@ -1,0 +1,32 @@
+name: Pipeline
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+      - dev
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+  pages: write
+  id-token: write
+
+
+jobs:
+
+  build-docs:
+    uses: NERC-CEH/dri-cicd/.github/workflows/build-docs.yml@main
+    with:
+      use_uv: true
+      pages_artifact_name: pages-artifact
+
+  deploy-docs:
+    needs: [build-docs]
+    if: github.ref == 'refs/heads/main'
+    uses: NERC-CEH/dri-cicd/.github/workflows/deploy-docs.yml@main
+    with:
+      pages_artifact_name: pages-artifact
