@@ -128,8 +128,8 @@ This project is licensed under the `GNU GPL v3.0 <https://github.com/NERC-CEH/Ra
    :numbered:
 
    tutorials/overview
-   tutorials/run_qc_checks
-   tutorials/run_a_qc_framework
+   tutorials/the_basics
+   tutorials/running_multiple_qc_checks
    tutorials/working_with_xarray
    tutorials/run_a_sensitivity_analysis
 

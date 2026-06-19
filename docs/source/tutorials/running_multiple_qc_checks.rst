@@ -1,6 +1,6 @@
-==================
-Run a QC framework
-==================
+==========================
+Running multiple QC checks
+==========================
 
 .. contents::
    :local:
