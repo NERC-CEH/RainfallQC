@@ -5,16 +5,20 @@ Quick Start
 ============
 The easiest way to start using the package is to install it using :code:`pip install rainfallqc`.
 
-.. note::
-    To use `RainfallQC` in a project, the syntax will be like:
+.. tab-set::
+    :class: outline padded-tabs
 
-    .. code-block:: python
+    .. tab-item:: :iconify:`devicon:python` python
 
-        import polars as pl
-        import rainfallqc.gauge_checks
+        To use `RainfallQC` in a project, a `polars dataframe <https://docs.pola.rs/api/python/stable/reference/dataframe/index.html/>`_ can be directly input to the QC checks like:
+                
+        .. code-block:: python
 
-        data = pl.read_csv("path/to/your/rain_gauge_data.csv")
-        flags = rainfallqc.gauge_checks.check_intermittency(data, target_gauge_col="rain_mm")
+            import polars as pl
+            import rainfallqc.gauge_checks
+
+            data = pl.read_csv("path/to/your/rain_gauge_data.csv")
+            flags = rainfallqc.gauge_checks.check_intermittency(data, target_gauge_col="rain_mm")
 
 
 All quality control checks in the RainfallQC package begin with ``check_``

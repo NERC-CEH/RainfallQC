@@ -10,42 +10,35 @@ Stable release
 
 To install RainfallQC, run this command in your terminal:
 
-.. code-block:: console
+.. tab-set::
+    :class: outline padded-tabs
 
-    $ pip install rainfallqc
+    .. tab-item:: :iconify:`devicon:pypi` pip
+                
+        .. code-block:: bash
 
-This is the preferred method to install RainfallQC, as it will always install the most recent stable release.
+            pip install rainfallqc
 
-If you don't have `pip`_ installed, this `Python installation guide`_ can guide
-you through the process.
+    .. tab-item:: :iconify:`material-icon-theme:uv` uv
+
+        Follow `uv installation instructions <https://docs.astral.sh/uv/getting-started/installation/>`_ if you
+        haven't already.
+
+        .. code-block:: bash
+
+            uv pip install rainfallqc
+            
+    .. tab-item:: :iconify:`devicon:github` From Source
+
+        .. code-block:: bash
+
+            git clone git://github.com/NERC-CEH/RainfallQC
+            cd RainfallQC
+            uv sync
+
+
+
+
 
 .. _pip: https://pip.pypa.io
 .. _Python installation guide: http://docs.python-guide.org/en/latest/starting/installation/
-
-
-From sources
-------------
-
-The sources for RainfallQC can be downloaded from the `Github repo`_.
-
-You can either clone the public repository:
-
-.. code-block:: console
-
-    $ git clone git://github.com/NERC-CEH/RainfallQC
-
-Or download the `tarball`_:
-
-.. code-block:: console
-
-    $ curl -OJL https://github.com/NERC-CEH/RainfallQC/tarball/master
-
-Once you have a copy of the source, you can install it with:
-
-.. code-block:: console
-
-    $ python setup.py install
-
-
-.. _Github repo: https://github.com/NERC-CEH/RainfallQC
-.. _tarball: https://github.com/NERC-CEH/RainfallQC/tarball/master
