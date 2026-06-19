@@ -1,4 +1,4 @@
-name: Pipeline
+name: Deploy docs
 
 on:
   pull_request:
