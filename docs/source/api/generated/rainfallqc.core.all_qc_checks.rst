@@ -5,3 +5,17 @@
    :members:
    :undoc-members:
    :show-inheritance:
+
+
+
+
+Functions
+---------
+
+.. autosummary::
+
+
+   get_columns_in_kwargs
+
+   qc_check
+

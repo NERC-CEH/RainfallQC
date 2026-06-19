@@ -40,7 +40,7 @@ templates_path = ["_templates"]
 exclude_patterns = ["_build", "Thumbs.db", ".DS_Store", "**.ipynb_checkpoints"]
 
 # -- Autodoc / autosummary ---------------------------------------------------
-autosummary_generate = True
+autosummary_generate = False
 autodoc_typehints = "description"
 autoclass_content = "class"
 viewcode_follow_imported_members = True

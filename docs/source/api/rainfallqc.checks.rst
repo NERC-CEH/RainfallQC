@@ -1,8 +1,8 @@
 .. _checks_api:
 
-===============
-Gauge QC Checks
-===============
+=========
+QC Checks
+=========
 
 .. currentmodule:: rainfallqc
 
