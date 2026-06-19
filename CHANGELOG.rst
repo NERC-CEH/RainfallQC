@@ -2,9 +2,10 @@
 Changelog
 =========
 
-0.6.0 (2026-04-27)
+1.0.0 (2026-04-27)
 ------------------
 * Overhaul docs to new FDRI style
+* Make changes to some of the wording in the docs
 * Add better sub-modules docstrings to each __init__.py file
 * Rename HISTORY.rst to CHANGELOG.rst
 * Fix linting issue with try statement for get_nearest_non_nan_etccdi_val_to_gauge
