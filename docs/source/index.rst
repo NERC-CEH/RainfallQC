@@ -127,7 +127,11 @@ This project is licensed under the `GNU GPL v3.0 <https://github.com/NERC-CEH/Ra
    :caption: User Guide
    :numbered:
 
-   tutorials/tutorials
+   tutorials/overview
+   tutorials/run_qc_checks
+   tutorials/working_with_xarray
+   tutorials/run_a_qc_framework
+   tutorials/run_a_sensitivity_analysis
 
 .. toctree::
     :hidden:
