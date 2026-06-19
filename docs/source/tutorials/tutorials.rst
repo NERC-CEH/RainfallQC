@@ -24,46 +24,48 @@ What's the format of your data?
 -------------------------------
 How you use RainfallQC will depend on the format of your data. The table below outlines a few potential formats and how to use RainfallQC with them.
 
-+--------------------------------------------+--------------+--------------------------------------------------------------+
-| Data format                                | See...       | Notes                                                        |
-+============================================+==============+==============================================================+
-| Single rain gauge (e.g. 1 CSV)             | Example 1    | All RainfallQC checks were built to run on tabular data      |
-+--------------------------------------------+--------------+--------------------------------------------------------------+
-| Rain gauge network data (e.g. 1 CSV        | Example 2    | You will need to define which of those gauges are considered |
-| with multiple columns)                     |              | to be neighbouring to a target gauge. Therefore you also     |
-|                                            |              | need metadata with gauge locations.                          |
-+--------------------------------------------+--------------+--------------------------------------------------------------+
-| Rain gauge network data (multiple file     | Example 3    | Load in metadata with gauge locations, then read in only     |
-| paths)                                     |              | nearby gauges to a given target.                             |
-+--------------------------------------------+--------------+--------------------------------------------------------------+
-| Rain gauge data as xarray Dataset          | Example 4    | If your data is in NetCDF format, for example. Be careful as |
-|                                            |              | you will lose metadata.                                      |
-+--------------------------------------------+--------------+--------------------------------------------------------------+
-| Tablular data you want to convert to       | Example 5    | Required if you want to run pyPWSQC methods, but your data   |
-| xarray for pyPWSQC                         |              | is CSVs. Sets your data's time format and projection using   |
-|                                            |              | deafults to create metadata.                                 |
-+--------------------------------------------+--------------+--------------------------------------------------------------+
+.. list-table::
+   :header-rows: 1
+   :widths: 30 20 50
 
+   * - Data format
+     - See...
+     - Notes
+   * - Single rain gauge (e.g. 1 CSV)
+     - Example 1
+     - All RainfallQC checks were built to run on tabular data
+   * - Rain gauge network data (e.g. 1 CSV with multiple columns)
+     - Example 2
+     - You will need to define which gauges are considered neighbouring to a target gauge. Therefore you also need metadata with gauge locations.
+   * - Rain gauge network data (multiple file paths)
+     - Example 3
+     - Load in metadata with gauge locations, then read in only nearby gauges to a given target.
+   * - Rain gauge data as xarray Dataset
+     - Example 4
+     - If your data is in NetCDF format, for example. Be careful as you will lose metadata.
+   * - Tabular data you want to convert to xarray for pyPWSQC
+     - Example 5
+     - Required if you want to run pyPWSQC methods, but your data is CSVs. Sets your data's time format and projection using defaults to create metadata.
 
 Which scenario best suits you?
 ------------------------------
 Do you have a single rain gauge, or a whole network? Do you want to run a single check or use RainfallQC as part of a data processing pipeline?
 The table below outlines some common scenarios and advice on how to proceed.
 
-+---------------------------------------------------+--------------------------------------------------------------+
-| Scenario                                          | Advice                                                       |
-+===================================================+==============================================================+
-| Running a single QC check                         | See Examples 1-4 below.                                      |
-+---------------------------------------------------+--------------------------------------------------------------+
-| Running multiple QC checks on a single gauge      | Use the `.apply_qc_framework()` method. See Example 6 below. |
-+---------------------------------------------------+--------------------------------------------------------------+
-| Running multiple QC checks on multiple gauges     | Use the `.apply_qc_framework()` method in a loop and store   |
-|                                                   | a summary. See Example 7 below.                              |
-+---------------------------------------------------+--------------------------------------------------------------+
-| Defining your own sensitivity analysis            | You will need to create your own qc_framework specs. See     |
-|                                                   | Example 8 below.                                             |
-+---------------------------------------------------+--------------------------------------------------------------+
+.. list-table::
+   :header-rows: 1
+   :widths: 40 60
 
+   * - Scenario
+     - Advice
+   * - Running a single QC check
+     - See Examples 1-4 below.
+   * - Running multiple QC checks on a single gauge
+     - Use the `.apply_qc_framework()` method. See Example 6 below.
+   * - Running multiple QC checks on multiple gauges
+     - Use the `.apply_qc_framework()` method in a loop and store a summary. See Example 7 below.
+   * - Defining your own sensitivity analysis
+     - You will need to create your own qc_framework specs. See Example 8 below.
 
 Examples
 ========
@@ -72,27 +74,17 @@ Example 1. - Running individual checks on a single rain gauge
 -------------------------------------------------------------
 Let's say you have data for a single rain gauge stored in "hourly_rain_gauge_data.csv" which looks like this:
 
-.. table:: Example data 1. Single rain gauge
-    :widths: auto
-    :align: center
+.. csv-table:: Example data 1. Single rain gauge
+   :header: time, rain_mm
+   :widths: 3, 2
 
-    +---------------------+---------+
-    | time                | rain_mm |
-    +=====================+=========+
-    | 2020-01-01 00:00    | 0.0     |
-    +---------------------+---------+
-    | 2020-01-01 01:00    | 0.1     |
-    +---------------------+---------+
-    | 2020-01-01 02:00    | 0.0     |
-    +---------------------+---------+
-    | 2020-01-01 03:00    | 105.0   |
-    +---------------------+---------+
-    | 2020-01-01 04:00    | 0.6     |
-    +---------------------+---------+
-    | ...                 | ...     |
-    +---------------------+---------+
-
-
+   2020-01-01 00:00, 0.0
+   2020-01-01 01:00, 0.1
+   2020-01-01 02:00, 0.0
+   2020-01-01 03:00, 105.0
+   2020-01-01 04:00, 0.6
+   ...
+   
 For the majority of the checks in RainfallQC, you can load in your data using `polars <https://pola-rs.github.io/polars-book/>`_ and run the checks directly.
 Below, we run 2 example QC checks:
 
