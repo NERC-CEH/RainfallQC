@@ -2,8 +2,15 @@
 Introduction
 ============
 
-This package provides tools for running quality control (QC) on rain gauge data in a flexible, user-driven way.
-It is designed to help everyone, from individual researchers to industrial-scale users, apply standardised QC checks to rainfall observations whether you have one rain gauge or a whole network of rain gauges.
+.. figure:: _static/example_of_data_to_qc.png
+   :align: center
+   :width: 500px
+   :alt: rainfall QC example
+
+   Do you need to quality control your rainfall data?
+
+This package provides tools for quality controlling rain gauge data in a flexible, user-driven way.
+It is designed to help everyone apply standardised quality control (QC) checks to rainfall observations, whether you have one rain gauge or a whole network of rain gauges.
 
 At its core, the package offers:
 
@@ -29,7 +36,7 @@ These different types of rainfall checks are either rainfall-specific or not and
    :align: center
    :alt: rainfallQC quadrant
 
-   Figure 1. Types of checks within RainfallQC
+   Types of checks within RainfallQC
 
 
 All QC checks in package
