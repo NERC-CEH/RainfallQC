@@ -436,12 +436,16 @@ def get_nearest_non_nan_etccdi_val_to_gauge(
     try:
         if isinstance(gauge_lat, pl.Series) and gauge_lat.len() == 1:
             gauge_lat = gauge_lat.item()
+        gauge_lat = float(gauge_lat)
+    except TypeError as te:
+        raise TypeError("Gauge latitude must be convertible to float.") from te
+
+    try:
         if isinstance(gauge_lon, pl.Series) and gauge_lon.len() == 1:
             gauge_lon = gauge_lon.item()
-        gauge_lat = float(gauge_lat)
         gauge_lon = float(gauge_lon)
     except TypeError as te:
-        raise TypeError("Gauge latitude and longitude must be convertible to float.") from te
+        raise TypeError("Gauge longitude must be convertible to float.") from te
 
     # 2. Compute haversine distance to each point
     dists = spatial_utils.haversine(stacked["lon"], stacked["lat"], gauge_lon, gauge_lat)
