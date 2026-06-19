@@ -11,9 +11,9 @@ RainfallQC - Quality control for rainfall data
 .. image:: https://img.shields.io/pypi/v/rainfallqc.svg
         :target: https://pypi.python.org/pypi/rainfallqc
 
-.. image:: https://readthedocs.org/projects/rainfallqc/badge/?version=latest
-        :target: https://rainfallqc.readthedocs.io/en/latest/?version=latest
-        :alt: Documentation Status
+.. image:: https://github.com/NERC-CEH/RainfallQC/actions/workflows/deploy-docs.yml/badge.svg
+   :target: https://github.com/NERC-CEH/RainfallQC/actions/workflows/deploy-docs.yml
+   :alt: Deploy docs
 
 .. image:: https://zenodo.org/badge/917722737.svg
         :target: https://doi.org/10.5281/zenodo.17457013
@@ -194,7 +194,7 @@ As of RainfallQC v0.3.0, there are three QC frameworks:
 
 1. "intenseqc" - All 25 checks from IntenseQC/GSDR-QC with names like: "QC1", "QC2" ... "QC25",
 2. "pypwsqc" - 2 checks from pyPWSQC with the names: "FZ" and "SO",
-3. "custom" - Allows the user to select a custom set of checks (see Example 8 in `Tutorials <https://rainfallqc.readthedocs.io/en/latest/tutorials.html>`_).
+3. "custom" - Allows the user to select a custom set of checks (see Example 8 in `Tutorials <https://nerc-ceh.github.io/RainfallQC/tutorials/run_a_sensitivity_analysis.html>`_).
 
 Let's run some QC checks from intenseqc framework below:
 
@@ -243,17 +243,17 @@ Because lots of the checks share the same parameters with a standard vocabulary,
 
 Other examples
 --------------
-Of course, your data may not be tabular, or may not be stored in a single file. Therefore, please see our other `Tutorials <https://rainfallqc.readthedocs.io/en/latest/tutorials.html>`_.
+Of course, your data may not be tabular, or may not be stored in a single file. Therefore, please see our other `Tutorials <https://nerc-ceh.github.io/RainfallQC/tutorials/overview.html>`_.
 
 There is also a `demo notebook <https://github.com/Thomasjkeel/RainfallQC-notebooks/blob/main/notebooks/demo/rainfallQC_demo.ipynb>`_.
 
-Finally, different QC methods are suitable for different temporal resolutions, see our `Which checks are suitable for my data's temporal resolution? <https://rainfallqc.readthedocs.io/en/latest/quickstart.html>`_ for more information.
+Finally, different QC methods are suitable for different temporal resolutions, see our `Which checks are suitable for my data's temporal resolution? <https://nerc-ceh.github.io/RainfallQC/quickstart.html>`_ for more information.
 
 Documentation and License
 =========================
 * RainfallQC is developed and maintained by UKCEH.
 * Free software: GNU General Public License v3
-* Documentation: https://rainfallqc.readthedocs.io.
+* Documentation: https://nerc-ceh.github.io/RainfallQC/
 
 
 Features
