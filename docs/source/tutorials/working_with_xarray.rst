@@ -6,9 +6,9 @@ Working with xarray data
    :local:
    :depth: 2
 
-.. _example-4:
+.. _example-6:
 
-Example 4. - Run QC checks when your rain gauge is an xarray Dataset
+Example 6. - Run QC checks when your rain gauge is an xarray Dataset
 --------------------------------------------------------------------
 There is not a 'safe' way to go between netCDF and a tabular format like Polars DataFrame because of the way that
 netCDFs store metadata, please keep this in mind.
@@ -58,9 +58,9 @@ with RainfallQC by selecting a single rain gauge as follows:
                              target_gauge_col="rain_gauge_1"
                         )
 
-.. _example-5:
+.. _example-7:
 
-Example 5. - Tabular data you want to convert to xarray (for pypwsqc)
+Example 7. - Tabular data you want to convert to xarray (for pypwsqc)
 ---------------------------------------------------------------------
 By default, the methods from `pyPWSQC <https://doi.org/10.5281/zenodo.4501919>`_ require the inputs to be xarray datasets.
 Please note that an interface for running some of the pyPWSQC methods are embedded into RainfallQC already.

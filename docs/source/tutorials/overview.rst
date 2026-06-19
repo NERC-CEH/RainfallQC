@@ -41,10 +41,10 @@ How you use RainfallQC will depend on the format of your data. The table below o
      - :ref:`Example 3 <example-3>`
      - Load in metadata with gauge locations, then read in only nearby gauges to a given target.
    * - Rain gauge data as xarray Dataset
-     - :ref:`Example 4 <example-4>`
+     - :ref:`Example 6 <example-6>`
      - If your data is in NetCDF format, for example. Be careful as you will lose metadata.
    * - Tabular data you want to convert to xarray for pyPWSQC
-     - :ref:`Example 5 <example-5>`
+     - :ref:`Example 7 <example-7>`
      - Required if you want to run pyPWSQC methods, but your data is CSVs. Sets your data's time format and projection using defaults to create metadata.
 
 Which scenario best suits you?
@@ -61,9 +61,9 @@ The table below outlines some common scenarios and advice on how to proceed.
    * - Running a single QC check
      - See Examples :ref:`1 <example-1>`, :ref:`2 <example-2>` and :ref:`3 <example-3>`.
    * - Running multiple QC checks on a single gauge
-     - Use the :py:meth:`.apply_qc_framework() <rainfallqc.qc_frameworks.apply_qc_framework.run_qc_framework>` method. See :ref:`Example 6 <example-6>` below.
+     - Use the :py:meth:`.apply_qc_framework() <rainfallqc.qc_frameworks.apply_qc_framework.run_qc_framework>` method. See :ref:`Example 4 <example-6>` below.
    * - Running multiple QC checks on multiple gauges
-     - Use the :py:meth:`.apply_qc_framework() <rainfallqc.qc_frameworks.apply_qc_framework.run_qc_framework>` method in a loop and store a summary. See :ref:`Example 7 <example-7>` below.
+     - Use the :py:meth:`.apply_qc_framework() <rainfallqc.qc_frameworks.apply_qc_framework.run_qc_framework>` method in a loop and store a summary. See :ref:`Example 5 <example-7>` below.
    * - Defining your own sensitivity analysis
      - You will need to create your own qc_framework specs. See :ref:`Example 8 <example-8>` below.
 

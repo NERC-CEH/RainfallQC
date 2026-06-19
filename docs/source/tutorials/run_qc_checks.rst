@@ -1,6 +1,6 @@
-=============
-Run QC checks
-=============
+==========
+The Basics
+==========
 
 .. contents::
    :local:

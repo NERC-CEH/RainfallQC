@@ -6,12 +6,11 @@ Run a QC framework
    :local:
    :depth: 2
 
-.. _example-6:
+.. _example-4:
 
-
-Example 6. - Running multiple QC checks on a single target gauge
+Example 4. - Running multiple QC checks on a single target gauge
 ----------------------------------------------------------------
-To run multiple QC checks, you can use the `apply_qc_framework() <rainfallqc.checks.html#rainfallqc.qc_frameworks.html#module-rainfallqc.qc_frameworks.apply_qc_framework>`_
+To run multiple QC checks, you can use the :py:meth:`.apply_qc_framework() <rainfallqc.qc_frameworks.apply_qc_framework.run_qc_framework>`
 method to run QC methods from a given framework (e.g. IntenseQC).
 
 Let's say you have hourly rainfall values from a rain gauge network data like
@@ -22,7 +21,7 @@ As of RainfallQC v0.5.0, there are three QC frameworks:
 
 - 1. "intenseqc" - All 25 checks from IntenseQC/GSDR-QC with names like: "QC1", "QC2" ... "QC25",
 - 2. "pypwsqc" - 2 checks from pyPWSQC with the names: "FZ" and "SO",
-- 3. "custom" - Allows the user to select a custom set of checks (see Example 8).
+- 3. "custom" - Allows the user to select a custom set of checks (see :ref:`Example 8 <example-8>`).
 
 Let's run some QC checks from intenseqc framework below:
 
@@ -73,9 +72,9 @@ Let's run some QC checks from intenseqc framework below:
 Because lots of the checks share the same parameters with a standard vocabulary, you can use the "shared" part of the ``qc_kwargs`` dictionary to set those.
 
 
-.. _example-7:
+.. _example-5:
 
-Example 7. - Looping through rain gauges and running multiple QC checks
+Example 5. - Looping through rain gauges and running multiple QC checks
 -----------------------------------------------------------------------
 This example is a little more involved and less well-explained (please email me: tomkee@ceh.ac.uk if you have any questions).
 
