@@ -1,1 +1,1 @@
-"""Quality checks."""
+"""Quality control checks."""

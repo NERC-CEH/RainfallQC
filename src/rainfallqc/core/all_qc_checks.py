@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Registry of all the QC checks in RainfallQC."""
+"""Register for QC checks in RainfallQC."""
 
 import functools
 import inspect

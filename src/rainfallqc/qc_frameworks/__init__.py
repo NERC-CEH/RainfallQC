@@ -1,1 +1,1 @@
-"""Rulebases to apply quality control checks."""
+"""QC Rulebases and Frameworks."""
