@@ -105,6 +105,17 @@ def test_check_wet_neighbour_hourly(hourly_gsdr_network):
     assert result["wet_spell_flag_hourly"].max() == 2.0
     assert len(result.filter(pl.col("wet_spell_flag_hourly") == 1)) == 24
 
+    with pytest.raises(AssertionError):
+        result = neighbourhood_checks.check_wet_neighbours_hourly(
+            hourly_gsdr_network,
+            target_gauge_col=f"{DEFAULT_RAIN_COL}_DE_00310",
+            list_of_nearest_stations=all_neighbour_cols,
+            time_res="daily",
+            wet_threshold=0.5,
+            min_n_neighbours=3,
+            hour_offset=7,
+        )
+
 
 def test_check_wet_neighbour_15min(mins15_gsdr_network):
     all_neighbour_cols = mins15_gsdr_network.columns[1:]  # exclude time
@@ -178,6 +189,16 @@ def test_check_dry_neighbour_hourly(hourly_gsdr_network):
     )
     assert result["dry_spell_flag_hourly"].max() == 3.0
     assert len(result.filter(pl.col("dry_spell_flag_hourly") == 3)) == 149 * 24
+    with pytest.raises(AssertionError):
+        result = neighbourhood_checks.check_dry_neighbours_hourly(
+        hourly_gsdr_network,
+        target_gauge_col=f"{DEFAULT_RAIN_COL}_DE_02483",
+        list_of_nearest_stations=all_neighbour_cols,
+        time_res="daily",
+        min_n_neighbours=3,
+        dry_period_days=15,
+        hour_offset=7,
+    )
 
 
 def test_check_dry_neighbour_15min(mins15_gsdr_network):

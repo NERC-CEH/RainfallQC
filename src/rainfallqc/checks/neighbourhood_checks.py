@@ -119,7 +119,7 @@ def check_wet_neighbours_hourly(
     min_count: int = None,
 ) -> pl.DataFrame:
     """
-    Identify suspicious large values by comparison to neighbour for daily data.
+    Identify suspicious large values by comparison to neighbour for hourly or 15-min data.
 
     Flags (majority voting where flag is the highest value across all neighbours):
     3, if normalised difference between target gauge and neighbours is above the 99.9th percentile
@@ -157,6 +157,7 @@ def check_wet_neighbours_hourly(
 
     """
     # 0. Initial checks
+    assert time_res in ["15m", "hourly"], f"time_res arg needs to be 'hourly' or '15m'. Currently: {time_res}"
     data_utils.check_data_is_specific_time_res(neighbour_data, time_res)
     list_of_nearest_stations_new = list_of_nearest_stations.copy()  # make copy
     if target_gauge_col in list_of_nearest_stations_new:
@@ -390,6 +391,7 @@ def check_dry_neighbours_hourly(
 
     """
     # 0. Initial checks
+    assert time_res in ["15m", "hourly"], f"time_res arg needs to be 'hourly' or '15m'. Currently: {time_res}"
     data_utils.check_data_is_specific_time_res(neighbour_data, time_res)
     list_of_nearest_stations_new = list_of_nearest_stations.copy()  # make copy
     if target_gauge_col in list_of_nearest_stations_new:
