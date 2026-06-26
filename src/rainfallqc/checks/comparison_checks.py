@@ -37,8 +37,8 @@ def check_annual_exceedance_etccdi_r99p(
 
     Returns
     -------
-    flag_list :
-        List of flags
+    list_of_years_where_sum_99_percentile_above_max_R99p :
+        List of values per year where the sum of the 99th percentile is above annual max R99p
 
     """
     # 1. Load R99p data
@@ -54,12 +54,12 @@ def check_annual_exceedance_etccdi_r99p(
         data, target_gauge_col, percentile=99
     )
 
-    # 4. Get flags of exceedance for R99p variable where the 0.99 percentile sum is more than ETCCDI max
-    exceedance_flags = flag_exceedance_of_max_etccdi_variable(
+    # 4. Get flags of exceedance for R99p variable where the 99th percentile sum is more than ETCCDI max
+    list_of_years_where_sum_99_percentile_above_max_R99p = flag_exceedance_of_max_etccdi_variable(
         sum_rainfall_above_99percentile_per_year, target_gauge_col, nearby_etccdi_r99p, etccdi_var="R99p"
     )
 
-    return exceedance_flags
+    return list_of_years_where_sum_99_percentile_above_max_R99p
 
 
 @qc_check("check_annual_exceedance_etccdi_prcptot", require_non_negative=True)
@@ -67,7 +67,7 @@ def check_annual_exceedance_etccdi_prcptot(
     data: pl.DataFrame, target_gauge_col: str, gauge_lat: int | float, gauge_lon: int | float
 ) -> list:
     """
-    Check annual exceedance of maximum PRCPTOT from ETCCDI dataset.
+    Check years with exceedances of maximum PRCPTOT from ETCCDI dataset.
 
     This is QC9 from the IntenseQC framework.
 
@@ -84,8 +84,8 @@ def check_annual_exceedance_etccdi_prcptot(
 
     Returns
     -------
-    exceedance_flags :
-        List of flags (see `exceedance_flagger` function)
+    list_of_years_where_sum_99_percentile_above_max_PRCPTOT :
+        List of values per year where the sum of the 99th percentile is above annual max PRCPTOT
 
     """
     # 1. Load PRCPTOT data
@@ -101,12 +101,12 @@ def check_annual_exceedance_etccdi_prcptot(
         data, target_gauge_col, percentile=99
     )
 
-    # 4. Get flags of exceedance for PRCPTOT variable where the 0.99 percentile sum is more than ETCCDI max
-    exceedance_flags = flag_exceedance_of_max_etccdi_variable(
+    # 4. Get flags of exceedance for PRCPTOT variable where the 99 percentile sum is more than ETCCDI max
+    list_of_years_where_sum_99_percentile_above_max_PRCPTOT = flag_exceedance_of_max_etccdi_variable(
         sum_rainfall_above_99percentile_per_year, target_gauge_col, nearby_etccdi_prcptot, etccdi_var="PRCPTOT"
     )
 
-    return exceedance_flags
+    return list_of_years_where_sum_99_percentile_above_max_PRCPTOT
 
 
 @qc_check("check_exceedance_of_rainfall_world_record", require_non_negative=True)
@@ -230,8 +230,8 @@ def get_sum_rainfall_above_percentile_per_year(
 
     Returns
     -------
-    exceedance_flags :
-        List of flags (see `exceedance_flagger` function)
+    list_of_nth_percentile_exceedances_by_year :
+        List of values per year above the nth_percentile
 
     """
     # 1. Add a daily year column to the data
@@ -251,11 +251,11 @@ def get_sum_rainfall_above_percentile_per_year(
     data_above_annual_percentile = data_yearly_percentiles.filter(pl.col(target_gauge_col) > pl.col("percentile"))
 
     # 5. Get number of values per year above nth percentile
-    sum_rainfall_above_percentile = data_above_annual_percentile.group_by_dynamic("time", every="1y").agg(
+    list_of_nth_percentile_exceedances_by_year = data_above_annual_percentile.group_by_dynamic("time", every="1y").agg(
         pl.col(target_gauge_col).sum()
     )
 
-    return sum_rainfall_above_percentile
+    return list_of_nth_percentile_exceedances_by_year
 
 
 def flag_exceedance_of_max_etccdi_variable(
