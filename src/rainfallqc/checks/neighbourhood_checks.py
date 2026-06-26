@@ -16,8 +16,98 @@ from rainfallqc.core.all_qc_checks import qc_check
 from rainfallqc.utils import data_readers, data_utils, neighbourhood_utils, stats
 
 
-@qc_check("check_wet_neighbours", require_non_negative=True)
-def check_wet_neighbours(
+@qc_check("check_wet_neighbours_daily", require_non_negative=True)
+def check_wet_neighbours_daily(
+    neighbour_data: pl.DataFrame,
+    target_gauge_col: str,
+    list_of_nearest_stations: List[str],
+    wet_threshold: int | float,
+    min_n_neighbours: int,
+    n_neighbours_ignored: int = 0,
+) -> pl.DataFrame:
+    """
+    Identify suspicious large values by comparison to neighbour for daily data.
+
+    Flags (majority voting where flag is the highest value across all neighbours):
+    3, if normalised difference between target gauge and neighbours is above the 99.9th percentile
+    2, ...if above 99th percentile
+    1, ...if above 95th percentile
+    0, if not in extreme exceedance of neighbours
+
+    This is QC16 from the IntenseQC framework.
+
+    Parameters
+    ----------
+    neighbour_data :
+        Rainfall data of neighbouring gauges with time col
+    target_gauge_col :
+        Target gauge column
+    list_of_nearest_stations:
+        List of columns with neighbouring gauges
+    wet_threshold :
+        Threshold for rainfall intensity in given time period
+    min_n_neighbours :
+        Minimum number of neighbours needed to be checked for flag
+    n_neighbours_ignored :
+        Number of zero flags allowed for majority voting (default: 0)
+
+    Returns
+    -------
+    data_w_wet_flags :
+        Target data with wet flags
+
+    """
+    # 1. Initial checks
+    data_utils.check_data_is_specific_time_res(neighbour_data, "daily")
+    list_of_nearest_stations_new = list_of_nearest_stations.copy()  # make copy
+    if target_gauge_col in list_of_nearest_stations_new:
+        # Remove target col from list so it is not included as a neighbour of itself.
+        list_of_nearest_stations_new.remove(target_gauge_col)
+    check_nearest_neighbour_columns(neighbour_data, target_gauge_col, list_of_nearest_stations_new)
+
+    # 2. Loop through each neighbour and get wet_flags
+    list_of_nearest_stations_iterable = list_of_nearest_stations_new.copy()  # make copy again to allow removal in loop
+    for nearest_neighbour in list_of_nearest_stations_iterable:
+        # 2.1 Flag data based on comparison of wet values in neighbours
+        try:
+            one_neighbour_data_wet_flags = flag_wet_day_errors_based_on_neighbours(
+                neighbour_data, target_gauge_col, nearest_neighbour, wet_threshold
+            )
+        except ValueError as ve:
+            list_of_nearest_stations_new.remove(nearest_neighbour)
+            print(f"Warning: removing '{nearest_neighbour}' from list_of_nearest_stations because: {ve}")
+            continue
+
+        # 2.2 Join to all data
+        neighbour_data = neighbour_data.join(
+            one_neighbour_data_wet_flags[["time", f"wet_flag_{nearest_neighbour}"]],
+            on="time",
+            how="left",
+        )
+
+    # 3. Get number of neighbours 'online' for each time step
+    neighbour_data = make_num_neighbours_online_col(neighbour_data, list_of_nearest_stations_new)
+
+    # 4. Neighbour majority voting where the flag is the highest flag in all neighbours
+    neighbour_data_w_wet_flags = get_majority_voting_flag(
+        neighbour_data,
+        list_of_nearest_stations_new,
+        min_n_neighbours,
+        n_zeros_allowed=n_neighbours_ignored,
+        flag_col_prefix="wet_flag_",
+        new_flag_col_name="majority_wet_flag",
+        aggregation="min",
+    )
+
+    # 5. Clean up data for return
+    neighbour_data_w_wet_flags = neighbour_data_w_wet_flags.select(["time", "majority_wet_flag"])
+
+    neighbour_data_w_wet_flags = neighbour_data_w_wet_flags.rename({"majority_wet_flag": "wet_spell_flag_daily"})
+    return neighbour_data_w_wet_flags.select(["time", "wet_spell_flag_daily"])
+
+
+@qc_check("check_wet_neighbours_hourly", require_non_negative=True)
+def check_wet_neighbours_hourly(
     neighbour_data: pl.DataFrame,
     target_gauge_col: str,
     list_of_nearest_stations: List[str],
@@ -29,7 +119,7 @@ def check_wet_neighbours(
     min_count: int = None,
 ) -> pl.DataFrame:
     """
-    Identify suspicious large values by comparison to neighbour for hourly or daily data.
+    Identify suspicious large values by comparison to neighbour for daily data.
 
     Flags (majority voting where flag is the highest value across all neighbours):
     3, if normalised difference between target gauge and neighbours is above the 99.9th percentile
@@ -37,7 +127,7 @@ def check_wet_neighbours(
     1, ...if above 95th percentile
     0, if not in extreme exceedance of neighbours
 
-    This is QC16 & QC17 from the IntenseQC framework.
+    This is QC17 from the IntenseQC framework.
 
     Parameters
     ----------
@@ -140,8 +230,117 @@ def check_wet_neighbours(
     return neighbour_data_w_wet_flags.select(["time", f"wet_spell_flag_{time_res}"])
 
 
-@qc_check("check_dry_neighbours", require_non_negative=True)
-def check_dry_neighbours(
+@qc_check("check_dry_neighbours_daily", require_non_negative=True)
+def check_dry_neighbours_daily(
+    neighbour_data: pl.DataFrame,
+    target_gauge_col: str,
+    list_of_nearest_stations: List[str],
+    min_n_neighbours: int,
+    dry_period_days: int = 15,
+    n_neighbours_ignored: int = 0,
+) -> pl.DataFrame:
+    """
+    Identify suspicious dry periods by comparison to neighbour for daily data.
+
+    Flags (majority voting where flag is the highest value across all neighbours):
+    3, if >= 3 average number of wet days in neighbours during a dry period in target.
+    2, ...if 2 days
+    1, ...if 1 day
+    0, if not neighbours on average dry during dry target gauge period.
+
+    This is QC18 from the IntenseQC framework.
+
+    Parameters
+    ----------
+    neighbour_data :
+        Rainfall data of neighbouring gauges with time col
+    target_gauge_col :
+        Target gauge column
+    list_of_nearest_stations:
+        List of columns with neighbouring gauges
+    min_n_neighbours :
+        Minimum number of neighbours needed to be checked for flag
+    dry_period_days :
+        Length for of a "dry_spell" (default: 15 days)
+    n_neighbours_ignored :
+        Number of zero flags allowed for majority voting (default: 0)
+
+    Returns
+    -------
+    data_w_dry_flags :
+        Target data with dry flags
+
+    """
+    # 0. Initial checks
+    data_utils.check_data_is_specific_time_res(neighbour_data, "daily")
+    list_of_nearest_stations_new = list_of_nearest_stations.copy()  # make copy
+    if target_gauge_col in list_of_nearest_stations_new:
+        # Remove target col from list so it is not included as a neighbour of itself.
+        list_of_nearest_stations_new.remove(target_gauge_col)
+    check_nearest_neighbour_columns(neighbour_data, target_gauge_col, list_of_nearest_stations_new)
+
+    # 1. Get proportions of dry period required to be flagged 1, 2, or 3
+    dry_period_proportions = data_utils.get_dry_period_proportions(dry_period_days)
+
+    # 2. Loop through each neighbour and get dry_flags
+    list_of_nearest_stations_iterable = list_of_nearest_stations_new.copy()  # make copy again to allow removal in loop
+    for nearest_neighbour in list_of_nearest_stations_iterable:
+        # 2.1 Convert to dry spell fraction
+        try:
+            one_neighbour_data = get_dry_spell_fraction_col(
+                neighbour_data,
+                target_gauge_col=target_gauge_col,
+                dry_period_days=dry_period_days,
+                nearest_neighbour=nearest_neighbour,
+            )
+        except ValueError as ve:
+            list_of_nearest_stations_new.remove(nearest_neighbour)
+            print(f"Warning: {ve}. Removing {nearest_neighbour} from list_of_nearest_stations.")
+            continue
+
+        # 2.2 Flag dry spell fractions
+        one_neighbour_data_dry_flags = flag_dry_spell_fractions(
+            one_neighbour_data,
+            target_gauge_col=target_gauge_col,
+            nearest_neighbour=nearest_neighbour,
+            proportion_of_dry_day_for_flags=dry_period_proportions,
+        )
+
+        # 2.3 Join to all data
+        neighbour_data = neighbour_data.join(
+            one_neighbour_data_dry_flags[["time", f"dry_flag_{nearest_neighbour}"]],
+            on="time",
+            how="left",
+        )
+
+    # 3. Get number of neighbours 'online' for each time step
+    neighbour_data = make_num_neighbours_online_col(neighbour_data, list_of_nearest_stations_new)
+
+    # 4. Neighbour majority voting where the flag is the highest flag in all neighbours
+    neighbour_data_w_dry_flags = get_majority_voting_flag(
+        neighbour_data,
+        list_of_nearest_stations_new,
+        min_n_neighbours,
+        n_zeros_allowed=n_neighbours_ignored,
+        flag_col_prefix="dry_flag_",
+        new_flag_col_name="majority_dry_flag",
+        aggregation="min",
+    )
+
+    # 5. Clean up data for return
+    neighbour_data_w_dry_flags = neighbour_data_w_dry_flags.select(["time", "majority_dry_flag"])
+
+    # 6. Backwards propagate dry flags into dry period
+    neighbour_data_w_dry_flags = data_utils.back_propagate_daily_data_flags(
+        neighbour_data_w_dry_flags, flag_column="majority_dry_flag", num_days=(dry_period_days - 1)
+    )
+
+    neighbour_data_w_dry_flags = neighbour_data_w_dry_flags.rename({"majority_dry_flag": "dry_spell_flag_daily"})
+    return neighbour_data_w_dry_flags.select(["time", "dry_spell_flag_daily"])
+
+
+@qc_check("check_dry_neighbours_hourly", require_non_negative=True)
+def check_dry_neighbours_hourly(
     neighbour_data: pl.DataFrame,
     target_gauge_col: str,
     list_of_nearest_stations: List[str],
@@ -153,7 +352,7 @@ def check_dry_neighbours(
     min_count: int = None,
 ) -> pl.DataFrame:
     """
-    Identify suspicious dry periods by comparison to neighbour for hourly or daily data.
+    Identify suspicious dry periods by comparison to neighbour for hourly or 15-min data.
 
     Flags (majority voting where flag is the highest value across all neighbours):
     3, if >= 3 average number of wet days in neighbours during a dry period in target.
@@ -161,7 +360,7 @@ def check_dry_neighbours(
     1, ...if 1 day
     0, if not neighbours on average dry during dry target gauge period.
 
-    This is QC18 & QC19 from the IntenseQC framework.
+    This is QC19 from the IntenseQC framework.
 
     Parameters
     ----------
@@ -172,7 +371,7 @@ def check_dry_neighbours(
     list_of_nearest_stations:
         List of columns with neighbouring gauges
     time_res :
-        Time resolution of data
+        Time resolution of data (hourly or 15m)
     min_n_neighbours :
         Minimum number of neighbours needed to be checked for flag
     dry_period_days :

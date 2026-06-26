@@ -25,10 +25,10 @@ def test_get_years_where_nth_percentile_is_zero(daily_gsdr_data):
 
 
 def test_get_years_where_annual_mean_k_top_rows_are_zero(hourly_gsdr_data):
-    years_k_top_5 = gauge_checks.check_years_where_annual_mean_k_top_rows_are_zero(
+    years_k_top_5 = gauge_checks.check_years_where_annual_kth_largest_value_is_zero(
         hourly_gsdr_data, target_gauge_col=DEFAULT_RAIN_COL, k=5
     )
-    years_k_top_2000 = gauge_checks.check_years_where_annual_mean_k_top_rows_are_zero(
+    years_k_top_2000 = gauge_checks.check_years_where_annual_kth_largest_value_is_zero(
         hourly_gsdr_data, target_gauge_col=DEFAULT_RAIN_COL, k=2000
     )
     assert len(years_k_top_5) == 0
