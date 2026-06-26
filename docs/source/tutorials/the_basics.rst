@@ -163,7 +163,7 @@ Let's say you have data for a multiple rain gauge stored in "hourly_rain_gauge_n
 
 
 You can then run checks that compare a target gauge to its neighbours.
-To demonstrate, we use the ``check_wet_neighbours`` QC check from ``neighbourhood_checks``.
+To demonstrate, we use the ``check_wet_neighbours_hourly`` QC check from ``neighbourhood_checks``.
 This check will flag rainfall values that are in excess of a given number of the neighbours (see Figure 3.)
 
 .. figure:: https://thomasjkeel.github.io/UK-Rain-Gauge-Network/example_images/wet_spell_flag_hourly.png
@@ -182,7 +182,7 @@ This check will flag rainfall values that are in excess of a given number of the
 
         data = pl.read_csv("hourly_rain_gauge_network.csv")
 
-        wet_neighbour_flags = neighbourhood_checks.check_wet_neighbours(
+        wet_neighbour_flags = neighbourhood_checks.check_wet_neighbours_hourly(
             data,
             target_gauge_col="rain_mm_gauge_1",
             list_of_nearest_stations=["rain_mm_gauge_2", "rain_mm_gauge_3"],

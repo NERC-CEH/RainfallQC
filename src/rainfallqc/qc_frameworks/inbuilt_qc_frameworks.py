@@ -19,8 +19,8 @@ INTENSE_QC = {
     "QC13": {"function": timeseries_checks.check_daily_accumulations},
     "QC14": {"function": timeseries_checks.check_monthly_accumulations},
     "QC15": {"function": timeseries_checks.check_streaks},
-    "QC16": {"function": neighbourhood_checks.check_wet_neighbours},
-    "QC17": {"function": neighbourhood_checks.check_wet_neighbours},
+    "QC16": {"function": neighbourhood_checks.check_wet_neighbours_daily},
+    "QC17": {"function": neighbourhood_checks.check_wet_neighbours_hourly},
     "QC18": {"function": neighbourhood_checks.check_dry_neighbours_daily},
     "QC19": {"function": neighbourhood_checks.check_dry_neighbours_hourly},
     "QC20": {"function": neighbourhood_checks.check_monthly_neighbours},
@@ -54,7 +54,7 @@ INTENSE_RULEBASE_QC = {
         "function": timeseries_checks.check_streaks,
     },
     "QC17": {
-        "function": neighbourhood_checks.check_wet_neighbours,
+        "function": neighbourhood_checks.check_wet_neighbours_hourly,
     },
     "QC19": {
         "function": neighbourhood_checks.check_dry_neighbours_hourly,
