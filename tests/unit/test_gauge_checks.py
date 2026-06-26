@@ -20,6 +20,8 @@ def test_get_years_where_nth_percentile_is_zero(daily_gsdr_data):
     
     with pytest.raises(AssertionError):
         gauge_checks.check_years_where_nth_percentile_is_zero(daily_gsdr_data, DEFAULT_RAIN_COL, percentile=.95)
+    with pytest.raises(AssertionError):
+        gauge_checks.check_years_where_nth_percentile_is_zero(daily_gsdr_data, DEFAULT_RAIN_COL, percentile=950)
 
 
 def test_get_years_where_annual_mean_k_top_rows_are_zero(hourly_gsdr_data):
