@@ -46,7 +46,7 @@ Let's run some QC checks from intenseqc framework below:
 
         # 2 Decide which parameters for QC
         qc_kwargs = {
-            "QC1": {"quantile": 5},
+            "QC1": {"percentile": 5},
             "QC14": {"wet_day_threshold": 1.0, "accumulation_multiplying_factor": 2.0},
             "QC16": {
                 "list_of_nearest_stations": nearest_neighbourhours,
@@ -99,7 +99,7 @@ So first, we need to decide which checks will run, and which of those are row-wi
 
 
     qc_kwargs = {
-        "QC1": {"quantile": 5},
+        "QC1": {"percentile": 5},
         "QC2": {"k": 3},
         "QC3": {"time_granularity": "hour"},
         "QC4": {"time_granularity": "weekday"},

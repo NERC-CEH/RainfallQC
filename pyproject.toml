@@ -88,7 +88,7 @@ homepage = "https://github.com/NERC-CEH/RainfallQC"
 target-version = ["py310", "py311", "py312", "py313"]
 
 [tool.bumpversion]
-current_version = "1.0.0"
+current_version = "1.0.1"
 commit = true
 message = "Bump version: {current_version} → {new_version}"
 commit_args = ""

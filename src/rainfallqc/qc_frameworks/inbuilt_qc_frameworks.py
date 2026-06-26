@@ -5,7 +5,7 @@ from rainfallqc.checks import comparison_checks, gauge_checks, neighbourhood_che
 
 INTENSE_QC = {
     "QC1": {"function": gauge_checks.check_years_where_nth_percentile_is_zero},
-    "QC2": {"function": gauge_checks.check_years_where_annual_mean_k_top_rows_are_zero},
+    "QC2": {"function": gauge_checks.check_years_where_annual_kth_largest_value_is_zero},
     "QC3": {"function": gauge_checks.check_temporal_bias},
     "QC4": {"function": gauge_checks.check_temporal_bias},
     "QC5": {"function": gauge_checks.check_intermittency},
@@ -19,10 +19,10 @@ INTENSE_QC = {
     "QC13": {"function": timeseries_checks.check_daily_accumulations},
     "QC14": {"function": timeseries_checks.check_monthly_accumulations},
     "QC15": {"function": timeseries_checks.check_streaks},
-    "QC16": {"function": neighbourhood_checks.check_wet_neighbours},
-    "QC17": {"function": neighbourhood_checks.check_wet_neighbours},
-    "QC18": {"function": neighbourhood_checks.check_dry_neighbours},
-    "QC19": {"function": neighbourhood_checks.check_dry_neighbours},
+    "QC16": {"function": neighbourhood_checks.check_wet_neighbours_daily},
+    "QC17": {"function": neighbourhood_checks.check_wet_neighbours_hourly},
+    "QC18": {"function": neighbourhood_checks.check_dry_neighbours_daily},
+    "QC19": {"function": neighbourhood_checks.check_dry_neighbours_hourly},
     "QC20": {"function": neighbourhood_checks.check_monthly_neighbours},
     "QC21": {"function": neighbourhood_checks.check_timing_offset},
     "QC22": {"function": neighbourhood_checks.check_neighbour_affinity_index},
@@ -33,7 +33,7 @@ INTENSE_QC = {
 
 INTENSE_RULEBASE_QC = {
     "QC2": {
-        "function": gauge_checks.check_years_where_annual_mean_k_top_rows_are_zero,
+        "function": gauge_checks.check_years_where_annual_kth_largest_value_is_zero,
     },
     "QC10": {
         "function": comparison_checks.check_exceedance_of_rainfall_world_record,
@@ -54,10 +54,10 @@ INTENSE_RULEBASE_QC = {
         "function": timeseries_checks.check_streaks,
     },
     "QC17": {
-        "function": neighbourhood_checks.check_wet_neighbours,
+        "function": neighbourhood_checks.check_wet_neighbours_hourly,
     },
     "QC19": {
-        "function": neighbourhood_checks.check_dry_neighbours,
+        "function": neighbourhood_checks.check_dry_neighbours_hourly,
     },
     "QC20": {
         "function": neighbourhood_checks.check_monthly_neighbours,

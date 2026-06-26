@@ -11,19 +11,24 @@ DEFAULT_RAIN_COL = "rain_mm"
 
 
 def test_get_years_where_nth_percentile_is_zero(daily_gsdr_data):
-    years_95th = gauge_checks.check_years_where_nth_percentile_is_zero(daily_gsdr_data, DEFAULT_RAIN_COL, quantile=0.95)
+    years_95th = gauge_checks.check_years_where_nth_percentile_is_zero(daily_gsdr_data, DEFAULT_RAIN_COL, percentile=95)
     years_35th = gauge_checks.check_years_where_nth_percentile_is_zero(
-        daily_gsdr_data, target_gauge_col=DEFAULT_RAIN_COL, quantile=0.35
+        daily_gsdr_data, target_gauge_col=DEFAULT_RAIN_COL, percentile=35
     )
     assert len(years_95th) == 0
     numpy.testing.assert_array_equal(years_35th, [2006, 2007, 2008, 2009, 2010])
+    
+    with pytest.raises(AssertionError):
+        gauge_checks.check_years_where_nth_percentile_is_zero(daily_gsdr_data, DEFAULT_RAIN_COL, percentile=.95)
+    with pytest.raises(AssertionError):
+        gauge_checks.check_years_where_nth_percentile_is_zero(daily_gsdr_data, DEFAULT_RAIN_COL, percentile=950)
 
 
 def test_get_years_where_annual_mean_k_top_rows_are_zero(hourly_gsdr_data):
-    years_k_top_5 = gauge_checks.check_years_where_annual_mean_k_top_rows_are_zero(
+    years_k_top_5 = gauge_checks.check_years_where_annual_kth_largest_value_is_zero(
         hourly_gsdr_data, target_gauge_col=DEFAULT_RAIN_COL, k=5
     )
-    years_k_top_2000 = gauge_checks.check_years_where_annual_mean_k_top_rows_are_zero(
+    years_k_top_2000 = gauge_checks.check_years_where_annual_kth_largest_value_is_zero(
         hourly_gsdr_data, target_gauge_col=DEFAULT_RAIN_COL, k=2000
     )
     assert len(years_k_top_5) == 0

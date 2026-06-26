@@ -23,7 +23,7 @@ Functions
 
    check_temporal_bias
 
-   check_years_where_annual_mean_k_top_rows_are_zero
+   check_years_where_annual_kth_largest_value_is_zero
 
    check_years_where_nth_percentile_is_zero
 
