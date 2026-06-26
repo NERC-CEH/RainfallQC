@@ -50,7 +50,7 @@ def check_wet_neighbours_daily(
         Minimum number of neighbours needed to be checked for flag
     n_neighbours_ignored :
         Number of zero flags allowed for majority voting (default: 0)
-    
+
     Returns
     -------
     data_w_wet_flags :
@@ -102,8 +102,8 @@ def check_wet_neighbours_daily(
     # 5. Clean up data for return
     neighbour_data_w_wet_flags = neighbour_data_w_wet_flags.select(["time", "majority_wet_flag"])
 
-    neighbour_data_w_wet_flags = neighbour_data_w_wet_flags.rename({"majority_wet_flag": f"wet_spell_flag_daily"})
-    return neighbour_data_w_wet_flags.select(["time", f"wet_spell_flag_daily"])
+    neighbour_data_w_wet_flags = neighbour_data_w_wet_flags.rename({"majority_wet_flag": "wet_spell_flag_daily"})
+    return neighbour_data_w_wet_flags.select(["time", "wet_spell_flag_daily"])
 
 
 @qc_check("check_wet_neighbours_hourly", require_non_negative=True)
@@ -335,8 +335,9 @@ def check_dry_neighbours_daily(
         neighbour_data_w_dry_flags, flag_column="majority_dry_flag", num_days=(dry_period_days - 1)
     )
 
-    neighbour_data_w_dry_flags = neighbour_data_w_dry_flags.rename({"majority_dry_flag": f"dry_spell_flag_daily"})
-    return neighbour_data_w_dry_flags.select(["time", f"dry_spell_flag_daily"])
+    neighbour_data_w_dry_flags = neighbour_data_w_dry_flags.rename({"majority_dry_flag": "dry_spell_flag_daily"})
+    return neighbour_data_w_dry_flags.select(["time", "dry_spell_flag_daily"])
+
 
 @qc_check("check_dry_neighbours_hourly", require_non_negative=True)
 def check_dry_neighbours_hourly(

@@ -176,7 +176,9 @@ def check_data_is_specific_time_res(data: pl.DataFrame, time_res: str | list) ->
     # Get actual time step as a string like "1h"
     time_step = get_data_timestep_as_str(data)
     if time_step not in allowed_res:
-        raise ValueError(f"Invalid time step for this QC check. Expected one of {allowed_res}, but data has time-step(s): {time_step}")
+        raise ValueError(
+            f"Invalid time step for the QC check. Expected one of {allowed_res}, but data has time-step(s): {time_step}"
+        )
 
 
 def check_for_negative_values(df: pl.DataFrame, target_gauge_col: str) -> bool:
