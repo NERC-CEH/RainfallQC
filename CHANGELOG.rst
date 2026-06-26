@@ -6,6 +6,7 @@ Changelog
 ------------------
 * Fix bugs in docs
 * Change "quantile" kwarg to "percentile" for QC1 in gauge_checks
+* Fix confusing naming of exceedance_flags in comparison_checks. E.g. 'list_of_years_where_sum_99_percentile_above_max_PRCPTOT' 
 
 
 1.0.0 (2026-06-19)
