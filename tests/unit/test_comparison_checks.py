@@ -60,3 +60,11 @@ def test_check_hourly_exceedance_etccdi_rx1day(hourly_gsdr_data, gsdr_metadata):
 def test_flag_exceedance_of_ref_val(vals, max_ref_val, expected):
     assert comparison_checks.flag_exceedance_of_ref_val(vals, max_ref_val) == expected
     assert np.isnan(comparison_checks.flag_exceedance_of_ref_val(val=None, ref_val=None))
+
+
+def test_get_sum_rainfall_above_percentile_per_year(hourly_gsdr_data):
+    result = comparison_checks.get_sum_rainfall_above_percentile_per_year(hourly_gsdr_data,  target_gauge_col=DEFAULT_RAIN_COL, percentile=35)
+    assert len(result) == 5
+
+    with pytest.raises(AssertionError):
+        comparison_checks.get_sum_rainfall_above_percentile_per_year(hourly_gsdr_data, DEFAULT_RAIN_COL, percentile=.95)

@@ -15,7 +15,7 @@ from rainfallqc.utils import data_utils, stats
 
 
 @qc_check("check_years_where_nth_percentile_is_zero", require_non_negative=True)
-def check_years_where_nth_percentile_is_zero(data: pl.DataFrame, target_gauge_col: str, quantile: float) -> list:
+def check_years_where_nth_percentile_is_zero(data: pl.DataFrame, target_gauge_col: str, percentile: float) -> list:
     """
     Return years where the n-th percentiles is zero.
 
@@ -27,8 +27,8 @@ def check_years_where_nth_percentile_is_zero(data: pl.DataFrame, target_gauge_co
         Rainfall data
     target_gauge_col :
         Column with rainfall data
-    quantile :
-        Between 0 & 1
+    percentile :
+        Between 1 & 100
 
     Returns
     -------
@@ -36,6 +36,8 @@ def check_years_where_nth_percentile_is_zero(data: pl.DataFrame, target_gauge_co
         List of years where n-th percentile is zero.
 
     """
+    assert percentile > 1 and percentile <= 100, f"percentile needs to be between 1-100. Currently {percentile}"
+    quantile = percentile / 100
     nth_perc = data.group_by_dynamic("time", every="1y").agg(pl.quantile(target_gauge_col, quantile))
     return nth_perc.filter(pl.col(target_gauge_col) == 0)["time"].dt.year().to_list()
 

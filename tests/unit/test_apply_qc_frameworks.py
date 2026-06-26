@@ -28,7 +28,7 @@ def test_apply_qc_frameworks_daily(daily_gpcc_network, gpcc_metadata):
         "QC24",
     ]
     qc_kwargs = {
-        "QC1": {"quantile": 5},
+        "QC1": {"percentile": 5},
         "QC13": {"accumulation_multiplying_factor": 2.0},
         "QC14": {"accumulation_multiplying_factor": 2.0},
         "QC16": {
@@ -82,7 +82,7 @@ def test_apply_qc_frameworks_hourly(hourly_gsdr_network, gsdr_metadata):
         "QC23",
     ]
     qc_kwargs = {
-        "QC1": {"quantile": 5},
+        "QC1": {"percentile": 5},
         # Shared defaults applied to all
         "shared": {
             "target_gauge_col": f"rain_mm_{TARGET_GSDR_ID}",
@@ -125,7 +125,7 @@ def test_apply_qc_frameworks_15min(mins15_gsdr_network, gsdr_metadata):
         "QC23",
     ]
     qc_kwargs = {
-        "QC1": {"quantile": 5},
+        "QC1": {"percentile": 5},
         # Shared defaults applied to all
         "shared": {
             "target_gauge_col": f"rain_mm_{TARGET_GSDR_ID}",

@@ -79,7 +79,7 @@ html_theme_options = {
                 },
             ],
         },
-        {"title": "API reference", "url": "api"},
+        {"title": "API reference", "url": "api/rainfallqc.checks"},
 
     ],
 }

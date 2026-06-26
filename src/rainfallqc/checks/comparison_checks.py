@@ -51,7 +51,7 @@ def check_annual_exceedance_etccdi_r99p(
 
     # 3. Get sum of rainfall above the 99th percentile per year
     sum_rainfall_above_99percentile_per_year = get_sum_rainfall_above_percentile_per_year(
-        data, target_gauge_col, percentile=0.99
+        data, target_gauge_col, percentile=99
     )
 
     # 4. Get flags of exceedance for R99p variable where the 0.99 percentile sum is more than ETCCDI max
@@ -98,7 +98,7 @@ def check_annual_exceedance_etccdi_prcptot(
 
     # 3. Get sum of rainfall above the 99th percentile per year
     sum_rainfall_above_99percentile_per_year = get_sum_rainfall_above_percentile_per_year(
-        data, target_gauge_col, percentile=0.99
+        data, target_gauge_col, percentile=99
     )
 
     # 4. Get flags of exceedance for PRCPTOT variable where the 0.99 percentile sum is more than ETCCDI max
@@ -226,7 +226,7 @@ def get_sum_rainfall_above_percentile_per_year(
     target_gauge_col :
         Column with rainfall data
     percentile :
-        nth percentile to check for values above
+        nth percentile to check for values above (between 1-100)
 
     Returns
     -------
@@ -238,8 +238,10 @@ def get_sum_rainfall_above_percentile_per_year(
     data = add_daily_year_col(data)
 
     # 2. Calculate percentiles
+    assert percentile > 1 and percentile <= 100, f"percentile needs to be between 1-100. Currently {percentile}"
+    quantile = percentile / 100
     data_percentiles = data.group_by("year").agg(
-        pl.col(target_gauge_col).fill_nan(0.0).quantile(percentile).alias("percentile")
+        pl.col(target_gauge_col).fill_nan(0.0).quantile(quantile).alias("percentile")
     )
 
     # 3. Join percentiles back to the main DataFrame

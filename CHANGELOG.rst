@@ -2,7 +2,13 @@
 Changelog
 =========
 
-1.0.0 (2026-04-27)
+1.0.1 (2026-06-27)
+------------------
+* Fix bugs in docs
+* Change "quantile" kwarg to "percentile" for QC1 in gauge_checks
+
+
+1.0.0 (2026-06-19)
 ------------------
 * Overhaul docs to new FDRI style
 * Make changes to some of the wording in the docs
