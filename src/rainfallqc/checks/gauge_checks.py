@@ -42,10 +42,10 @@ def check_years_where_nth_percentile_is_zero(data: pl.DataFrame, target_gauge_co
     return nth_perc.filter(pl.col(target_gauge_col) == 0)["time"].dt.year().to_list()
 
 
-@qc_check("check_years_where_annual_mean_k_top_rows_are_zero", require_non_negative=True)
-def check_years_where_annual_mean_k_top_rows_are_zero(data: pl.DataFrame, target_gauge_col: str, k: int) -> list:
+@qc_check("check_years_where_annual_kth_largest_value_is_zero", require_non_negative=True)
+def check_years_where_annual_kth_largest_value_is_zero(data: pl.DataFrame, target_gauge_col: str, k: int) -> list:
     """
-    Return year list where the annual mean top-K rows are zero.
+    Return list of years where the k-th largest value is 0.
 
     This is QC2 from the IntenseQC framework
 
@@ -56,12 +56,12 @@ def check_years_where_annual_mean_k_top_rows_are_zero(data: pl.DataFrame, target
     target_gauge_col :
         Column with rainfall data
     k :
-        Number of top values check i.e. k==5 is top 5
+        Number of the largest values to take for a given year i.e. k==5 is top 5
 
     Returns
     -------
     year_list :
-        List of years where k-largest are zero.
+        List of years where k-largest value is zero.
 
     """
     data_top_k = data.group_by_dynamic("time", every="1y").agg(pl.col(target_gauge_col).top_k(k).min())

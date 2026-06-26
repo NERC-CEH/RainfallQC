@@ -5,7 +5,7 @@ from rainfallqc.checks import comparison_checks, gauge_checks, neighbourhood_che
 
 INTENSE_QC = {
     "QC1": {"function": gauge_checks.check_years_where_nth_percentile_is_zero},
-    "QC2": {"function": gauge_checks.check_years_where_annual_mean_k_top_rows_are_zero},
+    "QC2": {"function": gauge_checks.check_years_where_annual_kth_largest_value_is_zero},
     "QC3": {"function": gauge_checks.check_temporal_bias},
     "QC4": {"function": gauge_checks.check_temporal_bias},
     "QC5": {"function": gauge_checks.check_intermittency},
@@ -33,7 +33,7 @@ INTENSE_QC = {
 
 INTENSE_RULEBASE_QC = {
     "QC2": {
-        "function": gauge_checks.check_years_where_annual_mean_k_top_rows_are_zero,
+        "function": gauge_checks.check_years_where_annual_kth_largest_value_is_zero,
     },
     "QC10": {
         "function": comparison_checks.check_exceedance_of_rainfall_world_record,
