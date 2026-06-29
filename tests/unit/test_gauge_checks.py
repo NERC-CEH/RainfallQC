@@ -39,7 +39,7 @@ def test_check_day_of_week_bias(daily_gsdr_data):
     week_bias_true = gauge_checks.check_temporal_bias(
         daily_gsdr_data, target_gauge_col=DEFAULT_RAIN_COL, time_granularity="weekday"
     )
-    assert week_bias_true == 0
+    assert week_bias_true == 1
     # week_bias_false = gauge_checks.check_day_of_week_bias(other_daily_gsdr_data, target_gauge_col=DEFAULT_RAIN_COL)
 
 
