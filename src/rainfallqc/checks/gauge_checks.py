@@ -107,9 +107,7 @@ def check_temporal_bias(
         raise ValueError("time_granularity must be either 'weekday' or 'hour'")
 
     # 1. Get time-groups
-    time_group_data = data.group_by(time_group).agg(
-        pl.col(target_gauge_col).drop_nans()
-    )
+    time_group_data = data.group_by(time_group).agg(pl.col(target_gauge_col).drop_nans())
 
     # 2. Get data mean
     overall_mean = data[target_gauge_col].drop_nans().mean()
@@ -121,7 +119,7 @@ def check_temporal_bias(
         # skip groups less than 2 values
         if len(tg_data) < 2:
             continue
-        
+
         # Compute two-sided t-test group array vs population mean
         _, p_val = scipy.stats.ttest_1samp(
             tg_data,
@@ -129,7 +127,7 @@ def check_temporal_bias(
             alternative="two-sided",
         )
         p_values.append(p_val)
-    
+
     # Check any are below threshold i.e. different distribution thus a bias
     return int(any(p < p_threshold for p in p_values))
 
