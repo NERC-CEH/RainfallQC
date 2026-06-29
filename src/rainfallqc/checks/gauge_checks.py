@@ -78,6 +78,8 @@ def check_temporal_bias(
     """
     Perform a two-sided t-test on the distribution of mean rainfall over time slices.
 
+    This check performs less well when using less data.
+
     This is QC3 (day of week bias) and QC4 (hour-of-day bias) from the IntenseQC framework.
 
     Parameters
@@ -104,15 +106,32 @@ def check_temporal_bias(
     else:
         raise ValueError("time_granularity must be either 'weekday' or 'hour'")
 
-    # 1. Get time-average mean
-    grouped_means = data.group_by(time_group).agg(pl.col(target_gauge_col).drop_nans().mean())[target_gauge_col]
+    # 1. Get time-groups
+    time_group_data = data.group_by(time_group).agg(
+        pl.col(target_gauge_col).drop_nans()
+    )
 
     # 2. Get data mean
     overall_mean = data[target_gauge_col].drop_nans().mean()
 
-    # 3. Compute 1-sample t-test
-    _, p_val = scipy.stats.ttest_1samp(grouped_means, overall_mean)
-    return int(p_val < p_threshold)
+    # 3. Loop through each time group and check difference from mean
+    p_values = []
+
+    for _, tg_data in time_group_data.iter_rows():
+        # skip groups less than 2 values
+        if len(tg_data) < 2:
+            continue
+        
+        # Compute two-sided t-test group array vs population mean
+        _, p_val = scipy.stats.ttest_1samp(
+            tg_data,
+            popmean=overall_mean,
+            alternative="two-sided",
+        )
+        p_values.append(p_val)
+    
+    # Check any are below threshold i.e. different distribution thus a bias
+    return int(any(p < p_threshold for p in p_values))
 
 
 @qc_check("check_intermittency", require_non_negative=True)
