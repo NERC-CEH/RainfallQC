@@ -2,6 +2,11 @@
 Changelog
 =========
 
+1.0.2 (2026-06-29)
+------------------
+* Fix bug with "check_temporal_bias" (QC3-4), so that each time group i.e. hour-of-week or day-of-week is compared to population smallest_measurable_rainfall_amount
+* Fix typo in docs table
+
 1.0.1 (2026-06-27)
 ------------------
 * Fix bugs in docs
