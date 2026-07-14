@@ -47,7 +47,6 @@
 
     `Docs <intro.html>`_
     `Usage <quickstart.html>`_
-    `Codeberg <https://codeberg.org/CEH-HOTDOG/RainfallQC>`_
     `GitHub <https://github.com/NERC-CEH/RainfallQC>`_
 
 .. grid:: 1 1 2 3
