@@ -13,6 +13,7 @@ import polars as pl
 
 from rainfallqc.core.all_qc_checks import qc_check
 from rainfallqc.checks.comparison_checks import flag_exceedance_of_ref_val_as_col
+from rainfallqc.checks.timeseries_checks import get_streaks_above_threshold, get_streaks_of_repeated_values, flag_streaks_exceeding_wet_day_rainfall_threshold
 from rainfallqc.utils import data_utils
 
 
@@ -76,7 +77,6 @@ def check_exceedance_of_UK_24hr_record(data: pl.DataFrame, target_gauge_col: str
     -------
     data_w_flags:
         Rainfall data with exceedance of UK 24hr Record
-
     """
     return check_subhourly_exceedance_of_given_record(
         data=data,
@@ -104,7 +104,6 @@ def check_daily_exceedance_of_UK_24hr_record(data: pl.DataFrame, target_gauge_co
     -------
     data_w_flags:
         Rainfall data with exceedance of UK 24hr rolling record
-
     """
     # 1. Check data is sub-hourly
     data_utils.check_data_is_specific_time_res(data, time_res=["1m", "15m"])
@@ -135,6 +134,59 @@ def check_daily_exceedance_of_UK_24hr_record(data: pl.DataFrame, target_gauge_co
     return data_w_flags_disag.select(["time", "UK_24hr_rolling_record_check"])
 
 
+@qc_check("check_streaks_20mm", require_non_negative=True)
+def check_streaks_20mm(data: pl.DataFrame, target_gauge_col: str, flag_col_name: str="streak_flag_20mm") -> pl.DataFrame:
+    """
+    Check streaks with fixed hourly threshold of 20 mm
+
+    This is QCX from the SubHourlyQC framework.
+
+    Parameters
+    ----------
+    data :
+        Rainfall data (15-min or 1-min)
+    target_gauge_col :
+        Column with rainfall data
+    flag_col_name :
+        Name for flag column (default: 'streak_flag_20mm')
+
+    Returns
+    -------
+    data_w_flags:
+        Rainfall data with flags dennotting period of repeating streak above 20mm
+    """
+    # 1. Check data is sub-hourly
+    data_utils.check_data_is_specific_time_res(data, time_res=["1m", "15m"])
+    time_step = data_utils.get_data_timestep_as_str(data)
+
+    # 2. Aggregate data to hourly
+    original_data = data.clone()
+    hourly_data = data.group_by_dynamic("time", every="1h").agg(pl.col(target_gauge_col).sum())
+
+    if time_step == "15m":
+        time_step_per_hour = 4  # 4x 15-min periods per hour
+    if time_step == "1m":
+        time_step_per_hour = 60  # 60 x 1-min periods per hour
+
+    # 3. Get streaks in data
+    streak_data = get_streaks_of_repeated_values(hourly_data, target_gauge_col)
+
+    # 4. Flag streaks of 2 or more repeated large values exceeding 20 mm
+    streak_data_w_flags = flag_streaks_exceeding_wet_day_rainfall_threshold(
+        streak_data, target_gauge_col, min_streak_length=2, accumulation_threshold=20, flag_col_name=flag_col_name
+    )
+
+    # 5. Disaggregate data back to original resolution
+    data_w_flags_disag = data_utils.downsample_and_fill_columns(
+        high_res_data=original_data,
+        low_res_data=streak_data_w_flags,
+        data_cols=flag_col_name,
+        fill_limit=time_step_per_hour - 1,
+        fill_method="backward",
+    )
+    return data_w_flags_disag.select(["time", flag_col_name])
+
+
 def check_subhourly_exceedance_of_given_record(
     data: pl.DataFrame, target_gauge_col: str, record_rainfall_amount: [int | float], flag_col_name: str
 ) -> pl.DataFrame:
@@ -158,7 +210,6 @@ def check_subhourly_exceedance_of_given_record(
     -------
     data_w_flags:
         Rainfall data with exceedance of given rainfall record (see `flag_exceedance_of_ref_val_as_col` function)
-
     """
     # 1. Check data is sub-hourly
     data_utils.check_data_is_specific_time_res(data, time_res=["1m", "15m"])
