@@ -216,7 +216,7 @@ def test_flag_streaks_exceeding_smallest_measurable_rainfall_amount(hourly_gsdr_
     result = timeseries_checks.flag_streaks_exceeding_smallest_measurable_rainfall_amount(
         streak_data,
         target_gauge_col=DEFAULT_RAIN_COL,
-        streak_length=12,
+        min_streak_length=12,
         smallest_measurable_rainfall_amount=gsdr_metadata["resolution"],
     )
     assert len(result.filter(pl.col("streak_flag3") > 0)) == 455
@@ -224,7 +224,7 @@ def test_flag_streaks_exceeding_smallest_measurable_rainfall_amount(hourly_gsdr_
     result = timeseries_checks.flag_streaks_exceeding_smallest_measurable_rainfall_amount(
         streak_data,
         target_gauge_col=DEFAULT_RAIN_COL,
-        streak_length=36,
+        min_streak_length=36,
         smallest_measurable_rainfall_amount=gsdr_metadata["resolution"],
     )
     assert len(result.filter(pl.col("streak_flag3") > 0)) == 288
@@ -235,7 +235,7 @@ def test_flag_streaks_exceeding_wet_day_rainfall_threshold(hourly_gsdr_data, gsd
     result = timeseries_checks.flag_streaks_exceeding_wet_day_rainfall_threshold(
         streak_data,
         target_gauge_col=DEFAULT_RAIN_COL,
-        streak_length=12,
+        min_streak_length=12,
         accumulation_threshold=11,
     )
     assert len(result.filter(pl.col("streak_flag1") > 0)) == 23
@@ -243,7 +243,7 @@ def test_flag_streaks_exceeding_wet_day_rainfall_threshold(hourly_gsdr_data, gsd
     result = timeseries_checks.flag_streaks_exceeding_wet_day_rainfall_threshold(
         streak_data,
         target_gauge_col=DEFAULT_RAIN_COL,
-        streak_length=6,
+        min_streak_length=6,
         accumulation_threshold=6,
     )
     assert len(result.filter(pl.col("streak_flag1") > 0)) == 71
