@@ -334,19 +334,19 @@ def check_streaks(
 
     # 3. Flag streaks of 2 or more repeated large values exceeding 2 * mean wet day rainfall (from ETCCDI SDII)
     streak_flag1 = flag_streaks_exceeding_wet_day_rainfall_threshold(
-        streak_data, target_gauge_col, streak_length=2, accumulation_threshold=accumulation_threshold
+        streak_data, target_gauge_col, min_streak_length=2, accumulation_threshold=accumulation_threshold
     )
 
     # 4. Flag streaks of 12 or more greater than smallest measurable rainfall amount
     streak_flag3 = flag_streaks_exceeding_smallest_measurable_rainfall_amount(
         streak_data,
         target_gauge_col,
-        streak_length=12 * time_multiplier,
+        min_streak_length=12 * time_multiplier,
         smallest_measurable_rainfall_amount=smallest_measurable_rainfall_amount,
     )
 
     # 5. Flag streaks of 24 or more greater than zero
-    streak_flag4 = flag_streaks_exceeding_zero(streak_data, target_gauge_col, streak_length=24 * time_multiplier)
+    streak_flag4 = flag_streaks_exceeding_zero(streak_data, target_gauge_col, min_streak_length=24 * time_multiplier)
 
     # 6. Flag periods of zeros bounded by streaks of multiples of 24
     streak_flag5 = flag_streaks_of_zero_bounded_by_days(streak_data, target_gauge_col, time_res=time_step)
@@ -443,7 +443,7 @@ def flag_streaks_of_zero_bounded_by_days(data: pl.DataFrame, target_gauge_col: s
     return data_w_flags
 
 
-def flag_streaks_exceeding_zero(data: pl.DataFrame, target_gauge_col: str, streak_length: int) -> pl.DataFrame:
+def flag_streaks_exceeding_zero(data: pl.DataFrame, target_gauge_col: str, min_streak_length: int) -> pl.DataFrame:
     """
     Flag values exceeding wet day rainfall accumulation threshold.
 
@@ -453,7 +453,7 @@ def flag_streaks_exceeding_zero(data: pl.DataFrame, target_gauge_col: str, strea
         Rainfall data with streak_id.
     target_gauge_col :
         Column with rainfall data.
-    streak_length :
+    min_streak_length :
         Only streaks longer than this will be considered.
 
     Returns
@@ -463,7 +463,7 @@ def flag_streaks_exceeding_zero(data: pl.DataFrame, target_gauge_col: str, strea
 
     """
     # 1. Get streak above length and exceeding zero
-    streaks_exceeding_zero = get_streaks_above_threshold(data, target_gauge_col, streak_length, 0.0)
+    streaks_exceeding_zero = get_streaks_above_threshold(data, target_gauge_col, min_streak_length, 0.0)
 
     # 2. Label original data
     data_w_flags = data.with_columns(
@@ -476,7 +476,7 @@ def flag_streaks_exceeding_zero(data: pl.DataFrame, target_gauge_col: str, strea
 
 
 def flag_streaks_exceeding_smallest_measurable_rainfall_amount(
-    data: pl.DataFrame, target_gauge_col: str, streak_length: int, smallest_measurable_rainfall_amount: float
+    data: pl.DataFrame, target_gauge_col: str, min_streak_length: int, smallest_measurable_rainfall_amount: float
 ) -> pl.DataFrame:
     """
     Flag streaks exceeding smallest measurable rainfall amount in data.
@@ -487,7 +487,7 @@ def flag_streaks_exceeding_smallest_measurable_rainfall_amount(
         Rainfall data with streak_id..
     target_gauge_col:
         Column with rainfall data.
-    streak_length :
+    min_streak_length :
         Only streaks longer than this will be considered
     smallest_measurable_rainfall_amount:
         Resolution of rainfall data (i.e. minimum rainfall recording).
@@ -500,7 +500,7 @@ def flag_streaks_exceeding_smallest_measurable_rainfall_amount(
     """
     # 1. Get streak above length and smallest measurable rainfall amount
     streaks_above_smallest_measurable_rainfall_amount = get_streaks_above_threshold(
-        data, target_gauge_col, streak_length, smallest_measurable_rainfall_amount
+        data, target_gauge_col, min_streak_length, smallest_measurable_rainfall_amount
     )
 
     # 2. Label original data
@@ -516,7 +516,7 @@ def flag_streaks_exceeding_smallest_measurable_rainfall_amount(
 
 
 def flag_streaks_exceeding_wet_day_rainfall_threshold(
-    data: pl.DataFrame, target_gauge_col: str, streak_length: int, accumulation_threshold: float
+    data: pl.DataFrame, target_gauge_col: str, min_streak_length: int, accumulation_threshold: float
 ) -> pl.DataFrame:
     """
     Flag values exceeding wet day rainfall accumulation threshold.
@@ -527,7 +527,7 @@ def flag_streaks_exceeding_wet_day_rainfall_threshold(
         Rainfall data with streak_id..
     target_gauge_col :
         Column with rainfall data.
-    streak_length :
+    min_streak_length :
         Only streaks longer than this will be considered
     accumulation_threshold :
         Threshold for rain accumulation.
@@ -540,7 +540,7 @@ def flag_streaks_exceeding_wet_day_rainfall_threshold(
     """
     # 1. Get streak above length and accumulation threshold
     streaks_above_accumulation = get_streaks_above_threshold(
-        data, target_gauge_col, streak_length, accumulation_threshold
+        data, target_gauge_col, min_streak_length, accumulation_threshold
     )
 
     # 2. Label original data
@@ -554,7 +554,7 @@ def flag_streaks_exceeding_wet_day_rainfall_threshold(
 
 
 def get_streaks_above_threshold(
-    data: pl.DataFrame, target_gauge_col: str, streak_length: int, value_threshold: int | float
+    data: pl.DataFrame, target_gauge_col: str, min_streak_length: int, value_threshold: int | float
 ) -> pl.DataFrame:
     """
         Get streak groups above given threshold.
@@ -565,7 +565,7 @@ def get_streaks_above_threshold(
         Rainfall data with streak_id..
     target_gauge_col :
         Column with rainfall data.
-    streak_length :
+    min_streak_length :
         Minimum length of streaks.
     value_threshold :
         Threshold to check .
@@ -587,7 +587,7 @@ def get_streaks_above_threshold(
     )
     # 2. Get streaks above streak length and threshold
     streaks_above_accumulation = data_streak_groups.drop_nans().filter(
-        (pl.col("streak_len") >= streak_length) & (pl.col("rain_amount") > value_threshold)
+        (pl.col("streak_len") >= min_streak_length) & (pl.col("rain_amount") > value_threshold)
     )
     return streaks_above_accumulation
 

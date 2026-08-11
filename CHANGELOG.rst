@@ -2,6 +2,13 @@
 Changelog
 =========
 
+1.1.0 (2026-08-11)
+------------------
+* Add subhourlyQC checks
+* Add exceedance of UK records (1h, 24hr and rolling24hr)
+* Change parameter: 'streak_length' to 'min_streak_length' 
+
+
 1.0.3 (2026-08-11)
 ------------------
 * change check_temporal_bias into check_hour_of_day and check_day_of_week 
