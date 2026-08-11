@@ -2,7 +2,7 @@
 Changelog
 =========
 
-1.1.0 (2026-08-11)
+1.0.3 (2026-08-11)
 ------------------
 * change check_temporal_bias into check_hour_of_day and check_day_of_week 
 
