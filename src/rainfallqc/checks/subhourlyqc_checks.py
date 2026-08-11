@@ -51,7 +51,7 @@ def check_exceedance_of_UK_1hr_record(data: pl.DataFrame, target_gauge_col: str)
         Rainfall data with exceedance of UK 1hr Record
 
     """
-    return check_subhourly_exceedance_of_given_record(
+    return get_subhourly_exceedance_of_given_record(
         data=data,
         target_gauge_col=target_gauge_col,
         record_rainfall_amount=UK_1hr_record,
@@ -78,7 +78,7 @@ def check_exceedance_of_UK_24hr_record(data: pl.DataFrame, target_gauge_col: str
     data_w_flags:
         Rainfall data with exceedance of UK 24hr Record
     """
-    return check_subhourly_exceedance_of_given_record(
+    return get_subhourly_exceedance_of_given_record(
         data=data,
         target_gauge_col=target_gauge_col,
         record_rainfall_amount=UK_24hr_record,
@@ -187,7 +187,7 @@ def check_streaks_20mm(data: pl.DataFrame, target_gauge_col: str, flag_col_name:
     return data_w_flags_disag.select(["time", flag_col_name])
 
 
-def check_subhourly_exceedance_of_given_record(
+def get_subhourly_exceedance_of_given_record(
     data: pl.DataFrame, target_gauge_col: str, record_rainfall_amount: [int | float], flag_col_name: str
 ) -> pl.DataFrame:
     """
