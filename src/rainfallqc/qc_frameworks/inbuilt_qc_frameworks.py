@@ -1,7 +1,14 @@
 # -*- coding: utf-8 -*-
 """In-built QC frameworks to apply to rainfall data to create quality controlled data."""
 
-from rainfallqc.checks import comparison_checks, gauge_checks, neighbourhood_checks, pypwsqc_filters, timeseries_checks, subhourlyqc_checks
+from rainfallqc.checks import (
+    comparison_checks,
+    gauge_checks,
+    neighbourhood_checks,
+    pypwsqc_filters,
+    timeseries_checks,
+    subhourlyqc_checks,
+)
 
 INTENSE_QC = {
     "QC1": {"function": gauge_checks.check_years_where_nth_percentile_is_zero},
@@ -67,7 +74,7 @@ INTENSE_RULEBASE_QC = {
 # Sub-hourly QC based on Villalobos-Herrera et al. 2022 (https://doi.org/10.1002/qj.4357). Also see Table S1 of that paper.
 UK_SUBHOURLY_QC = {
     "HQC_QC13": {"function": timeseries_checks.check_daily_accumulations},
-    "HQC_QC14": {"function": timeseries_checks.check_monthly_accumulations},    
+    "HQC_QC14": {"function": timeseries_checks.check_monthly_accumulations},
     "HQC_QC5": {"function": gauge_checks.check_intermittency},
     "HQC_QC1": {"function": gauge_checks.check_years_where_nth_percentile_is_zero},
     "HQC_QC2": {"function": gauge_checks.check_years_where_annual_kth_largest_value_is_zero},
@@ -78,14 +85,12 @@ UK_SUBHOURLY_QC = {
     "HQC_QC19": {"function": neighbourhood_checks.check_dry_neighbours_hourly},
     "HQC_QC8": {"function": comparison_checks.check_annual_exceedance_etccdi_r99p},
     "HQC_QC9": {"function": comparison_checks.check_annual_exceedance_etccdi_prcptot},
-
     # Modified part of IntenseQC (5)
     "HQC_UK1hr": {"function": subhourlyqc_checks.check_exceedance_of_UK_1hr_record},
     "HQC_UK24hr": {"function": subhourlyqc_checks.check_exceedance_of_UK_24hr_record},
     "HQC_UK24hr_rolling": {"function": subhourlyqc_checks.check_daily_exceedance_of_UK_24hr_record},
     "HQC_streaks_20mm_min": {"function": subhourlyqc_checks.check_streaks_20mm},
     # "SHQC_QC_spike_check": {"function": subhourlyqc_checks.spike_check}, # awaiting chat with Roberto
-
     "SHQC_freqResChecker": {"function": subhourlyqc_checks.check_freq_is_subhourly},
     # "SHQC_subH_checkr": {"function": subhourlyqc_checks.shqc_threshold_check},
 }

@@ -96,7 +96,9 @@ def check_day_of_week(
         1 if bias is detected (p < threshold), 0 otherwise
 
     """
-    return temporal_bias_test(data=data, target_gauge_col=target_gauge_col, time_granularity="weekday", p_threshold=p_threshold)
+    return temporal_bias_test(
+        data=data, target_gauge_col=target_gauge_col, time_granularity="weekday", p_threshold=p_threshold
+    )
 
 
 @qc_check("check_hour_of_day", require_non_negative=True)
@@ -127,7 +129,9 @@ def check_hour_of_day(
         1 if bias is detected (p < threshold), 0 otherwise
 
     """
-    return temporal_bias_test(data=data, target_gauge_col=target_gauge_col, time_granularity="hour", p_threshold=p_threshold)
+    return temporal_bias_test(
+        data=data, target_gauge_col=target_gauge_col, time_granularity="hour", p_threshold=p_threshold
+    )
 
 
 @qc_check("check_intermittency", require_non_negative=True)

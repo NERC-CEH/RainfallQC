@@ -310,7 +310,6 @@ def downsample_and_fill_columns(
         # List of column names
         cols_to_join = [time_col] + [pl.col(col) for col in data_cols]
 
-
     high_res_interval = _infer_interval(high_res_data, time_col)
     low_res_interval = _infer_interval(low_res_data, time_col)
 
@@ -620,14 +619,7 @@ def get_normalised_diff(data: pl.DataFrame, target_col: str, other_col: str, dif
 
 
 def _infer_interval(data: pl.DataFrame, time_col: str) -> datetime.timedelta:
-    times = (
-        data
-        .select(time_col)
-        .drop_nulls()
-        .unique()
-        .sort(time_col)
-        .get_column(time_col)
-    )
+    times = data.select(time_col).drop_nulls().unique().sort(time_col).get_column(time_col)
 
     diffs = times.diff().drop_nulls()
 

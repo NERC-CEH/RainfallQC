@@ -334,7 +334,11 @@ def check_streaks(
 
     # 3. Flag streaks of 2 or more repeated large values exceeding 2 * mean wet day rainfall (from ETCCDI SDII)
     streak_flag1 = flag_streaks_exceeding_wet_day_rainfall_threshold(
-        streak_data, target_gauge_col, min_streak_length=2, accumulation_threshold=accumulation_threshold, flag_col_name="streak_flag1"
+        streak_data,
+        target_gauge_col,
+        min_streak_length=2,
+        accumulation_threshold=accumulation_threshold,
+        flag_col_name="streak_flag1",
     )
 
     # 4. Flag streaks of 12 or more greater than smallest measurable rainfall amount
@@ -516,7 +520,11 @@ def flag_streaks_exceeding_smallest_measurable_rainfall_amount(
 
 
 def flag_streaks_exceeding_wet_day_rainfall_threshold(
-    data: pl.DataFrame, target_gauge_col: str, min_streak_length: int, accumulation_threshold: float, flag_col_name: str="streak_flag1"
+    data: pl.DataFrame,
+    target_gauge_col: str,
+    min_streak_length: int,
+    accumulation_threshold: float,
+    flag_col_name: str = "streak_flag1",
 ) -> pl.DataFrame:
     """
     Flag values exceeding wet day rainfall accumulation threshold.
