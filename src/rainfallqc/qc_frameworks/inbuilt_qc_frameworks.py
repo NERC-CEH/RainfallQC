@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """In-built QC frameworks to apply to rainfall data to create quality controlled data."""
 
-from rainfallqc.checks import comparison_checks, gauge_checks, neighbourhood_checks, pypwsqc_filters, timeseries_checks
+from rainfallqc.checks import comparison_checks, gauge_checks, neighbourhood_checks, pypwsqc_filters, timeseries_checks, subhourlyqc_checks
 
 INTENSE_QC = {
     "QC1": {"function": gauge_checks.check_years_where_nth_percentile_is_zero},
@@ -64,39 +64,31 @@ INTENSE_RULEBASE_QC = {
     },
 }
 
-# # Sub-hourly QC based on Table S1 of Villalobos-Herrera et al. 2022 (https://doi.org/10.1002/qj.4357)
-# UK_SUBHOURLY_QC = {
-#     "QC13": {"function": timeseries_checks.check_daily_accumulations},
-#     "QC14": {"function": timeseries_checks.check_monthly_accumulations},    
-#     "QC5": {"function": gauge_checks.check_intermittency},
-#     "QC1": {"function": gauge_checks.check_years_where_nth_percentile_is_zero},
-#     "QC2": {"function": gauge_checks.check_years_where_annual_kth_largest_value_is_zero},
-#     "QC3": {"function": gauge_checks.check_day_of_week},
-#     "QC4": {"function": gauge_checks.check_hour_of_day},
-#     "QC6": {"function": gauge_checks.check_breakpoints},
-#     "QC17": {"function": neighbourhood_checks.check_wet_neighbours_hourly},
-#     "QC19": {"function": neighbourhood_checks.check_dry_neighbours_hourly},
-#     "QC8": {"function": comparison_checks.check_annual_exceedance_etccdi_r99p},
-#     "QC9": {"function": comparison_checks.check_annual_exceedance_etccdi_prcptot},
+# Sub-hourly QC based on Villalobos-Herrera et al. 2022 (https://doi.org/10.1002/qj.4357). Also see Table S1 of that paper.
+UK_SUBHOURLY_QC = {
+    "HQC_QC13": {"function": timeseries_checks.check_daily_accumulations},
+    "HQC_QC14": {"function": timeseries_checks.check_monthly_accumulations},    
+    "HQC_QC5": {"function": gauge_checks.check_intermittency},
+    "HQC_QC1": {"function": gauge_checks.check_years_where_nth_percentile_is_zero},
+    "HQC_QC2": {"function": gauge_checks.check_years_where_annual_kth_largest_value_is_zero},
+    "HQC_QC3": {"function": gauge_checks.check_day_of_week},
+    "HQC_QC4": {"function": gauge_checks.check_hour_of_day},
+    "HQC_QC6": {"function": gauge_checks.check_breakpoints},
+    "HQC_QC17": {"function": neighbourhood_checks.check_wet_neighbours_hourly},
+    "HQC_QC19": {"function": neighbourhood_checks.check_dry_neighbours_hourly},
+    "HQC_QC8": {"function": comparison_checks.check_annual_exceedance_etccdi_r99p},
+    "HQC_QC9": {"function": comparison_checks.check_annual_exceedance_etccdi_prcptot},
 
-#     "QC_res_check": {"function": subhourlyqc_checks.freq_res_checker},
-#     "QCX": {"function:" subhourlyqc_checks.UK_1h_record_rainfall},
-#     "QCX": {"function": subhourlyqc_checks.UK_24hr_record_rainfall},
-#     "QC_shqc_threshold_check": {"function": subhourlyqc_checks.shqc_threshold_check},
-#     "QC15": {"function": subhourlyqc_checks.check_streaks},
-#     "QC_spike_check": {"function": subhourlyqc_checks.spike_check},
+    # Modified part of IntenseQC (5)
+    "HQC_UK1hr": {"function": subhourlyqc_checks.check_exceedance_of_UK_1hr_record},
+    "HQC_UK24hr": {"function": subhourlyqc_checks.check_exceedance_of_UK_24hr_record},
+    "HQC_UK24hr_rolling": {"function": subhourlyqc_checks.check_daily_exceedance_of_UK_24hr_record},
+    "HQC_streaks_20mm_min": {"function": subhourlyqc_checks.check_streaks_20mm},
+    # "SHQC_QC_spike_check": {"function": subhourlyqc_checks.spike_check}, # awaiting chat with Roberto
 
-#     "QC7": {"function": gauge_checks.check_min_val_change},    
-#     "QC10": {"function": comparison_checks.check_exceedance_of_rainfall_world_record},
-#     "QC11": {"function": comparison_checks.check_hourly_exceedance_etccdi_rx1day},
-#     "QC12": {"function": timeseries_checks.check_dry_period_cdd},
-#     "QC20": {"function": neighbourhood_checks.check_monthly_neighbours},
-#     "QC21": {"function": neighbourhood_checks.check_timing_offset},
-#     "QC22": {"function": neighbourhood_checks.check_neighbour_affinity_index},
-#     "QC23": {"function": neighbourhood_checks.check_neighbour_correlation},
-#     "QC24": {"function": neighbourhood_checks.check_daily_factor},
-#     "QC25": {"function": neighbourhood_checks.check_monthly_factor},
-# }
+    "SHQC_freqResChecker": {"function": subhourlyqc_checks.check_freq_is_subhourly},
+    # "SHQC_subH_checkr": {"function": subhourlyqc_checks.shqc_threshold_check},
+}
 
 
 PYPWSQC = {

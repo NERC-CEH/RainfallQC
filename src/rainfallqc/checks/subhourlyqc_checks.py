@@ -137,7 +137,7 @@ def check_daily_exceedance_of_UK_24hr_record(data: pl.DataFrame, target_gauge_co
 @qc_check("check_streaks_20mm", require_non_negative=True)
 def check_streaks_20mm(data: pl.DataFrame, target_gauge_col: str, flag_col_name: str="streak_flag_20mm") -> pl.DataFrame:
     """
-    Check streaks with fixed hourly threshold of 20 mm
+    Check streaks with fixed minimum hourly threshold of 20 mm.
 
     This is QCX from the SubHourlyQC framework.
 
@@ -185,6 +185,70 @@ def check_streaks_20mm(data: pl.DataFrame, target_gauge_col: str, flag_col_name:
         fill_method="backward",
     )
     return data_w_flags_disag.select(["time", flag_col_name])
+
+
+@qc_check("check_freq_is_subhourly", require_non_negative=True)
+def check_freq_is_subhourly(data: pl.DataFrame, target_gauge_col: str) -> pl.DataFrame:
+    """
+    Checks frequency and resolution of data is subhourly.
+    Specifically, it will check monthly periods with frequencies >= 30 minutes, or where the resolution is
+    1 mm (usually an indicator of tip counts not tip amounts in the data), and replace them with NAN.
+
+    Flags:
+    1 == when month has suspect frequency or resolution
+
+    This is freqResChecker (Function 1 of the SHQC process) from the SubHourlyQC framework.
+
+    Parameters
+    ----------
+    data :
+        Rainfall data (15-min or 1-min)
+    target_gauge_col :
+        Column with rainfall data
+
+    Returns
+    -------
+
+    """
+    # 1. Get all unique timestep in the data
+    unique_timesteps = data_utils.get_data_timesteps(data)
+    
+    # 2. If there are more than 1 time-step then apply check
+    if len(unique_timesteps) > 1:
+        # 3. Check frequency of data; I am uncertain of this, because what if very few values in month
+        data_freqs = data.with_columns([pl.col("time").diff().alias("time_step")])
+        most_common_freq_by_mo = data_freqs.group_by_dynamic("time", every="1mo").agg(pl.col("time_step").mode().first().alias("most_common_freq"))
+
+        # 4. Check resolution of the data (checking mode of rainfall); I am uncertain of this, because what if very few values in month
+        most_common_res_by_mo = data.group_by_dynamic("time", every="1mo").agg(pl.col(target_gauge_col).mode().first().alias("most_common_res"))
+        
+        # 5. Combine
+        freq_and_res = pl.concat([most_common_freq_by_mo, most_common_res_by_mo])
+
+        # 6. Flag months where freq >= 30 mins or and resolution >=1.0
+        freq_and_res_w_flags = freq_and_res.with_columns(
+            pl.when(
+                (pl.col("most_common_freq") >= datetime.timedelta(minutes=30)) |
+                (pl.col("most_common_res") >= 1.0)
+                )
+            .then(1)
+            .otherwise(0)
+            .alias("freq_res_flag")
+        )
+
+        # 7. Disaggregate data back to original resolution
+        data_w_flags_disag = data_utils.downsample_and_fill_columns(
+            high_res_data=original_data,
+            low_res_data=freq_and_res_w_flags,
+            data_cols="freq_res_flag",
+            fill_limit=None,
+            fill_method="backward",
+        )
+    else:
+        # Check data has consistent resolution that is 1-min or 15-min 
+        data_utils.check_data_is_specific_time_res(data, time_res=["1m", "15m"])
+        data_w_flags_disag = data.with_columns(freq_res_flag=0)
+    return data_w_flags_disag
 
 
 def get_subhourly_exceedance_of_given_record(
