@@ -7,13 +7,18 @@ Created on Thu Jul 11 10:11:35 2019
 Automated checks for high precipitation hours
 
 """
+
 import datetime
 import numpy as np
 import polars as pl
 
 from rainfallqc.core.all_qc_checks import qc_check
 from rainfallqc.checks.comparison_checks import flag_exceedance_of_ref_val_as_col
-from rainfallqc.checks.timeseries_checks import get_streaks_above_threshold, get_streaks_of_repeated_values, flag_streaks_exceeding_wet_day_rainfall_threshold
+from rainfallqc.checks.timeseries_checks import (
+    get_streaks_above_threshold,
+    get_streaks_of_repeated_values,
+    flag_streaks_exceeding_wet_day_rainfall_threshold,
+)
 from rainfallqc.utils import data_utils
 
 
@@ -135,7 +140,9 @@ def check_daily_exceedance_of_UK_24hr_record(data: pl.DataFrame, target_gauge_co
 
 
 @qc_check("check_streaks_20mm", require_non_negative=True)
-def check_streaks_20mm(data: pl.DataFrame, target_gauge_col: str, flag_col_name: str="streak_flag_20mm") -> pl.DataFrame:
+def check_streaks_20mm(
+    data: pl.DataFrame, target_gauge_col: str, flag_col_name: str = "streak_flag_20mm"
+) -> pl.DataFrame:
     """
     Check streaks with fixed minimum hourly threshold of 20 mm.
 
@@ -221,21 +228,22 @@ def check_freq_is_subhourly(data: pl.DataFrame, target_gauge_col: str) -> pl.Dat
         # 3. Check frequency of data; I am uncertain of this, because what if very few values in month
         data_freqs = data.with_columns([pl.col("time").diff().alias("time_step")])
         # Taking .max() if multiple freq from mode
-        most_common_freq_by_mo = data_freqs.group_by_dynamic("time", every="1mo").agg(pl.col("time_step").mode().max().alias("most_common_freq"))
+        most_common_freq_by_mo = data_freqs.group_by_dynamic("time", every="1mo").agg(
+            pl.col("time_step").mode().max().alias("most_common_freq")
+        )
 
-        # 4. Check resolution of the data (checking mode of rainfall); I am uncertain of this, because what if very few values in month. 
+        # 4. Check resolution of the data (checking mode of rainfall); I am uncertain of this, because what if very few values in month.
         # Taking .max() if multiple res from mode
-        most_common_res_by_mo = data.group_by_dynamic("time", every="1mo").agg(pl.col(target_gauge_col).mode().max().alias("most_common_res"))
-        
+        most_common_res_by_mo = data.group_by_dynamic("time", every="1mo").agg(
+            pl.col(target_gauge_col).mode().max().alias("most_common_res")
+        )
+
         # 5. Combine together
-        freq_and_res = most_common_freq_by_mo.join(most_common_res_by_mo, on='time')
+        freq_and_res = most_common_freq_by_mo.join(most_common_res_by_mo, on="time")
 
         # 6. Flag months where freq >= 30 mins or and resolution >=1.0
         freq_and_res_w_flags = freq_and_res.with_columns(
-            pl.when(
-                (pl.col("most_common_freq") >= datetime.timedelta(minutes=30)) |
-                (pl.col("most_common_res") >= 1.0)
-                )
+            pl.when((pl.col("most_common_freq") >= datetime.timedelta(minutes=30)) | (pl.col("most_common_res") >= 1.0))
             .then(1)
             .otherwise(0)
             .alias("freq_res_flag")
@@ -249,10 +257,35 @@ def check_freq_is_subhourly(data: pl.DataFrame, target_gauge_col: str) -> pl.Dat
         )
 
     else:
-        # Check data has consistent resolution that is 1-min or 15-min 
+        # Check data has consistent resolution that is 1-min or 15-min
         data_utils.check_data_is_specific_time_res(data, time_res=["1m", "15m"])
         data_w_flags_disag = data.with_columns(freq_res_flag=0)
     return data_w_flags_disag
+
+
+@qc_check("check_subhourly_thresholds", require_non_negative=True)
+def check_subhourly_thresholds(data: pl.DataFrame, target_gauge_col: str) -> pl.DataFrame:
+    """
+    Checks
+
+    Flags:
+    1 == when
+
+    This is subH_checkr (Function 2 of the SHQC process) from the SubHourlyQC framework.
+
+    Parameters
+    ----------
+    data :
+        Rainfall data (15-min or 1-min)
+    target_gauge_col :
+        Column with rainfall data
+
+    Returns
+    -------
+    data_w_flags_disag :
+        Rainfall data with flags denoting
+
+    """
 
 
 def get_subhourly_exceedance_of_given_record(
@@ -344,7 +377,7 @@ def get_subhourly_exceedance_of_given_record(
 #     """ Old read method
 #     try:
 #         data = pd.read_csv(file)
-        
+
 #         # Get datetime index
 #         data.index = pd.DatetimeIndex(data['ob_time'])
 #         # Get metadata in file
