@@ -4,7 +4,7 @@
 
 from rainfallqc.core import all_qc_checks
 
-TOTAL_NUMBER_OF_CHECKS = 30 # across package
+TOTAL_NUMBER_OF_CHECKS = 31 # across package
 
 def test_all_qc_checks():
     """Test that all QC checks are registered."""
