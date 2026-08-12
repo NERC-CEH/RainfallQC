@@ -238,7 +238,6 @@ def check_freq_is_subhourly(data: pl.DataFrame, target_gauge_col: str) -> pl.Dat
             .otherwise(0)
             .alias("freq_res_flag")
         )
-        # print(freq_and_res_w_flags['freq_res_flag'].value_counts())
 
         # 7. Disaggregate data back to original resolution
         data_w_flags_disag = data_utils.downsample_monthly_data(
@@ -246,7 +245,6 @@ def check_freq_is_subhourly(data: pl.DataFrame, target_gauge_col: str) -> pl.Dat
             monthly_data=freq_and_res_w_flags,
             data_cols="freq_res_flag",
         )
-        print(data_w_flags_disag['freq_res_flag'].value_counts())
 
     else:
         # Check data has consistent resolution that is 1-min or 15-min 
