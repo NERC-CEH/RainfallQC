@@ -107,6 +107,26 @@ def test_downsample_and_fill_columns(hourly_gsdr_network, daily_gsdr_network):
                time_col="time",
         )
 
+def test_downsample_and_fill_columns_incompatible_intervals(hourly_gsdr_network, daily_gsdr_network, monthly_gsdr_network):
+    with pytest.raises(ValueError):
+        data_utils.downsample_and_fill_columns(
+            high_res_data=daily_gsdr_network,
+            low_res_data=hourly_gsdr_network,
+            data_cols=[f"{DEFAULT_RAIN_COL}_DE_00390", f"{DEFAULT_RAIN_COL}_DE_00310"],
+            fill_limit=23,
+            fill_method="forward",
+            time_col="time",
+        )
+
+    with pytest.raises(ValueError):
+        data_utils.downsample_and_fill_columns(
+            high_res_data=hourly_gsdr_network.sample(1000, seed=41),
+            low_res_data=monthly_gsdr_network,
+            data_cols=[f"{DEFAULT_RAIN_COL}_DE_00390", f"{DEFAULT_RAIN_COL}_DE_00310"],
+            fill_limit=None,
+            fill_method="forward",
+            time_col="time",
+        )
 
 def test_get_dry_spells(hourly_gsdr_data):
     result = data_utils.get_dry_spells(hourly_gsdr_data, target_gauge_col=DEFAULT_RAIN_COL)

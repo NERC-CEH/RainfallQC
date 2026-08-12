@@ -310,6 +310,24 @@ def downsample_and_fill_columns(
         # List of column names
         cols_to_join = [time_col] + [pl.col(col) for col in data_cols]
 
+
+    high_res_interval = _infer_interval(high_res_data, time_col)
+    low_res_interval = _infer_interval(low_res_data, time_col)
+
+    if low_res_interval < high_res_interval:
+        raise ValueError(
+            f"Low-resolution data appears to have a higher frequency than "
+            f"high-resolution data: {low_res_interval} vs {high_res_interval}"
+        )
+
+    ratio = low_res_interval / high_res_interval
+    if ratio != int(ratio):
+        raise ValueError(
+            f"Data frequencies are incompatible: "
+            f"high-resolution interval={high_res_interval}, "
+            f"low-resolution interval={low_res_interval}"
+        )
+
     # Select time and all data columns to join
     cols_to_join_df = low_res_data.select(cols_to_join)
 
@@ -599,6 +617,24 @@ def get_normalised_diff(data: pl.DataFrame, target_col: str, other_col: str, dif
     return data.with_columns(
         (normalise_data(pl.col(target_col)) - normalise_data(pl.col(other_col))).alias(diff_col_name)
     )
+
+
+def _infer_interval(data: pl.DataFrame, time_col: str) -> datetime.timedelta:
+    times = (
+        data
+        .select(time_col)
+        .drop_nulls()
+        .unique()
+        .sort(time_col)
+        .get_column(time_col)
+    )
+
+    diffs = times.diff().drop_nulls()
+
+    if len(diffs) == 0:
+        raise ValueError("Not enough timestamps to infer data frequency")
+
+    return diffs.mode().max()
 
 
 def make_month_and_year_col(data: pl.DataFrame) -> pl.DataFrame:
