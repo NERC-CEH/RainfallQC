@@ -7,7 +7,7 @@ Created on Thu Jul 11 10:11:35 2019
 Automated checks for high precipitation hours
 
 """
-
+import datetime
 import numpy as np
 import polars as pl
 
@@ -212,18 +212,21 @@ def check_freq_is_subhourly(data: pl.DataFrame, target_gauge_col: str) -> pl.Dat
     """
     # 1. Get all unique timestep in the data
     unique_timesteps = data_utils.get_data_timesteps(data)
-    
+
     # 2. If there are more than 1 time-step then apply check
     if len(unique_timesteps) > 1:
+        original_data = data.clone()
         # 3. Check frequency of data; I am uncertain of this, because what if very few values in month
         data_freqs = data.with_columns([pl.col("time").diff().alias("time_step")])
-        most_common_freq_by_mo = data_freqs.group_by_dynamic("time", every="1mo").agg(pl.col("time_step").mode().first().alias("most_common_freq"))
+        # Taking .max() if multiple freq from mode
+        most_common_freq_by_mo = data_freqs.group_by_dynamic("time", every="1mo").agg(pl.col("time_step").mode().max().alias("most_common_freq"))
 
-        # 4. Check resolution of the data (checking mode of rainfall); I am uncertain of this, because what if very few values in month
-        most_common_res_by_mo = data.group_by_dynamic("time", every="1mo").agg(pl.col(target_gauge_col).mode().first().alias("most_common_res"))
+        # 4. Check resolution of the data (checking mode of rainfall); I am uncertain of this, because what if very few values in month. 
+        # Taking .max() if multiple res from mode
+        most_common_res_by_mo = data.group_by_dynamic("time", every="1mo").agg(pl.col(target_gauge_col).mode().max().alias("most_common_res"))
         
-        # 5. Combine
-        freq_and_res = pl.concat([most_common_freq_by_mo, most_common_res_by_mo])
+        # 5. Combine together
+        freq_and_res = most_common_freq_by_mo.join(most_common_res_by_mo, on='time')
 
         # 6. Flag months where freq >= 30 mins or and resolution >=1.0
         freq_and_res_w_flags = freq_and_res.with_columns(
@@ -235,15 +238,16 @@ def check_freq_is_subhourly(data: pl.DataFrame, target_gauge_col: str) -> pl.Dat
             .otherwise(0)
             .alias("freq_res_flag")
         )
+        # print(freq_and_res_w_flags['freq_res_flag'].value_counts())
 
         # 7. Disaggregate data back to original resolution
-        data_w_flags_disag = data_utils.downsample_and_fill_columns(
-            high_res_data=original_data,
-            low_res_data=freq_and_res_w_flags,
+        data_w_flags_disag = data_utils.downsample_monthly_data(
+            sub_monthly_data=original_data,
+            monthly_data=freq_and_res_w_flags,
             data_cols="freq_res_flag",
-            fill_limit=None,
-            fill_method="backward",
         )
+        print(data_w_flags_disag['freq_res_flag'].value_counts())
+
     else:
         # Check data has consistent resolution that is 1-min or 15-min 
         data_utils.check_data_is_specific_time_res(data, time_res=["1m", "15m"])
@@ -304,126 +308,126 @@ def get_subhourly_exceedance_of_given_record(
     return data_w_flags_disag.select(["time", flag_col_name])
 
 
-def freqResChecker(input_file_zip_pair, outdir):  # (file, outdir):
-    """
-    Function 1 of the SHQC process
+# def freqResChecker(input_file_zip_pair, outdir):  # (file, outdir):
+#     """
+#     Function 1 of the SHQC process
 
-    Reads in subhourly data and examines it's frequency and resolution
-    Monthly periods with frequencies >= 30 minutes, or where the resolution is
-    1 mm (usually an indicator of tip counts not tip amounts in the data), are
-    replaced with NAN.
+#     Reads in subhourly data and examines it's frequency and resolution
+#     Monthly periods with frequencies >= 30 minutes, or where the resolution is
+#     1 mm (usually an indicator of tip counts not tip amounts in the data), are
+#     replaced with NAN.
 
-    An output file is generated to keep track of changes.
-    """
+#     An output file is generated to keep track of changes.
+#     """
 
-    # Reading from zipfile
-    input_file = input_file_zip_pair[0]
-    zip_folder = input_file_zip_pair[1]
-    zf_in = zipfile.ZipFile(zip_folder, "r")
-    d = zf_in.open(input_file, mode="r")
+#     # Reading from zipfile
+#     input_file = input_file_zip_pair[0]
+#     zip_folder = input_file_zip_pair[1]
+#     zf_in = zipfile.ZipFile(zip_folder, "r")
+#     d = zf_in.open(input_file, mode="r")
 
-    try:
-        data = pd.read_csv(d)
+#     try:
+#         data = pd.read_csv(d)
 
-        # Get datetime index
-        data.index = pd.DatetimeIndex(data["ob_time"])
-        # Get metadata in file
-        station_id = data["id"][1]
-        station_name = data["src_id"][1]
-    except:
-        print("Could not read data for " + input_file)
+#         # Get datetime index
+#         data.index = pd.DatetimeIndex(data["ob_time"])
+#         # Get metadata in file
+#         station_id = data["id"][1]
+#         station_name = data["src_id"][1]
+#     except:
+#         print("Could not read data for " + input_file)
 
-    d.close()
-    zf_in.close()
+#     d.close()
+#     zf_in.close()
 
-    # read station data
-    """ Old read method
-    try:
-        data = pd.read_csv(file)
+#     # read station data
+#     """ Old read method
+#     try:
+#         data = pd.read_csv(file)
         
-        # Get datetime index
-        data.index = pd.DatetimeIndex(data['ob_time'])
-        # Get metadata in file
-        station_id = data['id'][1]
-        station_name = data['src_id'][1]
-    except:
-        print('Could not read data for '+file)
-    """
+#         # Get datetime index
+#         data.index = pd.DatetimeIndex(data['ob_time'])
+#         # Get metadata in file
+#         station_id = data['id'][1]
+#         station_name = data['src_id'][1]
+#     except:
+#         print('Could not read data for '+file)
+#     """
 
-    out = pd.DataFrame(
-        columns=["Station_id", "Station_name", "Removed", "N_months", "obs_rem", "pobs_rem", "mm_rem", "pmm_rem"]
-    )
+#     out = pd.DataFrame(
+#         columns=["Station_id", "Station_name", "Removed", "N_months", "obs_rem", "pobs_rem", "mm_rem", "pmm_rem"]
+#     )
 
-    og_data = data.copy()
-    # Drop un-needed columns
-    data = pd.DataFrame(data["accum"])
-    data = data.dropna()
+#     og_data = data.copy()
+#     # Drop un-needed columns
+#     data = pd.DataFrame(data["accum"])
+#     data = data.dropna()
 
-    # Calculate time difference vector to identify if data is 15-min or other type
-    tdifs = data.index.to_series().diff() / np.timedelta64(1, "s")
-    tdifs = tdifs.resample("M").apply(lambda x: stats2.mode(x)[0])
+#     # Calculate time difference vector to identify if data is 15-min or other type
+#     tdifs = data.index.to_series().diff() / np.timedelta64(1, "s")
+#     tdifs = tdifs.resample("M").apply(lambda x: stats2.mode(x)[0])
 
-    # Calculate data resolution, by month
-    res = data.resample("M").apply(lambda x: stats2.mode(x)[0])
-    # Concatenate checks
-    checks = pd.concat([tdifs, res], axis=1)
+#     # Calculate data resolution, by month
+#     res = data.resample("M").apply(lambda x: stats2.mode(x)[0])
+#     # Concatenate checks
+#     checks = pd.concat([tdifs, res], axis=1)
 
-    # If time resolution is >= 30mins or if resolution == 0.5, flag
-    checks["remove"] = np.where(
-        (checks["ob_time"] >= 1800) | ((checks["ob_time"] >= 1800) & (checks["accum"] == 0.5)) | (checks["accum"] >= 1),
-        1,
-        0,
-    )
+#     # If time resolution is >= 30mins or if resolution == 0.5, flag
+#     checks["remove"] = np.where(
+#         (checks["ob_time"] >= 1800) | ((checks["ob_time"] >= 1800) & (checks["accum"] == 0.5)) | (checks["accum"] >= 1),
+#         1,
+#         0,
+#     )
 
-    # If data has been flagged, remove and write
-    if max(checks["remove"]) > 0:
-        # Create mask to remove data
-        months = checks[checks["remove"] == 1].dropna().index
-        mask = months.to_period("M")
+#     # If data has been flagged, remove and write
+#     if max(checks["remove"]) > 0:
+#         # Create mask to remove data
+#         months = checks[checks["remove"] == 1].dropna().index
+#         mask = months.to_period("M")
 
-        # Fill erroneous periods with 'NA' values and write
-        clean_data = og_data.copy()
-        clean_data["accum"] = np.where(clean_data.index.to_period("M").isin(mask), np.nan, clean_data["accum"])
-        clean_data.to_csv(outdir + "/" + station_id + ".txt", index=False)
+#         # Fill erroneous periods with 'NA' values and write
+#         clean_data = og_data.copy()
+#         clean_data["accum"] = np.where(clean_data.index.to_period("M").isin(mask), np.nan, clean_data["accum"])
+#         clean_data.to_csv(outdir + "/" + station_id + ".txt", index=False)
 
-        # Calculate data removed
-        og_mis = og_data.accum.isnull().sum()
-        cl_mis = clean_data.accum.isnull().sum()
-        H_rem = cl_mis - og_mis
-        ph_rem = H_rem * 100 / og_data.shape[0]  # percentage of data entries replaced with NAN
+#         # Calculate data removed
+#         og_mis = og_data.accum.isnull().sum()
+#         cl_mis = clean_data.accum.isnull().sum()
+#         H_rem = cl_mis - og_mis
+#         ph_rem = H_rem * 100 / og_data.shape[0]  # percentage of data entries replaced with NAN
 
-        # Calculate rainfall removed
-        r_rem = og_data.accum.sum() - clean_data.accum.sum()
-        pr_rem = r_rem * 100 / og_data.accum.sum()
+#         # Calculate rainfall removed
+#         r_rem = og_data.accum.sum() - clean_data.accum.sum()
+#         pr_rem = r_rem * 100 / og_data.accum.sum()
 
-        rem = "True"
-        n_mon = checks[checks["remove"] > 0].shape[0]
+#         rem = "True"
+#         n_mon = checks[checks["remove"] > 0].shape[0]
 
-    # Otherwise write out un-changed data
-    else:
-        og_data.to_csv(outdir + "/" + station_id + ".txt", index=False)
-        rem = "False"
-        n_mon = 0
-        H_rem = 0
-        ph_rem = 0
-        r_rem = 0
-        pr_rem = 0
+#     # Otherwise write out un-changed data
+#     else:
+#         og_data.to_csv(outdir + "/" + station_id + ".txt", index=False)
+#         rem = "False"
+#         n_mon = 0
+#         H_rem = 0
+#         ph_rem = 0
+#         r_rem = 0
+#         pr_rem = 0
 
-    out = out.append(
-        {
-            "Station_id": station_id,
-            "Station_name": station_name,
-            "Removed": rem,
-            "N_months": n_mon,
-            "obs_rem": H_rem,
-            "pobs_rem": ph_rem,
-            "mm_rem": r_rem,
-            "pmm_rem": pr_rem,
-        },
-        ignore_index=True,
-    )
+#     out = out.append(
+#         {
+#             "Station_id": station_id,
+#             "Station_name": station_name,
+#             "Removed": rem,
+#             "N_months": n_mon,
+#             "obs_rem": H_rem,
+#             "pobs_rem": ph_rem,
+#             "mm_rem": r_rem,
+#             "pmm_rem": pr_rem,
+#         },
+#         ignore_index=True,
+#     )
 
-    return out
+#     return out
 
 
 def subH_checkr(file, metadir, thresholds60, thresholds15, thresholds1, outdir):
