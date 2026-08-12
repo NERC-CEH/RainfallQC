@@ -6,8 +6,8 @@ from rainfallqc.checks import (
     gauge_checks,
     neighbourhood_checks,
     pypwsqc_filters,
-    timeseries_checks,
     subhourlyqc_checks,
+    timeseries_checks,
 )
 
 INTENSE_QC = {
@@ -85,14 +85,15 @@ UK_SUBHOURLY_QC = {
     "HQC_QC19": {"function": neighbourhood_checks.check_dry_neighbours_hourly},
     "HQC_QC8": {"function": comparison_checks.check_annual_exceedance_etccdi_r99p},
     "HQC_QC9": {"function": comparison_checks.check_annual_exceedance_etccdi_prcptot},
-    # Modified part of IntenseQC (5)
+    # Modified part of IntenseQC (4)
     "HQC_UK1hr": {"function": subhourlyqc_checks.check_exceedance_of_UK_1hr_record},
     "HQC_UK24hr": {"function": subhourlyqc_checks.check_exceedance_of_UK_24hr_record},
     "HQC_UK24hr_rolling": {"function": subhourlyqc_checks.check_daily_exceedance_of_UK_24hr_record},
     "HQC_streaks_20mm_min": {"function": subhourlyqc_checks.check_streaks_20mm},
+    # New checks (3)
     # "SHQC_QC_spike_check": {"function": subhourlyqc_checks.spike_check}, # awaiting chat with Roberto
     "SHQC_freqResChecker": {"function": subhourlyqc_checks.check_freq_is_subhourly},
-    # "SHQC_subH_checkr": {"function": subhourlyqc_checks.shqc_threshold_check},
+    "SHQC_subH_checkr": {"function": subhourlyqc_checks.check_subhourly_thresholds},
 }
 
 
