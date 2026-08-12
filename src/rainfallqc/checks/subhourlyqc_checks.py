@@ -153,7 +153,7 @@ def check_streaks_20mm(data: pl.DataFrame, target_gauge_col: str, flag_col_name:
     Returns
     -------
     data_w_flags:
-        Rainfall data with flags dennotting period of repeating streak above 20mm
+        Rainfall data with flags denotting period of repeating streak above 20mm
     """
     # 1. Check data is sub-hourly
     data_utils.check_data_is_specific_time_res(data, time_res=["1m", "15m"])
@@ -208,6 +208,8 @@ def check_freq_is_subhourly(data: pl.DataFrame, target_gauge_col: str) -> pl.Dat
 
     Returns
     -------
+    data_w_flags_disag :
+        Rainfall data with flags denoting months where frequency or resolution is suspect
 
     """
     # 1. Get all unique timestep in the data
