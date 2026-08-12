@@ -4,7 +4,7 @@ Changelog
 
 1.1.0 (2026-08-11)
 ------------------
-* Add subhourlyQC checks
+* Add subhourlyQC checks from Villalobos-Herrera et al. (2022)
 * Add exceedance of UK records (1h, 24hr and rolling24hr)
 * Add streaks check of min 20mm
 * Change parameter: 'streak_length' to 'min_streak_length' 
