@@ -79,9 +79,9 @@ def test_check_freq_is_subhourly_1min_data(min1_gsdr_data):
 def test_check_subhourly_thresholds(min15_gsdr_data):
     result = subhourlyqc_checks.check_subhourly_thresholds(min15_gsdr_data, target_gauge_col=DEFAULT_RAIN_COL)
     assert len(result.filter(pl.col("month_1hr_threshold_flag") == 0)) == 170393
-    assert len(result.filter(pl.col("month_1hr_threshold_flag") == 1)) == 4400
+    assert len(result.filter(pl.col("month_1hr_threshold_flag") == 1)) == 4900
     assert len(result.filter(pl.col("month_15min_threshold_flag") == 0)) == 170893
-    assert len(result.filter(pl.col("month_15min_threshold_flag") == 1)) == 4900
+    assert len(result.filter(pl.col("month_15min_threshold_flag") == 1)) == 4400
 
 def test_check_subhourly_thresholds_1min_data(min1_gsdr_data):
     result = subhourlyqc_checks.check_subhourly_thresholds(min1_gsdr_data, target_gauge_col=DEFAULT_RAIN_COL)
