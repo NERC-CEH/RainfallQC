@@ -1,11 +1,12 @@
 # -*- coding: utf-8 -*-
 """
-Created on Thu Jul 11 10:11:35 2019
+Quality control checks for sub-hourly data.
 
-@author: Roberto Villalobos
+From Sub-hourly QC developed by Roberto Villalobos and described in Villalobos-Herrera et al. (2022).
 
-Automated checks for high precipitation hours
+Code adapted from https://github.com/nclwater/SubHourlyQC/tree/main (GNU GPL v3.0) authored by Roberto Villalobos.
 
+Classes and functions ordered by appearance in SubHourlyQC framework.
 """
 
 import datetime
