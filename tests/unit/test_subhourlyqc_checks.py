@@ -14,37 +14,37 @@ DEFAULT_RAIN_COL = "rain_mm"
 def test_check_exceedance_of_UK_1hr_record(min15_gsdr_data):
     result = subhourlyqc_checks.check_exceedance_of_UK_1hr_record(min15_gsdr_data, target_gauge_col=DEFAULT_RAIN_COL)
     assert len(result) == 175293
-    assert len(result.filter(pl.col("UK_1hr_record_check") > 0)) == 4420
-    assert len(result.filter(pl.col("UK_1hr_record_check") == 0)) == 170873
+    assert len(result.filter(pl.col("UK_1hr_record_flag") > 0)) == 4420
+    assert len(result.filter(pl.col("UK_1hr_record_flag") == 0)) == 170873
 
 
 def test_check_exceedance_of_UK_1h_record_1min_data(min1_gsdr_data):
     result = subhourlyqc_checks.check_exceedance_of_UK_1hr_record(min1_gsdr_data, target_gauge_col=DEFAULT_RAIN_COL)
     assert len(result) == 2629381
-    assert len(result.filter(pl.col("UK_1hr_record_check") > 0)) == 66300
-    assert len(result.filter(pl.col("UK_1hr_record_check") == 0)) == 2563081
+    assert len(result.filter(pl.col("UK_1hr_record_flag") > 0)) == 66300
+    assert len(result.filter(pl.col("UK_1hr_record_flag") == 0)) == 2563081
 
 
 
 def test_check_exceedance_of_UK_24hr_record(min15_gsdr_data):
     result = subhourlyqc_checks.check_exceedance_of_UK_24hr_record(min15_gsdr_data, target_gauge_col=DEFAULT_RAIN_COL)
-    assert len(result.filter(pl.col("UK_24hr_record_check") == 4)) == 20
-    assert len(result.filter(pl.col("UK_24hr_record_check") == 1)) == 4
-    assert len(result.filter(pl.col("UK_24hr_record_check") == 0)) == 170881
+    assert len(result.filter(pl.col("UK_24hr_record_flag") == 4)) == 20
+    assert len(result.filter(pl.col("UK_24hr_record_flag") == 1)) == 4
+    assert len(result.filter(pl.col("UK_24hr_record_flag") == 0)) == 170881
 
 
 def test_check_daily_exceedance_of_UK_24hr_record(min15_gsdr_data):
     result = subhourlyqc_checks.check_daily_exceedance_of_UK_24hr_record(min15_gsdr_data, target_gauge_col=DEFAULT_RAIN_COL)
-    assert len(result.filter(pl.col("UK_24hr_rolling_record_check") == 4)) == 192
-    assert len(result.filter(pl.col("UK_24hr_rolling_record_check") == 1)) == 96
-    assert len(result.filter(pl.col("UK_24hr_rolling_record_check") == 0)) == 168577
+    assert len(result.filter(pl.col("UK_24hr_rolling_record_flag") == 4)) == 192
+    assert len(result.filter(pl.col("UK_24hr_rolling_record_flag") == 1)) == 96
+    assert len(result.filter(pl.col("UK_24hr_rolling_record_flag") == 0)) == 168577
 
 
 def test_check_daily_exceedance_of_UK_24hr_record_1min_data(min1_gsdr_data):
     result = subhourlyqc_checks.check_daily_exceedance_of_UK_24hr_record(min1_gsdr_data, target_gauge_col=DEFAULT_RAIN_COL)
-    assert len(result.filter(pl.col("UK_24hr_rolling_record_check") == 4)) == 2880
-    assert len(result.filter(pl.col("UK_24hr_rolling_record_check") == 3)) == 1440
-    assert len(result.filter(pl.col("UK_24hr_rolling_record_check") == 0)) == 2528641
+    assert len(result.filter(pl.col("UK_24hr_rolling_record_flag") == 4)) == 2880
+    assert len(result.filter(pl.col("UK_24hr_rolling_record_flag") == 3)) == 1440
+    assert len(result.filter(pl.col("UK_24hr_rolling_record_flag") == 0)) == 2528641
 
 
 def test_check_streaks_20mm(min15_gsdr_data_streaky):

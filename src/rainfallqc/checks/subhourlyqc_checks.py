@@ -63,7 +63,7 @@ def check_exceedance_of_UK_1hr_record(data: pl.DataFrame, target_gauge_col: str)
         data=data,
         target_gauge_col=target_gauge_col,
         record_rainfall_amount=UK_1hr_RECORD,
-        flag_col_name="UK_1hr_record_check",
+        flag_col_name="UK_1hr_record_flag",
     )
 
 
@@ -99,7 +99,7 @@ def check_exceedance_of_UK_24hr_record(data: pl.DataFrame, target_gauge_col: str
         data=data,
         target_gauge_col=target_gauge_col,
         record_rainfall_amount=UK_24hr_RECORD,
-        flag_col_name="UK_24hr_record_check",
+        flag_col_name="UK_24hr_record_flag",
     )
 
 
@@ -146,18 +146,18 @@ def check_daily_exceedance_of_UK_24hr_record(data: pl.DataFrame, target_gauge_co
 
     # 3. Flag exceedance of world record value
     data_w_flags = flag_exceedance_of_ref_val_as_col(
-        daily_data, target_gauge_col, ref_val=UK_24hr_RECORD, new_col_name="UK_24hr_rolling_record_check"
+        daily_data, target_gauge_col, ref_val=UK_24hr_RECORD, new_col_name="UK_24hr_rolling_record_flag"
     )
 
     # 4. Disaggregate data back to original resolution
     data_w_flags_disag = data_utils.downsample_and_fill_columns(
         high_res_data=original_data,
         low_res_data=data_w_flags,
-        data_cols="UK_24hr_rolling_record_check",
+        data_cols="UK_24hr_rolling_record_flag",
         fill_limit=time_step_per_day - 1,
         fill_method="backward",
     )
-    return data_w_flags_disag.select(["time", "UK_24hr_rolling_record_check"])
+    return data_w_flags_disag.select(["time", "UK_24hr_rolling_record_flag"])
 
 
 @qc_check("check_streaks_20mm", require_non_negative=True)
