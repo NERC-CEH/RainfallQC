@@ -37,8 +37,8 @@ def check_exceedance_of_UK_1hr_record(data: pl.DataFrame, target_gauge_col: str)
     Check exceedance of UK 1-hour record.
 
     Flags:
-    0 == if doesn't exceed threshold
-    Seperate flags denote when the data exceeds the 1-hour record by:
+    0 == if doesn't exceed threshold.
+    Then seperate flags denote when the data exceeds the 1-hour record by:
     1 == < 20%
     2 == >= 20%
     3 == >= 33%
@@ -73,8 +73,8 @@ def check_exceedance_of_UK_24hr_record(data: pl.DataFrame, target_gauge_col: str
     Check exceedance of UK 24-hour record.
 
     Flags:
-    0 == if doesn't exceed threshold
-    Seperate flags denote when the data exceeds the 24-hour record by:
+    0 == if doesn't exceed threshold.
+    Then seperate flags denote when the data exceeds the 24-hour record by:
     1 == < 20%
     2 == >= 20%
     3 == >= 33%
@@ -109,8 +109,8 @@ def check_daily_exceedance_of_UK_24hr_record(data: pl.DataFrame, target_gauge_co
     Check exceedance of UK 24-hour record when aggregating to 24 hours.
 
     Flags:
-    0 == if doesn't exceed threshold
-    Seperate flags denote when the daily sums exceeds the 24-hour record by:
+    0 == if doesn't exceed threshold.
+    Then seperate flags denote when the daily sums exceeds the 24-hour record by:
     1 == < 20%
     2 == >= 20%
     3 == >= 33%
@@ -168,7 +168,7 @@ def check_streaks_20mm(
     Check streaks with fixed minimum hourly threshold of 20 mm.
 
     Flags:
-    1 == when data has streak of 2 or more timesteps that are more than 20 mm
+    1 == when data has streak of 2 or more timesteps that are more than 20 mm.
 
     This is HQC_streaks_20mm from the SubHourlyQC framework.
 
@@ -227,7 +227,7 @@ def check_freq_is_subhourly(data: pl.DataFrame, target_gauge_col: str) -> pl.Dat
     1 mm (usually an indicator of tip counts not tip amounts in the data), and replace them with NAN.
 
     Flags:
-    1 == when month has suspect frequency or resolution
+    1 == when month has suspect frequency or resolution.
 
     This is freqResChecker (Function 1 of the SHQC process) from the SubHourlyQC framework.
 
@@ -294,7 +294,7 @@ def check_subhourly_thresholds(data: pl.DataFrame, target_gauge_col: str) -> pl.
     Tests hourly, 15-min, 1-min rainfall totals agaisnt thresholds agaisnt values set for each month.
 
     Flags:
-    1 == when data is suspect
+    1 == when data is suspect.
 
     This is subH_checkr (Function 2 of the SHQC process) from the SubHourlyQC framework.
 
@@ -324,7 +324,6 @@ def check_subhourly_thresholds(data: pl.DataFrame, target_gauge_col: str) -> pl.
     if time_step == "1m":
         time_step_per_hour = 60  # 60 x 1-min periods per hour
 
-
     # 3. Aggregate data to hourly
     hourly_data = data.group_by_dynamic("time", every="1h").agg(
         pl.col(target_gauge_col).sum(), pl.col("month_name").first()
@@ -332,7 +331,10 @@ def check_subhourly_thresholds(data: pl.DataFrame, target_gauge_col: str) -> pl.
 
     # 4. Flag data based on hourly threshold
     data_1hr_w_flags = flag_data_based_on_threshold(
-        hourly_data, target_gauge_col, threshold_dict=UK_MONTHLY_THRESHOLDS_1hr, threshold_col_name="month_1hr_threshold"
+        hourly_data,
+        target_gauge_col,
+        threshold_dict=UK_MONTHLY_THRESHOLDS_1hr,
+        threshold_col_name="month_1hr_threshold",
     )
     # 4.1 Disaggregate data back to original resolution
     data_1hr_w_flags_disag = data_utils.downsample_and_fill_columns(
@@ -351,9 +353,12 @@ def check_subhourly_thresholds(data: pl.DataFrame, target_gauge_col: str) -> pl.
         data_15mins = data.group_by_dynamic("time", every="15m").agg(
             pl.col(target_gauge_col).sum(), pl.col("month_name").first()
         )
-     # Flag data based on 15min threshold
+    # Flag data based on 15min threshold
     data_15min_w_flags = flag_data_based_on_threshold(
-        data_15mins, target_gauge_col, threshold_dict=UK_MONTHLY_THRESHOLDS_15min, threshold_col_name="month_15min_threshold"
+        data_15mins,
+        target_gauge_col,
+        threshold_dict=UK_MONTHLY_THRESHOLDS_15min,
+        threshold_col_name="month_15min_threshold",
     ).select(["time", "month_15min_threshold_flag"])
     if time_step == "1m":
         # Disaggregate data back to original resolution
@@ -370,10 +375,11 @@ def check_subhourly_thresholds(data: pl.DataFrame, target_gauge_col: str) -> pl.
         ).select(["time", "month_1min_threshold_flag"])
 
     # 7. Join together all flag columns
-    data_w_all_flags = data_1hr_w_flags_disag.join(data_15min_w_flags, on='time')
+    data_w_all_flags = data_1hr_w_flags_disag.join(data_15min_w_flags, on="time")
     if time_step == "1m":
-        data_w_all_flags = data_w_all_flags.join(data_1min_w_flags, on='time')
+        data_w_all_flags = data_w_all_flags.join(data_1min_w_flags, on="time")
     return data_w_all_flags
+
 
 def get_subhourly_exceedance_of_given_record(
     data: pl.DataFrame, target_gauge_col: str, record_rainfall_amount: [int | float], flag_col_name: str
@@ -460,9 +466,7 @@ def flag_data_based_on_threshold(
             f" data = data.with_columns(pl.col('time').dt.strftime('%b').alias('month_name'))"
         )
 
-    data = data.with_columns(
-        pl.col("month_name").replace(threshold_dict).cast(pl.Int32).alias(threshold_col_name)
-    )
+    data = data.with_columns(pl.col("month_name").replace(threshold_dict).cast(pl.Int32).alias(threshold_col_name))
     data_w_flags = data.with_columns(
         pl.when(pl.col(target_gauge_col) > pl.col(threshold_col_name))
         .then(1)
