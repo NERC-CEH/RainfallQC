@@ -14,7 +14,7 @@ It is designed to help everyone apply standardised quality control (QC) checks t
 
 At its core, the package offers:
 
-- 27 QC checks for rainfall data as of v0.2.5 (25 from `IntenseQC <https://www.sciencedirect.com/science/article/pii/S1364815221002127>`_ and 2 from `pyPWSQC <https://doi.org/10.5281/zenodo.4501919>`_)
+- 33 QC checks for rainfall data as of v1.1.0 (25 from `IntenseQC <https://www.sciencedirect.com/science/article/pii/S1364815221002127>`_, 6 from `SubHourlyQC <https://doi.org/10.1002/qj.4357>`_ and 2 from `pyPWSQC <https://doi.org/10.5281/zenodo.4501919>`_)
 - Customizable parameters – adjust thresholds, streak or accumulation lengths, and distances to neighboring gauges
 - A modular QC framework – users can select which QC methods to apply, and configure them according to their project’s requirements
 
@@ -22,12 +22,13 @@ This approach allows you to build a tailored QC pipeline: include only the check
 
 What type of checks are in the package?
 ---------------------------------------
-The *RainfallQC* package breaks down the QC checks into four distinct types:
+The *RainfallQC* package breaks down the QC checks into six distinct types:
 
 - **Gauge checks** –  For detecting abnormalities in summary and descriptive statistics.
 - **Comparison checks** – For detecting abnormalities based on rainfall benchmarks.
 - **Time-series checks** – For detecting abnormalities in patterns of the data record.
 - **Neighbourhood checks** – For detecting abnormalities based on measurements in neighbouring rain gauges.
+- **Sub-hourly checks** – An extension for the IntenseQC framework with thresholds to apply to sub-hourly rainfall data.
 - **pypwsqc filters** – For applying quality assurance protocols and filters for rainfall data.
 
 These different types of rainfall checks are either rainfall-specific or not and need different amounts of data to run (Figure 1).
