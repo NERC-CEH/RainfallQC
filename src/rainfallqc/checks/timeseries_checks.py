@@ -709,7 +709,7 @@ def fill_in_monthly_accumulation_flags(
     else:
         duration_to_remove = pl.duration(days=max_dry_spell_duration)
     # 2. get monthly flag rows
-    flagged_rows = monthly_accumulation_flags.filter(pl.col("monthly_accumulation") > 0)
+    flagged_rows = monthly_accumulation_flags.filter(pl.col("monthly_accumulation").fill_null(0.0) > 0)
     # 3. Fill in rows preceeding
     for row in flagged_rows.iter_rows(named=True):
         # Check dry spell is at least minimum for a month
@@ -1018,7 +1018,7 @@ def join_dry_spell_data_back_to_original(data: pl.DataFrame, dry_spell_lengths_f
     dry_spell_flag_data = pl.DataFrame({"time": data["time"], "dry_spell_flag": np.zeros(data["time"].shape)})
 
     # 2. Get all non-0 flags (i.e. suspicious dry spells)
-    dry_spell_non_zero = dry_spell_lengths_flags.filter(pl.col("dry_spell_flag") > 0)
+    dry_spell_non_zero = dry_spell_lengths_flags.filter(pl.col("dry_spell_flag").fill_null(0.0) > 0)
 
     # 3. Loop through problematic flags and label the original data based on duration of dry spell
     for non_zero_data_row in dry_spell_non_zero.iter_rows():

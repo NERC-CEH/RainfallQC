@@ -295,7 +295,7 @@ def check_min_val_change(data: pl.DataFrame, target_gauge_col: str, expected_min
 
     """
     # 1. Filter out non-zero years
-    data_non_zero = data.filter(pl.col(target_gauge_col) > 0)
+    data_non_zero = data.filter(pl.col(target_gauge_col).fill_null(0.0) > 0)
 
     # 2. Get minimum value each year
     data_min_by_year = data_non_zero.group_by_dynamic(pl.col("time"), every="1y").agg(pl.col(target_gauge_col).min())

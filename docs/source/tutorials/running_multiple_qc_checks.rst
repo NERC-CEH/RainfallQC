@@ -261,7 +261,7 @@ My plan is to update this example after some feedback.
                     summary_of_qc[non_rowwise_checks_converter[qc_key]] = all_flags[qc_key]
 
             for col in all_flags['all_flags_by_row'].columns[2:]:
-                summary_of_qc[col] = len(all_flags['all_flags_by_row'].filter(pl.col(col) > 0).drop_nans()[col])
+                summary_of_qc[col] = len(all_flags['all_flags_by_row'].drop_nans().filter(pl.col(col) > 0)[col])
             overall_summary_of_qc.append(summary_of_qc)
 
 
