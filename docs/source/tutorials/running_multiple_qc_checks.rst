@@ -231,7 +231,7 @@ My plan is to update this example after some feedback.
             # Calculate summary statistics of flags
             all_flags['all_flags_by_row'] = all_flags['all_flags_by_row'].with_columns(
                 pl.when(
-                    pl.any_horizontal(pl.all().exclude(["time", target_gauge_col]).fill_null(0.0).map_elements(lambda col: col > 0))
+                    pl.any_horizontal(pl.all().exclude(["time", target_gauge_col]).fill_nan(0.0).map_elements(lambda col: col > 0))
                 )
                     .then(1)
                     .otherwise(0)

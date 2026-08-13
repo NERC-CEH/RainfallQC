@@ -659,13 +659,13 @@ def flag_accumulation_based_on_next_dry_spell_duration(
     return data.with_columns(
         pl.when(
             (pl.col("possible_accumulation") == 1)
-            & (pl.col("dry_spell_length").fill_null(0.0) >= min_dry_spell_duration)
+            & (pl.col("dry_spell_length").fill_nan(0.0) >= min_dry_spell_duration)
             & (pl.col("next_dry_spell").is_not_null())
         )
         .then(3)
         .when(
             (pl.col("possible_accumulation") == 1)
-            & (pl.col("dry_spell_length").fill_null(0.0) >= min_dry_spell_duration)
+            & (pl.col("dry_spell_length").fill_nan(0.0) >= min_dry_spell_duration)
         )
         .then(1)
         .otherwise(0)
@@ -709,7 +709,7 @@ def fill_in_monthly_accumulation_flags(
     else:
         duration_to_remove = pl.duration(days=max_dry_spell_duration)
     # 2. get monthly flag rows
-    flagged_rows = monthly_accumulation_flags.filter(pl.col("monthly_accumulation").fill_null(0.0) > 0)
+    flagged_rows = monthly_accumulation_flags.filter(pl.col("monthly_accumulation").fill_nan(0.0) > 0)
     # 3. Fill in rows preceeding
     for row in flagged_rows.iter_rows(named=True):
         # Check dry spell is at least minimum for a month
@@ -1018,7 +1018,7 @@ def join_dry_spell_data_back_to_original(data: pl.DataFrame, dry_spell_lengths_f
     dry_spell_flag_data = pl.DataFrame({"time": data["time"], "dry_spell_flag": np.zeros(data["time"].shape)})
 
     # 2. Get all non-0 flags (i.e. suspicious dry spells)
-    dry_spell_non_zero = dry_spell_lengths_flags.filter(pl.col("dry_spell_flag").fill_null(0.0) > 0)
+    dry_spell_non_zero = dry_spell_lengths_flags.filter(pl.col("dry_spell_flag").fill_nan(0.0) > 0)
 
     # 3. Loop through problematic flags and label the original data based on duration of dry spell
     for non_zero_data_row in dry_spell_non_zero.iter_rows():
@@ -1132,7 +1132,7 @@ def get_first_wet_after_dry_spell(data: pl.DataFrame, target_gauge_col: str) -> 
     gauge_dry_spell_groups = get_consecutive_dry_days(gauge_dry_spells)
 
     return gauge_dry_spell_groups.with_columns(
-        pl.when((pl.col("is_dry") == 0) & (pl.col("dry_group_id").diff().fill_null(0) == 1))
+        pl.when((pl.col("is_dry") == 0) & (pl.col("dry_group_id").diff().fill_nan(0) == 1))
         .then(pl.col("time"))
         .otherwise(None)
         .alias("first_wet_after_dry")
@@ -1184,7 +1184,7 @@ def get_consecutive_dry_days(gauge_dry_spells: pl.DataFrame) -> pl.DataFrame:
         Data with group ids for consecutive dry days
 
     """
-    return gauge_dry_spells.with_columns(((pl.col("is_dry").diff().fill_null(0) == 1).cum_sum()).alias("dry_group_id"))
+    return gauge_dry_spells.with_columns(((pl.col("is_dry").diff().fill_nan(0) == 1).cum_sum()).alias("dry_group_id"))
 
 
 def compute_dry_spell_days(dry_spell_data: xr.Dataset) -> xr.Dataset:
