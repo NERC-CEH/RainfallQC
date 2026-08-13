@@ -253,7 +253,7 @@ def convert_daily_data_to_monthly(
 
     # 3. Group data into monthly
     monthly_data = (
-        daily_data.group_by_dynamic("time", every="1mo", closed="right")
+        daily_data.group_by_dynamic("time", every="1mo", label="left")
         .agg(agg_expressions)
         .filter(
             pl.col("n_days")
@@ -773,7 +773,11 @@ def resample_data_by_time_step(
 
     """
     # resample into daily (also round to 1 decimal place)
-    return data.group_by_dynamic(time_col, every=time_step, label="right", offset=f"{hour_offset}h").agg(
+    if "h" in time_step:
+        label_to_use = "right"
+    else:
+        label_to_use = "left"
+    return data.group_by_dynamic(time_col, every=time_step, label=label_to_use, offset=f"{hour_offset}h").agg(
         [
             pl.when(pl.col(col).count() >= min_count).then(pl.col(col).sum()).otherwise(None).alias(col)
             for col in rain_cols

@@ -247,7 +247,7 @@ def test_check_monthly_neighbours_hourly(hourly_gsdr_network):
         time_res="hourly",
     )
 
-    assert len(result.filter(pl.col("majority_monthly_flag") == 1)) == 720
+    assert len(result.filter(pl.col("majority_monthly_flag") == 1)) == 740
     assert len(result.filter(pl.col("majority_monthly_flag") == 3)) == 744
     assert len(result.filter(pl.col("majority_monthly_flag") == -1)) == 720
     assert len(result.filter(pl.col("majority_monthly_flag").is_nan())) == 6600
@@ -265,7 +265,7 @@ def test_check_monthly_neighbours_15min(mins15_gsdr_network):
         time_res="15m",
     )
 
-    assert len(result.filter(pl.col("majority_monthly_flag") == 1)) == 720*4
+    assert len(result.filter(pl.col("majority_monthly_flag") == 1)) == 2976
     assert len(result.filter(pl.col("majority_monthly_flag") == 3)) == 2976
 
 
@@ -436,7 +436,7 @@ def test_check_monthly_factor(monthly_gsdr_network, monthly_gpcc_network):
         nearest_neighbour=f"{DEFAULT_RAIN_COL}_DE_00310",
     )
     assert round(result["monthly_factor_flag"].max(), 2) == 6
-    assert len(result.filter(pl.col("monthly_factor_flag") > 0)) == 6
+    assert len(result.filter(pl.col("monthly_factor_flag").fill_nan(0.0) > 0)) == 6
 
     result = neighbourhood_checks.check_monthly_factor(
         monthly_gpcc_network,

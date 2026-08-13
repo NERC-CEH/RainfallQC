@@ -266,6 +266,11 @@ Features
 - support for single gauges or networks of gauges
 - editable parameters so you can tweak thresholds, streak or accumulation lengths, and distances to neighbouring gauges
 
+Note on time aggregation
+========================
+Hourly data is aggregated with 'label=right', so 07:00:01 to 08:00 is labelled 08:00.
+For daily and monthly aggregation, label is left, so n-hour on D to n-hour on D+1 is D.
+
 How to cite this package
 ========================
 To cite a specific version of RainfallQC, please see `Zenodo <https://zenodo.org/records/17457184>`_ DOI. 
