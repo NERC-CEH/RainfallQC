@@ -26,9 +26,9 @@ UK_24hr_RECORD = 341.4  # mm
 
 # Monthly thresholds taken directly from paper (not code)
 MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
-UK_MONTHLY_THRESHOLDS_1hr = dict(zip(MONTH_NAMES, [30, 30, 30, 30, 40, 40, 40, 40, 40, 40, 30, 30]))
-UK_MONTHLY_THRESHOLDS_15min = dict(zip(MONTH_NAMES, [15, 15, 13, 13, 13, 18, 20, 20, 20, 20, 17, 16]))
-UK_MONTHLY_THRESHOLDS_1min = dict(zip(MONTH_NAMES, [3, 3, 2, 2, 2, 4, 5, 5, 5, 5, 4, 3]))
+UK_MONTHLY_THRESHOLDS_1hr = dict(zip(MONTH_NAMES, [30, 30, 30, 30, 40, 40, 40, 40, 40, 40, 30, 30], strict=True))
+UK_MONTHLY_THRESHOLDS_15min = dict(zip(MONTH_NAMES, [15, 15, 13, 13, 13, 18, 20, 20, 20, 20, 17, 16], strict=True))
+UK_MONTHLY_THRESHOLDS_1min = dict(zip(MONTH_NAMES, [3, 3, 2, 2, 2, 4, 5, 5, 5, 5, 4, 3], strict=True))
 
 
 @qc_check("check_exceedance_of_UK_1hr_record", require_non_negative=True)
@@ -222,7 +222,8 @@ def check_streaks_20mm(
 @qc_check("check_freq_is_subhourly", require_non_negative=True)
 def check_freq_is_subhourly(data: pl.DataFrame, target_gauge_col: str) -> pl.DataFrame:
     """
-    Checks frequency and resolution of data is subhourly.
+    Check frequency and resolution of data is subhourly.
+
     Specifically, it will check monthly periods with frequencies >= 30 minutes, or where the resolution is
     1 mm (usually an indicator of tip counts not tip amounts in the data), and replace them with NAN.
 
@@ -250,15 +251,18 @@ def check_freq_is_subhourly(data: pl.DataFrame, target_gauge_col: str) -> pl.Dat
     # 2. If there are more than 1 time-step then apply check
     if len(unique_timesteps) > 1:
         original_data = data.clone()
-        # 3. Check frequency of data; I am uncertain of this, because what if very few values in month
+        # 3. Check frequency of data;
+        # Taking .max() if multiple res from mode
+        # I am uncertain of this, because what if very few values in month
         data_freqs = data.with_columns([pl.col("time").diff().alias("time_step")])
         # Taking .max() if multiple freq from mode
         most_common_freq_by_mo = data_freqs.group_by_dynamic("time", every="1mo").agg(
             pl.col("time_step").mode().max().alias("most_common_freq")
         )
 
-        # 4. Check resolution of the data (checking mode of rainfall); I am uncertain of this, because what if very few values in month.
+        # 4. Check resolution of the data (checking mode of rainfall);
         # Taking .max() if multiple res from mode
+        # I am uncertain of this, because what if very few values in month/
         most_common_res_by_mo = data.group_by_dynamic("time", every="1mo").agg(
             pl.col(target_gauge_col).mode().max().alias("most_common_res")
         )
@@ -291,7 +295,7 @@ def check_freq_is_subhourly(data: pl.DataFrame, target_gauge_col: str) -> pl.Dat
 @qc_check("check_subhourly_thresholds", require_non_negative=True)
 def check_subhourly_thresholds(data: pl.DataFrame, target_gauge_col: str) -> pl.DataFrame:
     """
-    Tests hourly, 15-min, 1-min rainfall totals agaisnt thresholds agaisnt values set for each month.
+    Test hourly, 15-min, 1-min rainfall totals agaisnt thresholds agaisnt values set for each month.
 
     Flags:
     1 == when data is suspect.
@@ -439,7 +443,7 @@ def flag_data_based_on_threshold(
     data: pl.DataFrame, target_gauge_col: str, threshold_dict: dict, threshold_col_name: str
 ) -> pl.DataFrame:
     """
-    Flag data based on thresholds
+    Flag data based on thresholds.
 
     Built for SubHourlyQC framework and to be used with inbuilt UK_MONTHLY_THRESHOLDS_n.
 
@@ -462,8 +466,8 @@ def flag_data_based_on_threshold(
     """
     if "month_name" not in data.columns:
         raise ValueError(
-            f"Expecting a 'month_name' column, please create this column with: "
-            f" data = data.with_columns(pl.col('time').dt.strftime('%b').alias('month_name'))"
+            "Expecting a 'month_name' column, please create this column with: "
+            " data = data.with_columns(pl.col('time').dt.strftime('%b').alias('month_name'))"
         )
 
     data = data.with_columns(pl.col("month_name").replace(threshold_dict).cast(pl.Int32).alias(threshold_col_name))

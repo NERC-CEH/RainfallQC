@@ -71,7 +71,7 @@ INTENSE_RULEBASE_QC = {
     },
 }
 
-# Sub-hourly QC based on Villalobos-Herrera et al. 2022 (https://doi.org/10.1002/qj.4357). Also see Table S1 of that paper.
+# SubHourlyQC from Villalobos-Herrera et al. 2022 (https://doi.org/10.1002/qj.4357). Also see Table S1 of that paper.
 UK_SUBHOURLY_QC = {
     # From IntenseQC (12)
     "HQC_QC13": {"function": timeseries_checks.check_daily_accumulations},
