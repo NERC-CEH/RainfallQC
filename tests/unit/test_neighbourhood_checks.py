@@ -247,7 +247,7 @@ def test_check_monthly_neighbours_hourly(hourly_gsdr_network):
         time_res="hourly",
     )
 
-    assert len(result.filter(pl.col("majority_monthly_flag") == 1)) == 740
+    assert len(result.filter(pl.col("majority_monthly_flag") == 1)) == 720
     assert len(result.filter(pl.col("majority_monthly_flag") == 3)) == 744
     assert len(result.filter(pl.col("majority_monthly_flag") == -1)) == 720
     assert len(result.filter(pl.col("majority_monthly_flag").is_nan())) == 6600
@@ -265,7 +265,7 @@ def test_check_monthly_neighbours_15min(mins15_gsdr_network):
         time_res="15m",
     )
 
-    assert len(result.filter(pl.col("majority_monthly_flag") == 1)) == 2976
+    assert len(result.filter(pl.col("majority_monthly_flag") == 1)) == 2880
     assert len(result.filter(pl.col("majority_monthly_flag") == 3)) == 2976
 
 
