@@ -15,7 +15,7 @@ def test_check_exceedance_of_UK_1hr_record(min15_gsdr_data):
     result = subhourlyqc_checks.check_exceedance_of_UK_1hr_record(min15_gsdr_data, target_gauge_col=DEFAULT_RAIN_COL)
     assert len(result) == 175293
     assert len(result.filter(pl.col("UK_1hr_record_flag").fill_nan(0.0) > 0)) == 120
-    assert len(result.filter(pl.col("UK_1hr_record_flag").fill_nan(0.0) == 0)) == 175173
+    assert len(result.filter(pl.col("UK_1hr_record_flag") == 0)) == 170873
 
 
 def test_check_exceedance_of_UK_1h_record_1min_data(min1_gsdr_data):
