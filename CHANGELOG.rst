@@ -8,10 +8,10 @@ Changelog
 * Add exceedance of UK records (1h, 24hr and rolling24hr)
 * Add streaks check of min 20mm
 * Change parameter: 'streak_length' to 'min_streak_length' 
-* Add check_freq_is_subhourly (with modification to make it polars format
+* Add check_freq_is_subhourly (with modification to make it polars format)
 * Update downsample to check resolution and ratio of high res and low res before doing downsampling
 * Add check_subhourly_thresholds as polars implementation
-
+* Update relevant parts of the docs
 
 1.0.3 (2026-08-11)
 ------------------
