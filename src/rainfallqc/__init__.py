@@ -9,6 +9,7 @@ from rainfallqc.checks import (
     comparison_checks,
     gauge_checks,
     neighbourhood_checks,
+    subhourlyqc_checks,
     timeseries_checks,
 )
 from rainfallqc.qc_frameworks import apply_qc_framework
@@ -18,6 +19,7 @@ __all__ = [
     "comparison_checks",
     "gauge_checks",
     "neighbourhood_checks",
+    "subhourlyqc_checks",
     "timeseries_checks",
     "core",
     "utils",
