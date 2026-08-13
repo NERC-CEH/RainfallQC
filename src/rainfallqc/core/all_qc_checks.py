@@ -37,9 +37,9 @@ def qc_check(name: str, require_non_negative: bool = False) -> callable:
 
     def decorator(func: callable) -> callable:
         @functools.wraps(func)
-        def wrapper(df: pl.DataFrame, *args, **kwargs) -> list:
+        def wrapper(data: pl.DataFrame, *args, **kwargs) -> list:
             # Bind args/kwargs to signature to include defaults
-            bound = inspect.signature(func).bind_partial(df, *args, **kwargs)
+            bound = inspect.signature(func).bind_partial(data, *args, **kwargs)
             bound.apply_defaults()
             full_kwargs = bound.arguments  # dict including defaults
 
@@ -61,11 +61,11 @@ def qc_check(name: str, require_non_negative: bool = False) -> callable:
 
             # Optional non-negative pre-check
             for col in columns_to_check:
-                if require_non_negative and data_utils.check_for_negative_values(df, col):
+                if require_non_negative and data_utils.check_for_negative_values(data, col):
                     raise ValueError(f"{name} failed: column '{col}' contains negative values.")
 
             # Run the actual QC check
-            return func(df, *args, **kwargs)
+            return func(data, *args, **kwargs)
 
         # Register for later use
         QC_CHECKS[name] = wrapper
