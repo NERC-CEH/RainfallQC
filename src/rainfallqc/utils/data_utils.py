@@ -773,7 +773,7 @@ def resample_data_by_time_step(
 
     """
     # resample into daily (also round to 1 decimal place)
-    return data.group_by_dynamic(time_col, every=time_step, closed="left", label="left", offset=f"{hour_offset}h").agg(
+    return data.group_by_dynamic(time_col, every=time_step, label="right", offset=f"{hour_offset}h").agg(
         [
             pl.when(pl.col(col).count() >= min_count).then(pl.col(col).sum()).otherwise(None).alias(col)
             for col in rain_cols

@@ -91,7 +91,7 @@ def test_check_subhourly_thresholds_1min_data(min1_gsdr_data):
 
 def test_flag_data_based_on_threshold(min15_gsdr_data):
     data = min15_gsdr_data.with_columns(pl.col("time").dt.strftime("%b").alias("month_name"))
-    hourly_data = data.group_by_dynamic("time", every="1h").agg(
+    hourly_data = data.group_by_dynamic("time", every="1h", label='right').agg(
         pl.col(DEFAULT_RAIN_COL).sum(), pl.col("month_name").first()
     )
     result = subhourlyqc_checks.flag_data_based_on_threshold(data, target_gauge_col=DEFAULT_RAIN_COL, threshold_dict=subhourlyqc_checks.UK_MONTHLY_THRESHOLDS_15min, threshold_col_name="monthly_15min_threshold")

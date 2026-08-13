@@ -193,7 +193,7 @@ def check_streaks_20mm(
 
     # 2. Aggregate data to hourly
     original_data = data.clone()
-    hourly_data = data.group_by_dynamic("time", every="1h").agg(pl.col(target_gauge_col).sum())
+    hourly_data = data.group_by_dynamic("time", every="1h", label='right').agg(pl.col(target_gauge_col).sum())
 
     if time_step == "15m":
         time_step_per_hour = 4  # 4x 15-min periods per hour
@@ -329,7 +329,7 @@ def check_subhourly_thresholds(data: pl.DataFrame, target_gauge_col: str) -> pl.
         time_step_per_hour = 60  # 60 x 1-min periods per hour
 
     # 3. Aggregate data to hourly
-    hourly_data = data.group_by_dynamic("time", every="1h").agg(
+    hourly_data = data.group_by_dynamic("time", every="1h", label='right').agg(
         pl.col(target_gauge_col).sum(), pl.col("month_name").first()
     )
 
@@ -416,7 +416,7 @@ def get_subhourly_exceedance_of_given_record(
 
     # 2. Aggregate data to hourly
     original_data = data.clone()
-    hourly_data = data.group_by_dynamic("time", every="1h").agg(pl.col(target_gauge_col).sum())
+    hourly_data = data.group_by_dynamic("time", every="1h", label='right').agg(pl.col(target_gauge_col).sum())
 
     if time_step == "15m":
         time_step_per_hour = 4  # 4x 15-min periods per hour
