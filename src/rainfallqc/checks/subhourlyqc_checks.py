@@ -36,7 +36,15 @@ def check_exceedance_of_UK_1hr_record(data: pl.DataFrame, target_gauge_col: str)
     """
     Check exceedance of UK 1-hour record.
 
-    This is QCX from the SubHourlyQC framework.
+    Flags:
+    0 == if doesn't exceed threshold
+    Seperate flags denote when the data exceeds the 1-hour record by:
+    1 == < 20%
+    2 == >= 20%
+    3 == >= 33%
+    4 == >= 50%
+
+    This is HQC_UK1hr from the SubHourlyQC framework.
 
     Parameters
     ----------
@@ -64,7 +72,15 @@ def check_exceedance_of_UK_24hr_record(data: pl.DataFrame, target_gauge_col: str
     """
     Check exceedance of UK 24-hour record.
 
-    This is QCX from the SubHourlyQC framework.
+    Flags:
+    0 == if doesn't exceed threshold
+    Seperate flags denote when the data exceeds the 24-hour record by:
+    1 == < 20%
+    2 == >= 20%
+    3 == >= 33%
+    4 == >= 50%
+
+    This is HQC_UK24hr from the SubHourlyQC framework.
 
     Parameters
     ----------
@@ -92,7 +108,15 @@ def check_daily_exceedance_of_UK_24hr_record(data: pl.DataFrame, target_gauge_co
     """
     Check exceedance of UK 24-hour record when aggregating to 24 hours.
 
-    This is QCX from the SubHourlyQC framework.
+    Flags:
+    0 == if doesn't exceed threshold
+    Seperate flags denote when the daily sums exceeds the 24-hour record by:
+    1 == < 20%
+    2 == >= 20%
+    3 == >= 33%
+    4 == >= 50%
+
+    This is HQC_UK24hr_rolling from the SubHourlyQC framework.
 
     Parameters
     ----------
@@ -143,7 +167,10 @@ def check_streaks_20mm(
     """
     Check streaks with fixed minimum hourly threshold of 20 mm.
 
-    This is QCX from the SubHourlyQC framework.
+    Flags:
+    1 == when data has streak of 2 or more timesteps that are more than 20 mm
+
+    This is HQC_streaks_20mm from the SubHourlyQC framework.
 
     Parameters
     ----------
