@@ -90,7 +90,7 @@ UK_SUBHOURLY_QC = {
     "HQC_UK1hr": {"function": subhourlyqc_checks.check_exceedance_of_UK_1hr_record},
     "HQC_UK24hr": {"function": subhourlyqc_checks.check_exceedance_of_UK_24hr_record},
     "HQC_UK24hr_rolling": {"function": subhourlyqc_checks.check_daily_exceedance_of_UK_24hr_record},
-    "HQC_streaks_20mm_min": {"function": subhourlyqc_checks.check_streaks_20mm},
+    "HQC_streaks_20mm": {"function": subhourlyqc_checks.check_streaks_20mm},
     # New checks (3)
     # "SHQC_QC_spike_check": {"function": subhourlyqc_checks.spike_check}, # awaiting chat with Roberto
     "SHQC_freqResChecker": {"function": subhourlyqc_checks.check_freq_is_subhourly},
