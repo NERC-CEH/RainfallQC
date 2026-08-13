@@ -2,13 +2,14 @@
 Tutorial overview
 =================
 
-RainfallQC contains five modules:
+RainfallQC contains six modules:
 
 1. ``gauge_checks`` - For detecting abnormalities in summary and descriptive statistics.
 2. ``comparison_checks`` - For detecting abnormalities by comparing to benchmark data.
 3. ``timeseries_checks`` - For detecting abnormalities in patterns of the data record.
 4. ``neighbourhood_checks`` - For detecting abnormalities based on measurements in neighbouring gauges.
-5. ``pypwsqc_filters`` - For applying quality assurance protocols and filters for rainfall data from `pyPWSQC <https://pypwsqc.readthedocs.io/en/latest/index.html>`_
+5. ``subhourlyqc_checks`` - An extension for IntenseQC to be applied to sub-hourly rainfall data.
+6. ``pypwsqc_filters`` - For applying quality assurance protocols and filters for rainfall data from `pyPWSQC <https://pypwsqc.readthedocs.io/en/latest/index.html>`_
 
 
 Each one of these modules contains individual QC check methods, which begin with the syntax ``check_``.
