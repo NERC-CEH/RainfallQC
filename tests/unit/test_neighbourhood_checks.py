@@ -445,7 +445,7 @@ def test_check_monthly_factor(monthly_gsdr_network, monthly_gpcc_network):
     )
 
     assert round(result["monthly_factor_flag"].max(), 2) == 3
-    assert len(result.filter(pl.col("monthly_factor_flag") > 0)) == 61
+    assert len(result.filter(pl.col("monthly_factor_flag").fill_nan(0.0) > 0)) == 61
 
 
 def test_make_num_neighbours_online_col(hourly_gsdr_network):

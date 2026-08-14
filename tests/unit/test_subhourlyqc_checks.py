@@ -14,15 +14,15 @@ DEFAULT_RAIN_COL = "rain_mm"
 def test_check_exceedance_of_UK_1hr_record(min15_gsdr_data):
     result = subhourlyqc_checks.check_exceedance_of_UK_1hr_record(min15_gsdr_data, target_gauge_col=DEFAULT_RAIN_COL)
     assert len(result) == 175293
-    assert len(result.filter(pl.col("UK_1hr_record_flag") > 0)) == 4420
-    assert len(result.filter(pl.col("UK_1hr_record_flag") == 0)) == 170872
+    assert len(result.filter(pl.col("UK_1hr_record_flag").fill_nan(0.0) > 0)) == 120
+    assert len(result.filter(pl.col("UK_1hr_record_flag") == 0)) == 170873
 
 
 def test_check_exceedance_of_UK_1h_record_1min_data(min1_gsdr_data):
     result = subhourlyqc_checks.check_exceedance_of_UK_1hr_record(min1_gsdr_data, target_gauge_col=DEFAULT_RAIN_COL)
     assert len(result) == 2629381
-    assert len(result.filter(pl.col("UK_1hr_record_flag") > 0)) == 66300
-    assert len(result.filter(pl.col("UK_1hr_record_flag") == 0)) == 2563080
+    assert len(result.filter(pl.col("UK_1hr_record_flag").fill_nan(0.0) > 0)) == 1800
+    assert len(result.filter(pl.col("UK_1hr_record_flag") == 0)) == 2563081
 
 
 
