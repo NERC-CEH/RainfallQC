@@ -379,7 +379,9 @@ def check_subhourly_thresholds(data: pl.DataFrame, target_gauge_col: str) -> pl.
         ).select(["time", "month_1min_threshold_flag"])
 
     # 7. Join together all flag columns
-    data_w_all_flags = data_1hr_w_flags_disag.join(data_15min_w_flags, on="time").select(["time", "month_15min_threshold_flag", "month_1hr_threshold_flag"])
+    data_w_all_flags = data_1hr_w_flags_disag.join(data_15min_w_flags, on="time").select(
+        ["time", "month_15min_threshold_flag", "month_1hr_threshold_flag"]
+    )
     if time_step == "1m":
         data_w_all_flags = data_w_all_flags.join(data_1min_w_flags, on="time")
     return data_w_all_flags
