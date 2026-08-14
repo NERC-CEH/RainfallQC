@@ -155,7 +155,7 @@ def check_daily_exceedance_of_UK_24hr_record(data: pl.DataFrame, target_gauge_co
         low_res_data=data_w_flags,
         data_cols="UK_24hr_rolling_record_flag",
         fill_limit=time_step_per_day - 1,
-        fill_method="backward",
+        fill_method="forward",
     )
     return data_w_flags_disag.select(["time", "UK_24hr_rolling_record_flag"])
 
