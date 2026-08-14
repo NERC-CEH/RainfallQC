@@ -311,7 +311,7 @@ def check_streaks(
     time_step = data_utils.get_data_timestep_as_str(data)
     if time_step == "15m":
         original_data = data.clone()
-        data = data.group_by_dynamic("time", every="1h", label='right').agg(pl.col(target_gauge_col).sum())
+        data = data.group_by_dynamic("time", every="1h", label="right").agg(pl.col(target_gauge_col).sum())
         time_multiplier = 4  # 4x 15-min periods per hour
     else:
         time_multiplier = 1
