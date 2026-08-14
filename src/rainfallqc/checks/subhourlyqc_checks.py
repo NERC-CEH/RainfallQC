@@ -472,7 +472,7 @@ def flag_data_based_on_threshold(
 
     data = data.with_columns(pl.col("month_name").replace(threshold_dict).cast(pl.Int32).alias(threshold_col_name))
     data_w_flags = data.with_columns(
-        pl.when(pl.col(target_gauge_col) > pl.col(threshold_col_name))
+        pl.when(pl.col(target_gauge_col).fill_nan(0.0) > pl.col(threshold_col_name))
         .then(1)
         .otherwise(0)
         .alias(f"{threshold_col_name}_flag")
