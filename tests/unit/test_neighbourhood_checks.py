@@ -265,7 +265,7 @@ def test_check_monthly_neighbours_15min(mins15_gsdr_network):
         time_res="15m",
     )
 
-    assert len(result.filter(pl.col("majority_monthly_flag") == 1)) == 720*4
+    assert len(result.filter(pl.col("majority_monthly_flag") == 1)) == 2880
     assert len(result.filter(pl.col("majority_monthly_flag") == 3)) == 2976
 
 

@@ -12,6 +12,7 @@ Changelog
 * Update downsample to check resolution and ratio of high res and low res before doing downsampling
 * Add check_subhourly_thresholds as polars implementation
 * Update relevant parts of the docs
+* Add label 'right' to group_by_dynamic so that data is aggregated upwards i.e. 7:00:01 to 8:00 is 8:00.
 
 1.0.3 (2026-08-11)
 ------------------

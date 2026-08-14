@@ -30,7 +30,7 @@ def test_check_exceedance_of_UK_24hr_record(min15_gsdr_data):
     result = subhourlyqc_checks.check_exceedance_of_UK_24hr_record(min15_gsdr_data, target_gauge_col=DEFAULT_RAIN_COL)
     assert len(result.filter(pl.col("UK_24hr_record_flag") == 4)) == 20
     assert len(result.filter(pl.col("UK_24hr_record_flag") == 1)) == 4
-    assert len(result.filter(pl.col("UK_24hr_record_flag") == 0)) == 170881
+    assert len(result.filter(pl.col("UK_24hr_record_flag") == 0)) == 170880
 
 
 def test_check_daily_exceedance_of_UK_24hr_record(min15_gsdr_data):
@@ -49,12 +49,12 @@ def test_check_daily_exceedance_of_UK_24hr_record_1min_data(min1_gsdr_data):
 
 def test_check_streaks_20mm(min15_gsdr_data_streaky):
     result = subhourlyqc_checks.check_streaks_20mm(min15_gsdr_data_streaky, target_gauge_col=DEFAULT_RAIN_COL)
-    assert len(result.filter(pl.col("streak_flag_20mm") == 0)) == 174801
+    assert len(result.filter(pl.col("streak_flag_20mm") == 0)) == 174800
     assert len(result.filter(pl.col("streak_flag_20mm") == 1)) == 492
 
 def test_check_streaks_20mm_1min_data(min1_gsdr_data):
     result = subhourlyqc_checks.check_streaks_20mm(min1_gsdr_data, target_gauge_col=DEFAULT_RAIN_COL)
-    assert len(result.filter(pl.col("streak_flag_20mm") == 0)) == 2627701
+    assert len(result.filter(pl.col("streak_flag_20mm") == 0)) == 2627700
     assert len(result.filter(pl.col("streak_flag_20mm") == 1)) == 1680
 
 def test_check_freq_is_subhourly(min15_gsdr_data):
@@ -76,7 +76,7 @@ def test_check_freq_is_subhourly_1min_data(min1_gsdr_data):
 
 def test_check_subhourly_thresholds(min15_gsdr_data):
     result = subhourlyqc_checks.check_subhourly_thresholds(min15_gsdr_data, target_gauge_col=DEFAULT_RAIN_COL)
-    assert len(result.filter(pl.col("month_1hr_threshold_flag") == 0)) == 170841
+    assert len(result.filter(pl.col("month_1hr_threshold_flag") == 0)) == 170840
     assert len(result.filter(pl.col("month_1hr_threshold_flag") == 1)) == 4452
     assert len(result.filter(pl.col("month_15min_threshold_flag") == 0)) == 170896
     assert len(result.filter(pl.col("month_15min_threshold_flag") == 1)) == 4397
@@ -91,7 +91,7 @@ def test_check_subhourly_thresholds_1min_data(min1_gsdr_data):
 
 def test_flag_data_based_on_threshold(min15_gsdr_data):
     data = min15_gsdr_data.with_columns(pl.col("time").dt.strftime("%b").alias("month_name"))
-    hourly_data = data.group_by_dynamic("time", every="1h").agg(
+    hourly_data = data.group_by_dynamic("time", every="1h", label='right').agg(
         pl.col(DEFAULT_RAIN_COL).sum(), pl.col("month_name").first()
     )
     result = subhourlyqc_checks.flag_data_based_on_threshold(data, target_gauge_col=DEFAULT_RAIN_COL, threshold_dict=subhourlyqc_checks.UK_MONTHLY_THRESHOLDS_15min, threshold_col_name="monthly_15min_threshold")
