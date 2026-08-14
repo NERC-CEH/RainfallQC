@@ -96,7 +96,7 @@ def factor_diff(data: pl.DataFrame, target_col: str, other_col: str) -> pl.DataF
 
     """
     return data.with_columns(
-        pl.when((pl.col(target_col) > 0) & (pl.col(other_col) > 0))
+        pl.when((pl.col(target_col).fill_nan(0.0) > 0) & (pl.col(other_col).fill_nan(0.0) > 0))
         .then(pl.col(target_col) / pl.col(other_col))
         .otherwise(np.nan)
         .alias("factor_diff")

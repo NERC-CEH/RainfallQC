@@ -76,16 +76,16 @@ def test_check_freq_is_subhourly_1min_data(min1_gsdr_data):
 
 def test_check_subhourly_thresholds(min15_gsdr_data):
     result = subhourlyqc_checks.check_subhourly_thresholds(min15_gsdr_data, target_gauge_col=DEFAULT_RAIN_COL)
-    assert len(result.filter(pl.col("month_1hr_threshold_flag") == 0)) == 170840
-    assert len(result.filter(pl.col("month_1hr_threshold_flag") == 1)) == 4452
-    assert len(result.filter(pl.col("month_15min_threshold_flag") == 0)) == 170896
-    assert len(result.filter(pl.col("month_15min_threshold_flag") == 1)) == 4397
+    assert len(result.filter(pl.col("month_1hr_threshold_flag") == 0)) == 175140
+    assert len(result.filter(pl.col("month_1hr_threshold_flag") == 1)) == 152
+    assert len(result.filter(pl.col("month_15min_threshold_flag") == 0)) == 175167
+    assert len(result.filter(pl.col("month_15min_threshold_flag") == 1)) == 126
 
 def test_check_subhourly_thresholds_1min_data(min1_gsdr_data):
     result = subhourlyqc_checks.check_subhourly_thresholds(min1_gsdr_data, target_gauge_col=DEFAULT_RAIN_COL)
-    assert len(result.filter(pl.col("month_1hr_threshold_flag") == 1)) == 66960
-    assert len(result.filter(pl.col("month_15min_threshold_flag") == 1)) == 66390
-    assert len(result.filter(pl.col("month_1min_threshold_flag") == 1)) == 66207
+    assert len(result.filter(pl.col("month_1hr_threshold_flag") == 1)) == 2460
+    assert len(result.filter(pl.col("month_15min_threshold_flag") == 1)) == 1890
+    assert len(result.filter(pl.col("month_1min_threshold_flag") == 1)) == 1736
 
 
 
@@ -95,8 +95,8 @@ def test_flag_data_based_on_threshold(min15_gsdr_data):
         pl.col(DEFAULT_RAIN_COL).sum(), pl.col("month_name").first()
     )
     result = subhourlyqc_checks.flag_data_based_on_threshold(data, target_gauge_col=DEFAULT_RAIN_COL, threshold_dict=subhourlyqc_checks.UK_MONTHLY_THRESHOLDS_15min, threshold_col_name="monthly_15min_threshold")
-    assert len(result.filter(pl.col("monthly_15min_threshold_flag") == 1)) == 4397
-    assert len(result.filter(pl.col("monthly_15min_threshold_flag") == 0)) == 170896
+    assert len(result.filter(pl.col("monthly_15min_threshold_flag") == 1)) == 126
+    assert len(result.filter(pl.col("monthly_15min_threshold_flag") == 0)) == 175167
 
     with pytest.raises(ValueError):
         subhourlyqc_checks.flag_data_based_on_threshold(min15_gsdr_data, target_gauge_col=DEFAULT_RAIN_COL, threshold_dict=subhourlyqc_checks.UK_MONTHLY_THRESHOLDS_15min, threshold_col_name="monthly_15min_threshold")
