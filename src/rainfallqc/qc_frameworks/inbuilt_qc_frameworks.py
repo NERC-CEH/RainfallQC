@@ -108,7 +108,7 @@ PYPWSQC = {
     "SO": {"function": pypwsqc_filters.check_station_outlier},
 }
 
-INBUILT_QC_FRAMEWORKS = {"intenseqc": INTENSE_QC, "intenseqc_rulebase_only": INTENSE_RULEBASE_QC, "pypwsqc": PYPWSQC}
+INBUILT_QC_FRAMEWORKS = {"intenseqc": INTENSE_QC, "intenseqc_rulebase_only": INTENSE_RULEBASE_QC, "uk_subhourlyqc": UK_SUBHOURLY_QC, "pypwsqc": PYPWSQC}
 
 
 # all checks that are computed as summary of overall data or once per year values
