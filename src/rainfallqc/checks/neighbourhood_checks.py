@@ -1442,7 +1442,7 @@ def filter_data_based_on_unusual_wetness(
         (pl.col(target_gauge_col) >= wet_threshold)
         & (pl.col(target_gauge_col).is_finite())
         & (pl.col(nearest_neighbour).is_finite())
-        & (pl.col(f"diff_{nearest_neighbour}") > 0.0)
+        & (pl.col(f"diff_{nearest_neighbour}").fill_nan(0.0) > 0.0)
     )
 
 

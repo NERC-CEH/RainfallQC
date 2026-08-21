@@ -194,7 +194,8 @@ As of RainfallQC v0.3.0, there are three QC frameworks:
 
 1. "intenseqc" - All 25 checks from IntenseQC/GSDR-QC with names like: "QC1", "QC2" ... "QC25",
 2. "pypwsqc" - 2 checks from pyPWSQC with the names: "FZ" and "SO",
-3. "custom" - Allows the user to select a custom set of checks (see Example 8 in `Tutorials <https://nerc-ceh.github.io/RainfallQC/tutorials/run_a_sensitivity_analysis.html>`_).
+3. "subhourlyqc" - Checks to extent intenseqc for subhourly data (7 new, 12 shared with intenseqc), with names like "HQC_QC1", "SHQC_freqResChecker":
+4. and "custom" - Allows the user to select a custom set of checks (see Example 8 in `Tutorials <https://nerc-ceh.github.io/RainfallQC/tutorials/run_a_sensitivity_analysis.html>`_).
 
 Let's run some QC checks from intenseqc framework below:
 
@@ -259,11 +260,16 @@ Documentation and License
 Features
 ========
 
-- 27 rainfall QC methods (25 from IntenseQC, 2 from pyPWSQC)
+- 33 rainfall QC methods (25 from IntenseQC, 6 from SubHourlyQC and 2 from pyPWSQC)
 - polars DataFrame support for fast data processing
 - modular structure so you can pick and choose which checks to run
 - support for single gauges or networks of gauges
 - editable parameters so you can tweak thresholds, streak or accumulation lengths, and distances to neighbouring gauges
+
+Note on time aggregation
+========================
+Hourly data is aggregated with 'label=right', so 07:00:01 to 08:00 is labelled 08:00.
+For daily and monthly aggregation, label is left, so n-hour on D to n-hour on D+1 is D.
 
 How to cite this package
 ========================
@@ -272,7 +278,7 @@ For v0.3.1: https://doi.org/10.5281/zenodo.17457013
 
 Credits
 =======
-* Builds upon `IntenseQC <https://github.com/nclwater/intense-qc/tree/master>`_, and (is compatible with) `pyPWSQC <https://github.com/OpenSenseAction/pypwsqc>`_:
+* Builds upon `IntenseQC <https://github.com/nclwater/intense-qc/tree/master>`_, `SubHourlyQC <https://github.com/nclwater/SubHourlyQC/tree/main>`_  and (is compatible with) `pyPWSQC <https://github.com/OpenSenseAction/pypwsqc>`_:
 * Please email tomkee@ceh.ac.uk if you have any questions.
 * This package was created with Cookiecutter_ and the `audreyr/cookiecutter-pypackage`_ project template.
 

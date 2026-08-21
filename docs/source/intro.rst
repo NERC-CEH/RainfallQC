@@ -14,7 +14,7 @@ It is designed to help everyone apply standardised quality control (QC) checks t
 
 At its core, the package offers:
 
-- 27 QC checks for rainfall data as of v0.2.5 (25 from `IntenseQC <https://www.sciencedirect.com/science/article/pii/S1364815221002127>`_ and 2 from `pyPWSQC <https://doi.org/10.5281/zenodo.4501919>`_)
+- 33 QC checks for rainfall data as of v1.1.0 (25 from `IntenseQC <https://www.sciencedirect.com/science/article/pii/S1364815221002127>`_, 6 from `SubHourlyQC <https://doi.org/10.1002/qj.4357>`_ and 2 from `pyPWSQC <https://doi.org/10.5281/zenodo.4501919>`_)
 - Customizable parameters – adjust thresholds, streak or accumulation lengths, and distances to neighboring gauges
 - A modular QC framework – users can select which QC methods to apply, and configure them according to their project’s requirements
 
@@ -22,12 +22,13 @@ This approach allows you to build a tailored QC pipeline: include only the check
 
 What type of checks are in the package?
 ---------------------------------------
-The *RainfallQC* package breaks down the QC checks into four distinct types:
+The *RainfallQC* package breaks down the QC checks into six distinct types:
 
 - **Gauge checks** –  For detecting abnormalities in summary and descriptive statistics.
 - **Comparison checks** – For detecting abnormalities based on rainfall benchmarks.
 - **Time-series checks** – For detecting abnormalities in patterns of the data record.
 - **Neighbourhood checks** – For detecting abnormalities based on measurements in neighbouring rain gauges.
+- **Sub-hourly checks** – An extension for the IntenseQC framework with thresholds to apply to sub-hourly rainfall data.
 - **pypwsqc filters** – For applying quality assurance protocols and filters for rainfall data.
 
 These different types of rainfall checks are either rainfall-specific or not and need different amounts of data to run (Figure 1).
@@ -47,13 +48,13 @@ These are the quality control checks currently implemented in the package:
    :widths: auto
    :align: left
 
-   ================================================================================================================================================================  ====================  ====================================================================================  ===============
+   ================================================================================================================================================================  ====================  ====================================================================================  ===================
    Check                                                                                                                                                             Sub-module            QC Framework                                                                          Note
-   ================================================================================================================================================================  ====================  ====================================================================================  ===============
+   ================================================================================================================================================================  ====================  ====================================================================================  ===================
    `Percentiles <api/generated/rainfallqc.checks.gauge_checks.html#rainfallqc.checks.gauge_checks.check_years_where_nth_percentile_is_zero>`_                        Gauge checks          `IntenseQC <https://www.sciencedirect.com/science/article/pii/S1364815221002127>`_    QC1
    `K-largest <api/generated/rainfallqc.checks.gauge_checks.html#rainfallqc.checks.gauge_checks.check_years_where_annual_kth_largest_value_is_zero>`_                Gauge checks          IntenseQC                                                                             QC2
-   `Days of week <api/generated/rainfallqc.checks.gauge_checks.html#rainfallqc.checks.gauge_checks.check_temporal_bias>`_                                            Gauge checks          IntenseQC                                                                             QC3
-   `Hours of day <api/generated/rainfallqc.checks.gauge_checks.html#rainfallqc.checks.gauge_checks.check_temporal_bias>`_                                            Gauge checks          IntenseQC                                                                             QC4
+   `Days of week <api/generated/rainfallqc.checks.gauge_checks.html#rainfallqc.checks.gauge_checks.check_day_of_week>`_                                              Gauge checks          IntenseQC                                                                             QC3
+   `Hours of day <api/generated/rainfallqc.checks.gauge_checks.html#rainfallqc.checks.gauge_checks.check_hour_of_day>`_                                              Gauge checks          IntenseQC                                                                             QC4
    `Intermittency <api/generated/rainfallqc.checks.gauge_checks.html#rainfallqc.checks.gauge_checks.check_intermittency>`_                                           Gauge checks          IntenseQC                                                                             QC5
    `Breakpoints <api/generated/rainfallqc.checks.gauge_checks.html#rainfallqc.checks.gauge_checks.check_breakpoints>`_                                               Gauge checks          IntenseQC                                                                             QC6
    `Minimum value change <api/generated/rainfallqc.checks.gauge_checks.html#rainfallqc.checks.gauge_checks.check_min_val_change>`_                                   Gauge checks          IntenseQC                                                                             QC7
@@ -75,6 +76,12 @@ These are the quality control checks currently implemented in the package:
    `Pre-QC pearson correlation <api/generated/rainfallqc.checks.neighbourhood_checks.html#rainfallqc.checks.neighbourhood_checks.check_neighbour_correlation>`_      Neighbourhood checks  IntenseQC                                                                             QC23
    `Daily factor <api/generated/rainfallqc.checks.neighbourhood_checks.html#rainfallqc.checks.neighbourhood_checks.check_daily_factor>`_                             Neighbourhood checks  IntenseQC                                                                             QC24
    `Monthly factor <api/generated/rainfallqc.checks.neighbourhood_checks.html#rainfallqc.checks.neighbourhood_checks.check_monly_factor>`_                           Neighbourhood checks  IntenseQC                                                                             QC25
+   `SubHourly <api/generated/rainfallqc.checks.subhourlyqc.html#rainfallqc.checks.subhourlyqc.check_exceedance_of_UK_1hr_record>`_                                   Sub-hourly thresholds `SubHourlyQC <https://doi.org/10.1002/qj.4357>`_                                      HQC_UK1hr
+   `SubHourly <api/generated/rainfallqc.checks.subhourlyqc.html#rainfallqc.checks.subhourlyqc.check_exceedance_of_UK_24hr_record>`_                                  Sub-hourly thresholds `SubHourlyQC <https://doi.org/10.1002/qj.4357>`_                                      HQC_UK24hr
+   `SubHourly <api/generated/rainfallqc.checks.subhourlyqc.html#rainfallqc.checks.subhourlyqc.check_daily_exceedance_of_UK_24hr_record>`_                            Sub-hourly thresholds `SubHourlyQC <https://doi.org/10.1002/qj.4357>`_                                      HQC_UK24hr_rolling
+   `SubHourly <api/generated/rainfallqc.checks.subhourlyqc.html#rainfallqc.checks.subhourlyqc.check_streaks_20mm>`_                                                  Sub-hourly thresholds `SubHourlyQC <https://doi.org/10.1002/qj.4357>`_                                      HQC_streaks_20mm
+   `SubHourly <api/generated/rainfallqc.checks.subhourlyqc.html#rainfallqc.checks.subhourlyqc.check_freq_is_subhourly>`_                                             Sub-hourly thresholds `SubHourlyQC <https://doi.org/10.1002/qj.4357>`_                                      SHQC_freqResChecker
+   `SubHourly <api/generated/rainfallqc.checks.subhourlyqc.html#rainfallqc.checks.subhourlyqc.check_subhourly_thresholds>`_                                          Sub-hourly thresholds `SubHourlyQC <https://doi.org/10.1002/qj.4357>`_                                      SHQC_subH_checkr
    `Faulty Zeros <api/generated/rainfallqc.checks.pypwsqc_filters.html#rainfallqc.checks.pypwsqc_filters.check_faulty_zeros>`_                                       pyPWSQC filters       `pyPWSQC <https://doi.org/10.5281/zenodo.4501919>`_                                   FZ
-   `Station Outliers <api/generated/rainfallqc.checks.pypwsqc_filters.html#rainfallqc.checks.pypwsqc_filters.check_station_outlier>`_                                pyPWSQC filters       pyPWSQC                                                                               SO
-   ================================================================================================================================================================  ====================  ====================================================================================  ===============
+   `Station Outliers <api/generated/rainfallqc.checks.pypwsqc_filters.html#rainfallqc.checks.pypwsqc_filters.check_station_outlier>`_                                pyPWSQC filters       `pyPWSQC <https://doi.org/10.5281/zenodo.4501919>`_                                   SO
+   ================================================================================================================================================================  ====================  ====================================================================================  ===================

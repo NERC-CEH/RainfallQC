@@ -68,11 +68,10 @@ def check_years_where_annual_kth_largest_value_is_zero(data: pl.DataFrame, targe
     return data_top_k.filter(pl.col(target_gauge_col) == 0)["time"].dt.year().to_list()
 
 
-@qc_check("check_temporal_bias", require_non_negative=True)
-def check_temporal_bias(
+@qc_check("check_day_of_week", require_non_negative=True)
+def check_day_of_week(
     data: pl.DataFrame,
     target_gauge_col: str,
-    time_granularity: str,
     p_threshold: float = 0.01,
 ) -> int:
     """
@@ -80,7 +79,7 @@ def check_temporal_bias(
 
     This check performs less well when using less data.
 
-    This is QC3 (day of week bias) and QC4 (hour-of-day bias) from the IntenseQC framework.
+    This is QC3 (day of week bias) from the IntenseQC framework.
 
     Parameters
     ----------
@@ -88,10 +87,8 @@ def check_temporal_bias(
         Rainfall data
     target_gauge_col :
         Column with rainfall data
-    time_granularity :
-        Temporal grouping, either 'weekday' or 'hour'
     p_threshold :
-        Significance level for the test
+        Significance level for the test (default 0.01)
 
     Returns
     -------
@@ -99,37 +96,42 @@ def check_temporal_bias(
         1 if bias is detected (p < threshold), 0 otherwise
 
     """
-    if time_granularity == "weekday":
-        time_group = pl.col("time").dt.weekday()
-    elif time_granularity == "hour":
-        time_group = pl.col("time").dt.hour()
-    else:
-        raise ValueError("time_granularity must be either 'weekday' or 'hour'")
+    return temporal_bias_test(
+        data=data, target_gauge_col=target_gauge_col, time_granularity="weekday", p_threshold=p_threshold
+    )
 
-    # 1. Get time-groups
-    time_group_data = data.group_by(time_group).agg(pl.col(target_gauge_col).drop_nans())
 
-    # 2. Get data mean
-    overall_mean = data[target_gauge_col].drop_nans().mean()
+@qc_check("check_hour_of_day", require_non_negative=True)
+def check_hour_of_day(
+    data: pl.DataFrame,
+    target_gauge_col: str,
+    p_threshold: float = 0.01,
+) -> int:
+    """
+    Perform a two-sided t-test on the distribution of mean rainfall over time slices.
 
-    # 3. Loop through each time group and check difference from mean
-    p_values = []
+    This check performs less well when using less data.
 
-    for _, tg_data in time_group_data.iter_rows():
-        # skip groups less than 2 values
-        if len(tg_data) < 2:
-            continue
+    This is QC4 (hour-of-day bias) from the IntenseQC framework.
 
-        # Compute two-sided t-test group array vs population mean
-        _, p_val = scipy.stats.ttest_1samp(
-            tg_data,
-            popmean=overall_mean,
-            alternative="two-sided",
-        )
-        p_values.append(p_val)
+    Parameters
+    ----------
+    data :
+        Rainfall data
+    target_gauge_col :
+        Column with rainfall data
+    p_threshold :
+        Significance level for the test (default 0.01)
 
-    # Check any are below threshold i.e. different distribution thus a bias
-    return int(any(p < p_threshold for p in p_values))
+    Returns
+    -------
+    flag : int
+        1 if bias is detected (p < threshold), 0 otherwise
+
+    """
+    return temporal_bias_test(
+        data=data, target_gauge_col=target_gauge_col, time_granularity="hour", p_threshold=p_threshold
+    )
 
 
 @qc_check("check_intermittency", require_non_negative=True)
@@ -293,10 +295,73 @@ def check_min_val_change(data: pl.DataFrame, target_gauge_col: str, expected_min
 
     """
     # 1. Filter out non-zero years
-    data_non_zero = data.filter(pl.col(target_gauge_col) > 0)
+    data_non_zero = data.filter(pl.col(target_gauge_col).fill_nan(0.0) > 0)
 
     # 2. Get minimum value each year
     data_min_by_year = data_non_zero.group_by_dynamic(pl.col("time"), every="1y").agg(pl.col(target_gauge_col).min())
 
     non_res_years = data_min_by_year.filter(pl.col(target_gauge_col) != expected_min_val)
     return non_res_years["time"].dt.year().to_list()
+
+
+def temporal_bias_test(
+    data: pl.DataFrame,
+    target_gauge_col: str,
+    time_granularity: str,
+    p_threshold: float = 0.01,
+) -> int:
+    """
+    Perform a two-sided t-test on the distribution of mean rainfall over time slices.
+
+    This check performs less well when using less data.
+
+    This is used in QC3 (day of week bias) and QC4 (hour-of-day bias) from the IntenseQC framework.
+
+    Parameters
+    ----------
+    data :
+        Rainfall data
+    target_gauge_col :
+        Column with rainfall data
+    time_granularity :
+        Temporal grouping, either 'weekday' or 'hour'
+    p_threshold :
+        Significance level for the test
+
+    Returns
+    -------
+    flag : int
+        1 if bias is detected (p < threshold), 0 otherwise
+
+    """
+    if time_granularity == "weekday":
+        time_group = pl.col("time").dt.weekday()
+    elif time_granularity == "hour":
+        time_group = pl.col("time").dt.hour()
+    else:
+        raise ValueError("time_granularity must be either 'weekday' or 'hour'")
+
+    # 1. Get time-groups
+    time_group_data = data.group_by(time_group).agg(pl.col(target_gauge_col).drop_nans())
+
+    # 2. Get data mean
+    overall_mean = data[target_gauge_col].drop_nans().mean()
+
+    # 3. Loop through each time group and check difference from mean
+    p_values = []
+
+    for _, tg_data in time_group_data.iter_rows():
+        # skip groups less than 2 values
+        if len(tg_data) < 2:
+            continue
+
+        # Compute two-sided t-test group array vs population mean
+        _, p_val = scipy.stats.ttest_1samp(
+            tg_data,
+            popmean=overall_mean,
+            alternative="two-sided",
+        )
+        p_values.append(p_val)
+
+    # Check any are below threshold i.e. different distribution thus a bias
+    return int(any(p < p_threshold for p in p_values))

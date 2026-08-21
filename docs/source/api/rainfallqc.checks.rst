@@ -18,4 +18,5 @@ QC Checks
     rainfallqc.checks.comparison_checks
     rainfallqc.checks.timeseries_checks
     rainfallqc.checks.neighbourhood_checks
+    rainfallqc.checks.subhourlyqc_checks
     rainfallqc.checks.pypwsqc_filters

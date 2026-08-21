@@ -253,7 +253,7 @@ def convert_daily_data_to_monthly(
 
     # 3. Group data into monthly
     monthly_data = (
-        daily_data.group_by_dynamic("time", every="1mo", closed="right")
+        daily_data.group_by_dynamic("time", every="1mo", label="left")
         .agg(agg_expressions)
         .filter(
             pl.col("n_days")
@@ -309,6 +309,23 @@ def downsample_and_fill_columns(
     else:
         # List of column names
         cols_to_join = [time_col] + [pl.col(col) for col in data_cols]
+
+    high_res_interval = _infer_interval(high_res_data, time_col)
+    low_res_interval = _infer_interval(low_res_data, time_col)
+
+    if low_res_interval < high_res_interval:
+        raise ValueError(
+            f"Low-resolution data appears to have a higher frequency than "
+            f"high-resolution data: {low_res_interval} vs {high_res_interval}"
+        )
+
+    ratio = low_res_interval / high_res_interval
+    if ratio != int(ratio):
+        raise ValueError(
+            f"Data frequencies are incompatible: "
+            f"high-resolution interval={high_res_interval}, "
+            f"low-resolution interval={low_res_interval}"
+        )
 
     # Select time and all data columns to join
     cols_to_join_df = low_res_data.select(cols_to_join)
@@ -601,6 +618,17 @@ def get_normalised_diff(data: pl.DataFrame, target_col: str, other_col: str, dif
     )
 
 
+def _infer_interval(data: pl.DataFrame, time_col: str) -> datetime.timedelta:
+    times = data.select(time_col).drop_nulls().unique().sort(time_col).get_column(time_col)
+
+    diffs = times.diff().drop_nulls()
+
+    if len(diffs) == 0:
+        raise ValueError("Not enough timestamps to infer data frequency")
+
+    return diffs.mode().max()
+
+
 def make_month_and_year_col(data: pl.DataFrame) -> pl.DataFrame:
     """
     Make year and month columns for polars dataframe.
@@ -745,7 +773,11 @@ def resample_data_by_time_step(
 
     """
     # resample into daily (also round to 1 decimal place)
-    return data.group_by_dynamic(time_col, every=time_step, closed="left", label="left", offset=f"{hour_offset}h").agg(
+    if "h" in time_step:
+        label_to_use = "right"
+    else:
+        label_to_use = "left"
+    return data.group_by_dynamic(time_col, every=time_step, label=label_to_use, offset=f"{hour_offset}h").agg(
         [
             pl.when(pl.col(col).count() >= min_count).then(pl.col(col).sum()).otherwise(None).alias(col)
             for col in rain_cols

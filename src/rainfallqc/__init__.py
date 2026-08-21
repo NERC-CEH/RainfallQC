@@ -2,13 +2,14 @@
 
 __author__ = """Tom Keel"""
 __email__ = "tomkee@ceh.ac.uk"
-__version__ = "1.0.2"
+__version__ = "1.1.0"
 
 from rainfallqc import core, utils
 from rainfallqc.checks import (
     comparison_checks,
     gauge_checks,
     neighbourhood_checks,
+    subhourlyqc_checks,
     timeseries_checks,
 )
 from rainfallqc.qc_frameworks import apply_qc_framework
@@ -18,6 +19,7 @@ __all__ = [
     "comparison_checks",
     "gauge_checks",
     "neighbourhood_checks",
+    "subhourlyqc_checks",
     "timeseries_checks",
     "core",
     "utils",

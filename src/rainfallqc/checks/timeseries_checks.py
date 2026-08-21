@@ -311,7 +311,7 @@ def check_streaks(
     time_step = data_utils.get_data_timestep_as_str(data)
     if time_step == "15m":
         original_data = data.clone()
-        data = data.group_by_dynamic("time", every="1h").agg(pl.col(target_gauge_col).sum())
+        data = data.group_by_dynamic("time", every="1h", label="right").agg(pl.col(target_gauge_col).sum())
         time_multiplier = 4  # 4x 15-min periods per hour
     else:
         time_multiplier = 1
@@ -334,19 +334,23 @@ def check_streaks(
 
     # 3. Flag streaks of 2 or more repeated large values exceeding 2 * mean wet day rainfall (from ETCCDI SDII)
     streak_flag1 = flag_streaks_exceeding_wet_day_rainfall_threshold(
-        streak_data, target_gauge_col, streak_length=2, accumulation_threshold=accumulation_threshold
+        streak_data,
+        target_gauge_col,
+        min_streak_length=2,
+        accumulation_threshold=accumulation_threshold,
+        flag_col_name="streak_flag1",
     )
 
     # 4. Flag streaks of 12 or more greater than smallest measurable rainfall amount
     streak_flag3 = flag_streaks_exceeding_smallest_measurable_rainfall_amount(
         streak_data,
         target_gauge_col,
-        streak_length=12 * time_multiplier,
+        min_streak_length=12 * time_multiplier,
         smallest_measurable_rainfall_amount=smallest_measurable_rainfall_amount,
     )
 
     # 5. Flag streaks of 24 or more greater than zero
-    streak_flag4 = flag_streaks_exceeding_zero(streak_data, target_gauge_col, streak_length=24 * time_multiplier)
+    streak_flag4 = flag_streaks_exceeding_zero(streak_data, target_gauge_col, min_streak_length=24 * time_multiplier)
 
     # 6. Flag periods of zeros bounded by streaks of multiples of 24
     streak_flag5 = flag_streaks_of_zero_bounded_by_days(streak_data, target_gauge_col, time_res=time_step)
@@ -443,7 +447,7 @@ def flag_streaks_of_zero_bounded_by_days(data: pl.DataFrame, target_gauge_col: s
     return data_w_flags
 
 
-def flag_streaks_exceeding_zero(data: pl.DataFrame, target_gauge_col: str, streak_length: int) -> pl.DataFrame:
+def flag_streaks_exceeding_zero(data: pl.DataFrame, target_gauge_col: str, min_streak_length: int) -> pl.DataFrame:
     """
     Flag values exceeding wet day rainfall accumulation threshold.
 
@@ -453,7 +457,7 @@ def flag_streaks_exceeding_zero(data: pl.DataFrame, target_gauge_col: str, strea
         Rainfall data with streak_id.
     target_gauge_col :
         Column with rainfall data.
-    streak_length :
+    min_streak_length :
         Only streaks longer than this will be considered.
 
     Returns
@@ -463,7 +467,7 @@ def flag_streaks_exceeding_zero(data: pl.DataFrame, target_gauge_col: str, strea
 
     """
     # 1. Get streak above length and exceeding zero
-    streaks_exceeding_zero = get_streaks_above_threshold(data, target_gauge_col, streak_length, 0.0)
+    streaks_exceeding_zero = get_streaks_above_threshold(data, target_gauge_col, min_streak_length, 0.0)
 
     # 2. Label original data
     data_w_flags = data.with_columns(
@@ -476,7 +480,7 @@ def flag_streaks_exceeding_zero(data: pl.DataFrame, target_gauge_col: str, strea
 
 
 def flag_streaks_exceeding_smallest_measurable_rainfall_amount(
-    data: pl.DataFrame, target_gauge_col: str, streak_length: int, smallest_measurable_rainfall_amount: float
+    data: pl.DataFrame, target_gauge_col: str, min_streak_length: int, smallest_measurable_rainfall_amount: float
 ) -> pl.DataFrame:
     """
     Flag streaks exceeding smallest measurable rainfall amount in data.
@@ -487,7 +491,7 @@ def flag_streaks_exceeding_smallest_measurable_rainfall_amount(
         Rainfall data with streak_id..
     target_gauge_col:
         Column with rainfall data.
-    streak_length :
+    min_streak_length :
         Only streaks longer than this will be considered
     smallest_measurable_rainfall_amount:
         Resolution of rainfall data (i.e. minimum rainfall recording).
@@ -500,7 +504,7 @@ def flag_streaks_exceeding_smallest_measurable_rainfall_amount(
     """
     # 1. Get streak above length and smallest measurable rainfall amount
     streaks_above_smallest_measurable_rainfall_amount = get_streaks_above_threshold(
-        data, target_gauge_col, streak_length, smallest_measurable_rainfall_amount
+        data, target_gauge_col, min_streak_length, smallest_measurable_rainfall_amount
     )
 
     # 2. Label original data
@@ -516,7 +520,11 @@ def flag_streaks_exceeding_smallest_measurable_rainfall_amount(
 
 
 def flag_streaks_exceeding_wet_day_rainfall_threshold(
-    data: pl.DataFrame, target_gauge_col: str, streak_length: int, accumulation_threshold: float
+    data: pl.DataFrame,
+    target_gauge_col: str,
+    min_streak_length: int,
+    accumulation_threshold: float,
+    flag_col_name: str = "streak_flag1",
 ) -> pl.DataFrame:
     """
     Flag values exceeding wet day rainfall accumulation threshold.
@@ -527,10 +535,12 @@ def flag_streaks_exceeding_wet_day_rainfall_threshold(
         Rainfall data with streak_id..
     target_gauge_col :
         Column with rainfall data.
-    streak_length :
+    min_streak_length :
         Only streaks longer than this will be considered
     accumulation_threshold :
         Threshold for rain accumulation.
+    flag_col_name :
+        Name for flag column (default: streak_flag1 as this is either 0 or 1 from IntenseQC)
 
     Returns
     -------
@@ -540,7 +550,7 @@ def flag_streaks_exceeding_wet_day_rainfall_threshold(
     """
     # 1. Get streak above length and accumulation threshold
     streaks_above_accumulation = get_streaks_above_threshold(
-        data, target_gauge_col, streak_length, accumulation_threshold
+        data, target_gauge_col, min_streak_length, accumulation_threshold
     )
 
     # 2. Label original data
@@ -548,13 +558,13 @@ def flag_streaks_exceeding_wet_day_rainfall_threshold(
         pl.when(pl.col("streak_id").is_in(streaks_above_accumulation["streak_id"].unique().to_list()))
         .then(1)
         .otherwise(0)
-        .alias("streak_flag1")
+        .alias(flag_col_name)
     )
     return data_w_flags
 
 
 def get_streaks_above_threshold(
-    data: pl.DataFrame, target_gauge_col: str, streak_length: int, value_threshold: int | float
+    data: pl.DataFrame, target_gauge_col: str, min_streak_length: int, value_threshold: int | float
 ) -> pl.DataFrame:
     """
         Get streak groups above given threshold.
@@ -565,7 +575,7 @@ def get_streaks_above_threshold(
         Rainfall data with streak_id..
     target_gauge_col :
         Column with rainfall data.
-    streak_length :
+    min_streak_length :
         Minimum length of streaks.
     value_threshold :
         Threshold to check .
@@ -587,7 +597,7 @@ def get_streaks_above_threshold(
     )
     # 2. Get streaks above streak length and threshold
     streaks_above_accumulation = data_streak_groups.drop_nans().filter(
-        (pl.col("streak_len") >= streak_length) & (pl.col("rain_amount") > value_threshold)
+        (pl.col("streak_len") >= min_streak_length) & (pl.col("rain_amount") > value_threshold)
     )
     return streaks_above_accumulation
 
@@ -649,13 +659,13 @@ def flag_accumulation_based_on_next_dry_spell_duration(
     return data.with_columns(
         pl.when(
             (pl.col("possible_accumulation") == 1)
-            & (pl.col("dry_spell_length").fill_null(0.0) >= min_dry_spell_duration)
+            & (pl.col("dry_spell_length").fill_nan(0.0) >= min_dry_spell_duration)
             & (pl.col("next_dry_spell").is_not_null())
         )
         .then(3)
         .when(
             (pl.col("possible_accumulation") == 1)
-            & (pl.col("dry_spell_length").fill_null(0.0) >= min_dry_spell_duration)
+            & (pl.col("dry_spell_length").fill_nan(0.0) >= min_dry_spell_duration)
         )
         .then(1)
         .otherwise(0)
@@ -699,7 +709,7 @@ def fill_in_monthly_accumulation_flags(
     else:
         duration_to_remove = pl.duration(days=max_dry_spell_duration)
     # 2. get monthly flag rows
-    flagged_rows = monthly_accumulation_flags.filter(pl.col("monthly_accumulation") > 0)
+    flagged_rows = monthly_accumulation_flags.filter(pl.col("monthly_accumulation").fill_nan(0.0) > 0)
     # 3. Fill in rows preceeding
     for row in flagged_rows.iter_rows(named=True):
         # Check dry spell is at least minimum for a month
@@ -1008,7 +1018,7 @@ def join_dry_spell_data_back_to_original(data: pl.DataFrame, dry_spell_lengths_f
     dry_spell_flag_data = pl.DataFrame({"time": data["time"], "dry_spell_flag": np.zeros(data["time"].shape)})
 
     # 2. Get all non-0 flags (i.e. suspicious dry spells)
-    dry_spell_non_zero = dry_spell_lengths_flags.filter(pl.col("dry_spell_flag") > 0)
+    dry_spell_non_zero = dry_spell_lengths_flags.filter(pl.col("dry_spell_flag").fill_nan(0.0) > 0)
 
     # 3. Loop through problematic flags and label the original data based on duration of dry spell
     for non_zero_data_row in dry_spell_non_zero.iter_rows():
@@ -1122,7 +1132,7 @@ def get_first_wet_after_dry_spell(data: pl.DataFrame, target_gauge_col: str) -> 
     gauge_dry_spell_groups = get_consecutive_dry_days(gauge_dry_spells)
 
     return gauge_dry_spell_groups.with_columns(
-        pl.when((pl.col("is_dry") == 0) & (pl.col("dry_group_id").diff().fill_null(0) == 1))
+        pl.when((pl.col("is_dry") == 0) & (pl.col("dry_group_id").diff().fill_nan(0) == 1))
         .then(pl.col("time"))
         .otherwise(None)
         .alias("first_wet_after_dry")
@@ -1174,7 +1184,7 @@ def get_consecutive_dry_days(gauge_dry_spells: pl.DataFrame) -> pl.DataFrame:
         Data with group ids for consecutive dry days
 
     """
-    return gauge_dry_spells.with_columns(((pl.col("is_dry").diff().fill_null(0) == 1).cum_sum()).alias("dry_group_id"))
+    return gauge_dry_spells.with_columns(((pl.col("is_dry").diff().fill_nan(0) == 1).cum_sum()).alias("dry_group_id"))
 
 
 def compute_dry_spell_days(dry_spell_data: xr.Dataset) -> xr.Dataset:

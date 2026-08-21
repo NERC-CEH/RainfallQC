@@ -26,13 +26,14 @@ All quality control checks in the RainfallQC package begin with ``check_``
 Content overview
 ----------------
 
-RainfallQC contains five modules:
+RainfallQC contains six modules:
 
 1. ``gauge_checks`` - For detecting abnormalities in summary and descriptive statistics.
 2. ``comparison_checks`` - For detecting abnormalities by comparing to benchmark data.
 3. ``timeseries_checks`` - For detecting abnormalities in patterns of the data record.
 4. ``neighbourhood_checks`` - For detecting abnormalities based on measurements in neighbouring gauges.
-5. ``pypwsqc_filters`` - For applying quality assurance protocols and filters for rainfall data.
+5. ``subhourlyqc_checks`` - An extension for IntenseQC to be applied to sub-hourly rainfall data.
+6. ``pypwsqc_filters`` - For applying quality assurance protocols and filters for rainfall data.
 
 You can find a jupyter notebook with an easy-to-follow example `here <https://github.com/Thomasjkeel/RainfallQC-notebooks/blob/main/notebooks/demo/rainfallQC_demo.ipynb>`_
 
@@ -42,6 +43,7 @@ As you can imagine, not all quality control checks are suitable for all temporal
 Therefore, we have created a table that shows which checks are suitable for which temporal data resolutions,
 and which can be applied after aggregating data to a coarser temporal resolution.
 
+**Note:** *checks from the SubHourlyQC framework were meant for data that is either 1m or 15m resolution.*
 
 .. image:: _static/qc_applicability_table.png
    :align: center
