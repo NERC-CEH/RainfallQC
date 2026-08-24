@@ -166,9 +166,13 @@ method to run QC methods from a given framework (e.g. IntenseQC).
 
 For more information about how to run multiple checks in a framework see `Example 4 in the docs <https://nerc-ceh.github.io/RainfallQC/tutorials/running_multiple_qc_checks.html>`_
 
+Other examples
+--------------
+Of course, your data may not be tabular, or may not be stored in a single file. Therefore, please see our other `Tutorials <https://nerc-ceh.github.io/RainfallQC/tutorials/overview.html>`_.
+
 
 QC frameworks in RainfallQC
----------------------------
+===========================
 
 As of RainfallQC v1.1.0, there are three QC frameworks:
 
@@ -189,7 +193,7 @@ As of RainfallQC v1.1.0, there are three QC frameworks:
 
 
 .. table:: QC checks and appropriate time-resolution
-   :widths: 10 40 19 17 17 17 17
+   :widths: auto
    :align: left
 
    =========================================== =====================  ==================================================================================== ================= ================= ================= ================= =================
@@ -230,9 +234,6 @@ As of RainfallQC v1.1.0, there are three QC frameworks:
    Station Outliers                            pyPWSQC filters        `pyPWSQC <https://doi.org/10.5281/zenodo.4501919>`_                                  :green:`✓`        :green:`✓`        :green:`✓`        :red:`☓`          :red:`☓`     
    =========================================== =====================  ==================================================================================== ================= ================= ================= ================= =================
 
-Other examples
---------------
-Of course, your data may not be tabular, or may not be stored in a single file. Therefore, please see our other `Tutorials <https://nerc-ceh.github.io/RainfallQC/tutorials/overview.html>`_.
 
 
 Documentation and License
