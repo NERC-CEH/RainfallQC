@@ -250,6 +250,72 @@ There is also a `demo notebook <https://github.com/Thomasjkeel/RainfallQC-notebo
 
 Finally, different QC methods are suitable for different temporal resolutions, see our `Which checks are suitable for my data's temporal resolution? <https://nerc-ceh.github.io/RainfallQC/quickstart.html>`_ for more information.
 
+
+Which checks are suitable for my data's temporal resolution?
+------------------------------------------------------------
+As you can imagine, not all quality control checks are suitable for all temporal resolutions.
+Therefore, we have created a table that shows which checks are suitable for which temporal resolutions,
+and which can be applied after aggregating data ("agg") to a coarser temporal resolution.
+
+.. :dark-green:`✓`
+.. :red:`☓`
+
+.. role:: green
+   :class: qc-green
+
+.. role:: dark-green
+   :class: qc-dark-green
+
+.. role:: yellow
+   :class: qc-yellow
+
+.. role:: red
+   :class: qc-red
+
+
+.. table:: Which checks are suitable for my data's time-resolution
+   :widths: 10 40 19 17 17 17 17
+   :align: left
+
+   ===================== ======================================================================================================================================================================== ================= ================= ================= ================= =================
+   Short name            Long name                                                                                                                                                                <15-min           15-min            hourly            daily             monthly
+   ===================== ======================================================================================================================================================================== ================= ================= ================= ================= =================
+   QC1                   `Percentiles <api/generated/rainfallqc.checks.gauge_checks.html#ranfallqc.checks.gauge_checks.check_years_where_nth_percentile_is_zero>`_                                :green:`✓`        :green:`✓`        :green:`✓`        :green:`✓`        :green:`✓`
+   QC2                   `K-largest <api/generated/rainfallqc.checks.gauge_checks.html#rainfallqc.checks.gauge_checks.check_years_where_annual_kth_largest_value_is_zero>`_                       :green:`✓`        :green:`✓`        :green:`✓`        :green:`✓`        :green:`✓`
+   QC3                   `Days of week <api/generated/rainfallqc.checks.gauge_checks.html#rainfallqc.checks.gauge_checks.check_day_of_week>`_                                                     :green:`✓`        :green:`✓`        :green:`✓`        :green:`✓`        :red:`☓`
+   QC4                   `Hours of day <api/generated/rainfallqc.checks.gauge_checks.html#rainfallqc.checks.gauge_checks.check_hour_of_day>`_                                                     :green:`✓`        :green:`✓`        :green:`✓`        :red:`☓`          :red:`☓`
+   QC5                   `Intermittency <api/generated/rainfallqc.checks.gauge_checks.html#rainfallqc.checks.gauge_checks.check_intermittency>`_                                                  :green:`✓`        :green:`✓`        :green:`✓`        :green:`✓`        :green:`✓`
+   QC6                   `Breakpoints <api/generated/rainfallqc.checks.gauge_checks.html#rainfallqc.checks.gauge_checks.check_breakpoints>`_                                                      :green:`✓`        :green:`✓`        :green:`✓`        :green:`✓`        :red:`☓`
+   QC7                   `Minimum value change <api/generated/rainfallqc.checks.gauge_checks.html#rainfallqc.checks.gauge_checks.check_min_val_change>`_                                          :green:`✓`        :green:`✓`        :green:`✓`        :green:`✓`        :green:`✓`
+   QC8                   `R99p <api/generated/rainfallqc.checks.comparison_checks.html#rainfallqc.checks.comparison_checks.check_annual_exceedance_etccdi_r99p>`_                                 :green:`✓`        :green:`✓`        :green:`✓`        :green:`✓`        :red:`☓`
+   QC9                   `PRCPTOT <api/generated/rainfallqc.checks.comparison_checks.html#rainfallqc.checks.comparison_checks.check_annual_exceedance_etccdi_prcptot>`_                           :green:`✓`        :green:`✓`        :green:`✓`        :green:`✓`        :red:`☓`
+   QC10                  `World Record <api/generated/rainfallqc.checks.comparison_checks.html#rainfallqc.checks.comparison_checks.check_exceedance_of_rainfall_world_record>`_                   :green:`✓`        :green:`✓`        :green:`✓`        :green:`✓`        :red:`☓`
+   QC11                  `Rx1day <api/generated/rainfallqc.checks.comparison_checks.html#rainfallqc.checks.comparison_checks.check_hourly_exceedance_etccdi_rx1day>`_                             :green:`✓`        :green:`✓`        :green:`✓`        :red:`☓`          :red:`☓`
+   QC12                  `CDD (Dry spells) <api/generated/rainfallqc.checks.timeseries_checks.html#rainfallqc.checks.timeseries_checks.check_dry_period_cdd>`_                                    :green:`✓`        :green:`✓`        :green:`✓`        :green:`✓`        :red:`☓`
+   QC13                  `Daily accumulations <api/generated/rainfallqc.checks.timeseries_checks.html#rainfallqc.checks.timeseries_checks.check_daily_accumulations>`_                            :dark-green:`agg` :dark-green:`agg` :green:`✓`        :green:`✓`        :red:`☓`
+   QC14                  `Monthly accumulations <api/generated/rainfallqc.checks.timeseries_checks.html#rainfallqc.checks.timeseries_checks.check_monthly_accumulations>`_                        :green:`✓`        :green:`✓`        :green:`✓`        :green:`✓`        :red:`☓`
+   QC15                  `Streaks <api/generated/rainfallqc.checks.timeseries_checks.html#rainfallqc.checks.timeseries_checks.check_streaks>`_                                                    :dark-green:`agg` :dark-green:`agg` :green:`✓`        :green:`✓`        :red:`☓`
+   QC16                  `Daily neighbours (wet) <api/generated/rainfallqc.checks.neighbourhood_checks.html#rainfallqc.checks.neighbourhood_checks.check_wet_neighbours_daily>`_                  :green:`✓`        :green:`✓`        :green:`✓`        :green:`✓`        :red:`☓`
+   QC17                  `Hourly neighbours (wet) <api/generated/rainfallqc.checks.neighbourhood_checks.html#rainfallqc.checks.neighbourhood_checks.check_wet_neighbours_hourly>`_                :green:`✓`        :green:`✓`        :green:`✓`        :red:`☓`          :red:`☓`
+   QC18                  `Daily neighbours (dry) <api/generated/rainfallqc.checks.neighbourhood_checks.html#rainfallqc.checks.neighbourhood_checks.check_dry_neighbours_daily>`_                  :green:`✓`        :green:`✓`        :green:`✓`        :green:`✓`        :red:`☓`
+   QC19                  `Hourly neighbours (dry) <api/generated/rainfallqc.checks.neighbourhood_checks.html#rainfallqc.checks.neighbourhood_checks.check_dry_neighbours_hourly>`_                :green:`✓`        :green:`✓`        :green:`✓`        :red:`☓`          :red:`☓`
+   QC20                  `Monthly neighbours <api/generated/rainfallqc.checks.neighbourhood_checks.html#rainfallqc.checks.neighbourhood_checks.check_monthly_neighbours>`_                        :dark-green:`agg` :dark-green:`agg` :dark-green:`agg` :dark-green:`agg` :green:`✓`
+   QC21                  `Timing offset <api/generated/rainfallqc.checks.neighbourhood_checks.html#rainfallqc.checks.neighbourhood_checks.check_timing_offset>`_                                  :green:`✓`        :green:`✓`        :green:`✓`        :green:`✓`        :red:`☓`
+   QC22                  `Pre-QC affinity index <api/generated/rainfallqc.checks.neighbourhood_checks.html#rainfallqc.checks.neighbourhood_checks.check_neighbour_affinity_index>`_               :green:`✓`        :green:`✓`        :green:`✓`        :green:`✓`        :green:`✓` 
+   QC23                  `Pre-QC pearson correlation <api/generated/rainfallqc.checks.neighbourhood_checks.html#rainfallqc.checks.neighbourhood_checks.check_neighbour_correlation>`_             :green:`✓`        :green:`✓`        :green:`✓`        :green:`✓`        :green:`✓`
+   QC24                  `Daily factor <api/generated/rainfallqc.checks.neighbourhood_checks.html#rainfallqc.checks.neighbourhood_checks.check_daily_factor>`_                                    :dark-green:`agg` :dark-green:`agg` :dark-green:`agg` :green:`✓`        :red:`☓`
+   QC25                  `Monthly factor <api/generated/rainfallqc.checks.neighbourhood_checks.html#rainfallqc.checks.neighbourhood_checks.check_monly_factor>`_                                  :dark-green:`agg` :dark-green:`agg` :dark-green:`agg` :dark-green:`agg` :green:`✓`
+   HQC_UK1hr             `Check exceedance of UK 1h record <api/generated/rainfallqc.checks.subhourlyqc.html#rainfallqc.checks.subhourlyqc.check_exceedance_of_UK_1hr_record>`_                   :green:`✓`        :green:`✓`        :red:`☓`          :red:`☓`          :red:`☓`
+   HQC_UK24hr            `Check exceedance of UK 24h record <api/generated/rainfallqc.checks.subhourlyqc.html#rainfallqc.checks.subhourlyqc.check_exceedance_of_UK_24hr_record>`_                 :green:`✓`        :green:`✓`        :red:`☓`          :red:`☓`          :red:`☓`
+   HQC_UK24hr_rolling    `Check 24h-sum exceedance of UK 24h record <api/generated/rainfallqc.checks.subhourlyqc.html#rainfallqc.checks.subhourlyqc.check_daily_exceedance_of_UK_24hr_record>`_   :green:`✓`        :green:`✓`        :red:`☓`          :red:`☓`          :red:`☓`
+   HQC_streaks_20mm      `Check streaks (20 mm min) <api/generated/rainfallqc.checks.subhourlyqc.html#rainfallqc.checks.subhourlyqc.check_streaks_20mm>`_                                         :green:`✓`        :green:`✓`        :red:`☓`          :red:`☓`          :red:`☓`
+   SHQC_freqResChecker   `Check data has sub-hourly frequency <api/generated/rainfallqc.checks.subhourlyqc.html#rainfallqc.checks.subhourlyqc.check_freq_is_subhourly>`_                          :green:`✓`        :green:`✓`        :red:`☓`          :red:`☓`          :red:`☓`
+   SHQC_subH_checkr      `Check sub-hourly rainfall thresholds <api/generated/rainfallqc.checks.subhourlyqc.html#rainfallqc.checks.subhourlyqc.check_subhourly_thresholds>`_                      :green:`✓`        :green:`✓`        :red:`☓`          :red:`☓`          :red:`☓`
+   FZ                    `Faulty Zeros <api/generated/rainfallqc.checks.pypwsqc_filters.html#rainfallqc.checks.pypwsqc_filters.check_faulty_zeros>`_                                              :green:`✓`        :green:`✓`        :green:`✓`        :green:`✓`        :red:`☓`
+   SO                    `Station Outliers <api/generated/rainfallqc.checks.pypwsqc_filters.html#rainfallqc.checks.pypwsqc_filters.check_station_outlier>`_                                       :green:`✓`        :green:`✓`        :green:`✓`        :red:`☓`          :red:`☓`     
+   ===================== ======================================================================================================================================================================== ================= ================= ================= ================= =================
+
+
 Documentation and License
 =========================
 * RainfallQC is developed and maintained by UKCEH.
