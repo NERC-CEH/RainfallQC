@@ -16,7 +16,7 @@ RainfallQC - Quality control for rainfall data
    :alt: Deploy docs
 
 .. image:: https://zenodo.org/badge/917722737.svg
-        :target: https://doi.org/10.5281/zenodo.17457013
+        :target: https://doi.org/10.5281/zenodo.21030756
 
 Provides methods for running rainfall quality control.
 
@@ -38,8 +38,8 @@ RainfallQC can be installed from PyPi:
     pip install rainfallqc
 
 
-Example use
-===========
+Examples
+========
 
 Example 1. - Running individual checks on a single rain gauge
 -------------------------------------------------------------
@@ -251,7 +251,7 @@ For daily and monthly aggregation, label is left, so n-hour on D to n-hour on D+
 How to cite this package
 ========================
 To cite a specific version of RainfallQC, please see `Zenodo <https://zenodo.org/records/17457184>`_ DOI. 
-For v0.3.1: https://doi.org/10.5281/zenodo.17457013
+For v1.0.2: https://doi.org/10.5281/zenodo.21030756
 
 Credits
 =======
