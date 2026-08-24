@@ -15,6 +15,7 @@ Changelog
 * Add label 'right' to group_by_dynamic so that data is aggregated upwards i.e. 7:00:01 to 8:00 is 8:00.
 * Add `.fill_nan(0.0)`` to checks doing comparisons
 * Add check for polars dataframe as input of `.apply_qc_framework()``
+* Fix readme and quickstart in docs
 
 1.0.3 (2026-08-11)
 ------------------
