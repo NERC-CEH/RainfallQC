@@ -87,7 +87,7 @@ RainfallQC is built on top of `Polars <https://docs.pola.rs/>`_, which handles e
 
    .. container:: image-item
 
-      .. figure:: _static/ukceh_logo.png
+      .. figure:: _static/ukceh_logo_light.png
          :alt: UKCEH
          :height: 100px
          :target: https://www.ceh.ac.uk
