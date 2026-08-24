@@ -19,7 +19,9 @@ Functions
 
    check_daily_factor
 
-   check_dry_neighbours
+   check_dry_neighbours_daily
+
+   check_dry_neighbours_hourly
 
    check_monthly_factor
 
@@ -33,7 +35,9 @@ Functions
 
    check_timing_offset
 
-   check_wet_neighbours
+   check_wet_neighbours_daily
+
+   check_wet_neighbours_hourly
 
    filter_data_based_on_unusual_wetness
 

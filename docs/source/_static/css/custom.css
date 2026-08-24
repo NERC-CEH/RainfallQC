@@ -82,3 +82,31 @@
 .toctree-l3 {
     font-size: 0.75em;
 }
+
+.qc-green {
+    display: block;
+    background-color: #c6efce;
+    color: #006100;
+    text-align: center;
+}
+
+.qc-yellow {
+    display: block;
+    background-color: #ffeb9c;
+    color: #9c6500;
+    text-align: center;
+}
+
+.qc-red {
+    display: block;
+    background-color: #ffc7ce;
+    color: #9c0006;
+    text-align: center;
+}
+
+.qc-dark-green {
+    display: block;
+    background-color: #006100;
+    color: #c6efce;
+    text-align: center;
+}
