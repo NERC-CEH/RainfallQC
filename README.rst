@@ -16,7 +16,7 @@ RainfallQC - Quality control for rainfall data
    :alt: Deploy docs
 
 .. image:: https://zenodo.org/badge/917722737.svg
-        :target: https://doi.org/10.5281/zenodo.21030756
+        :target: https://doi.org/10.5281/zenodo.22083293
 
 Provides methods for running rainfall quality control.
 
@@ -250,8 +250,8 @@ For daily and monthly aggregation, label is left, so n-hour on D to n-hour on D+
 
 How to cite this package
 ========================
-To cite a specific version of RainfallQC, please see `Zenodo <https://zenodo.org/records/17457184>`_ DOI. 
-For v1.0.2: https://doi.org/10.5281/zenodo.21030756
+To cite a specific version of RainfallQC, please see `Zenodo <https://zenodo.org/records/22083293>`_ DOI. 
+For v1.1.0: https://doi.org/10.5281/zenodo.22083293
 
 Credits
 =======
