@@ -2,6 +2,25 @@
 Changelog
 =========
 
+1.1.0 (2026-08-11)
+------------------
+* Add subhourlyQC checks from Villalobos-Herrera et al. (2022)
+* Add exceedance of UK records (1h, 24hr and rolling24hr)
+* Add streaks check of min 20mm
+* Change parameter: 'streak_length' to 'min_streak_length' 
+* Add check_freq_is_subhourly (with modification to make it polars format)
+* Update downsample to check resolution and ratio of high res and low res before doing downsampling
+* Add check_subhourly_thresholds as polars implementation
+* Update relevant parts of the docs
+* Add label 'right' to group_by_dynamic so that data is aggregated upwards i.e. 7:00:01 to 8:00 is 8:00.
+* Add `.fill_nan(0.0)`` to checks doing comparisons
+* Add check for polars dataframe as input of `.apply_qc_framework()``
+* Fix readme and quickstart in docs
+
+1.0.3 (2026-08-11)
+------------------
+* change check_temporal_bias into check_hour_of_day and check_day_of_week 
+
 1.0.2 (2026-06-29)
 ------------------
 * Fix bug with "check_temporal_bias" (QC3-4), so that each time group i.e. hour-of-week or day-of-week is compared to population smallest_measurable_rainfall_amount

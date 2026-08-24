@@ -21,7 +21,9 @@ Functions
 
    check_min_val_change
 
-   check_temporal_bias
+   check_day_of_week
+
+   check_hour_of_day
 
    check_years_where_annual_kth_largest_value_is_zero
 

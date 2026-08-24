@@ -37,6 +37,7 @@ def run_qc_framework(
         Results of running QC framework.
 
     """
+    assert isinstance(data, pl.DataFrame), "Input data needs to be a polars DataFrame."
     qc_results = {}
     shared_kwargs = qc_kwargs.get("shared", {})
 

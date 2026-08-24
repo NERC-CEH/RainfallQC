@@ -98,11 +98,17 @@ def test_apply_qc_frameworks_hourly(hourly_gsdr_network, gsdr_metadata):
             "n_neighbours_ignored": 0,
         },
     }
+
+    with pytest.raises(AssertionError):
+        apply_qc_framework.run_qc_framework(
+            [0, 1, 2], qc_framework="IntenseQC", qc_methods_to_run=qc_methods_to_run, qc_kwargs=qc_kwargs
+        )
+
     result = apply_qc_framework.run_qc_framework(
         hourly_gsdr_network, qc_framework="IntenseQC", qc_methods_to_run=qc_methods_to_run, qc_kwargs=qc_kwargs
     )
     assert len(result.keys()) == 15
-    assert len(result["QC15"].filter(pl.col("streak_flag1") > 0)) == 0
+    assert len(result["QC15"].filter(pl.col("streak_flag1").fill_nan(0.0) > 0)) == 0
     assert result["QC21"] == 0  # timing offset
     assert round(result["QC22"], 2) == 0.81  # affinity index
     assert round(result["QC23"], 2) == 0.03  # correlation
@@ -146,8 +152,8 @@ def test_apply_qc_frameworks_15min(mins15_gsdr_network, gsdr_metadata):
     )
     assert len(result.keys()) == 13
     assert result["QC21"] == 0  # timing offset
-    assert round(result["QC22"], 2) == 0.8  # affinity index
-    assert round(result["QC23"], 2) == 0.31  # correlation
+    assert round(result["QC22"], 2) == 0.89  # affinity index
+    assert round(result["QC23"], 2) == 0.35  # correlation
 
 
 def test_apply_pypwsqc_framework(hourly_gsdr_network_no_prefix, gsdr_gauge_network):

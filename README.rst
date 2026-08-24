@@ -16,9 +16,18 @@ RainfallQC - Quality control for rainfall data
    :alt: Deploy docs
 
 .. image:: https://zenodo.org/badge/917722737.svg
-        :target: https://doi.org/10.5281/zenodo.17457013
+        :target: https://doi.org/10.5281/zenodo.21030756
 
 Provides methods for running rainfall quality control.
+
+Features
+========
+
+- 33 rainfall QC methods (25 from IntenseQC, 6 from SubHourlyQC and 2 from pyPWSQC)
+- polars DataFrame support for fast data processing
+- modular structure so you can pick and choose which checks to run
+- support for single rain gauges or networks of rain gauges
+- editable parameters so you can tweak thresholds, streak or accumulation lengths, and distances to neighbouring gauges
 
 Installation
 ============
@@ -29,8 +38,8 @@ RainfallQC can be installed from PyPi:
     pip install rainfallqc
 
 
-Example use
-===========
+Examples
+========
 
 Example 1. - Running individual checks on a single rain gauge
 -------------------------------------------------------------
@@ -164,90 +173,69 @@ Example 2. - Running multiple QC checks on a single target gauge
 To run multiple QC checks, you can use the `apply_qc_framework() <rainfallqc.checks.html#rainfallqc.qc_frameworks.html#module-rainfallqc.qc_frameworks.apply_qc_framework>`_
 method to run QC methods from a given framework (e.g. IntenseQC).
 
-Let's say you have hourly rainfall values from a rain gauge network data like:
-
-.. table:: Example data 2. Rain gauge network
-    :widths: auto
-    :align: center
-
-    +---------------------+-----------------+-----------------+-----------------+
-    | time                | rain_mm_gauge_1 | rain_mm_gauge_2 | rain_mm_gauge_3 |
-    +=====================+=================+=================+=================+
-    | 2020-01-01 00:00    | 0.0             | 0.5             | 0.0             |
-    +---------------------+-----------------+-----------------+-----------------+
-    | 2020-01-01 01:00    | 0.5             | 0.0             | 1.0             |
-    +---------------------+-----------------+-----------------+-----------------+
-    | 2020-01-01 02:00    | 0.0             | 1.0             | 0.0             |
-    +---------------------+-----------------+-----------------+-----------------+
-    | 2020-01-01 03:00    | 105.0           | 0.0             | 0.5             |
-    +---------------------+-----------------+-----------------+-----------------+
-    | 2020-01-01 04:00    | 0.0             | 0.5             | 0.0             |
-    +---------------------+-----------------+-----------------+-----------------+
-    | ...                 | ...             | ...             | ...             |
-    +---------------------+-----------------+-----------------+-----------------+
-
-
-... and metadata like example metdata 1.
-You can then run multiple QC checks at once by defining a QC framework, the methods to run and parameters for those methods.
-
-As of RainfallQC v0.3.0, there are three QC frameworks:
-
-1. "intenseqc" - All 25 checks from IntenseQC/GSDR-QC with names like: "QC1", "QC2" ... "QC25",
-2. "pypwsqc" - 2 checks from pyPWSQC with the names: "FZ" and "SO",
-3. "custom" - Allows the user to select a custom set of checks (see Example 8 in `Tutorials <https://nerc-ceh.github.io/RainfallQC/tutorials/run_a_sensitivity_analysis.html>`_).
-
-Let's run some QC checks from intenseqc framework below:
-
-.. code-block:: python
-
-        import polars as pl
-        from rainfallqc.qc_frameworks import apply_qc_framework
-
-        network_data = pl.read_csv("hourly_rain_gauge_network.csv")
-        metadata = pl.read_csv("rain_gauge_metadata.csv")
-
-        # 1. Decide which QC methods of IntenseQC will be run
-        qc_framework = "IntenseQC"
-        qc_methods_to_run = ["QC1", "QC8", "QC9", "QC10", "QC11", "QC12", "QC14", "QC15", "QC16"]
-
-        # 2. Determine nearest neighbouring gauges for neighbourhood checks
-        gauge_lat = gpcc_metadata["latitude"]
-        gauge_lon = gpcc_metadata["longitude"]
-        nearest_neighbourhours = ["rain_mm_gauge_2", "rain_mm_gauge_3", ...] # or see Example 3 if not determined
-
-        # 2 Decide which parameters for QC
-        qc_kwargs = {
-            "QC1": {"percentile": 5},
-            "QC14": {"wet_day_threshold": 1.0, "accumulation_multiplying_factor": 2.0},
-            "QC16": {
-                "list_of_nearest_stations": nearest_neighbourhours,
-                "wet_threshold": 1.0,
-                "min_n_neighbours": 5,
-                "n_neighbours_ignored": 0,
-            },
-            "shared": {
-                "target_gauge_col": "rain_mm_gauge_1",
-                "gauge_lat": gauge_lat,
-                "gauge_lon": gauge_lon,
-                "time_res": "daily",
-                "smallest_measurable_rainfall_amount": 0.1,
-            },
-        }
-
-        # 3. Run QC methods on network data
-        qc_result = apply_qc_framework.run_qc_framework(
-            daily_rain_gauge_network, qc_framework=qc_framework, qc_methods_to_run=qc_methods_to_run, qc_kwargs=qc_kwargs
-        )
-
-Because lots of the checks share the same parameters with a standard vocabulary, you can use the "shared" part of the ``qc_kwargs`` dictionary to set those.
+For more information about how to run multiple checks in a framework see `Example 4 in the docs <https://nerc-ceh.github.io/RainfallQC/tutorials/running_multiple_qc_checks.html>`_
 
 Other examples
 --------------
 Of course, your data may not be tabular, or may not be stored in a single file. Therefore, please see our other `Tutorials <https://nerc-ceh.github.io/RainfallQC/tutorials/overview.html>`_.
 
-There is also a `demo notebook <https://github.com/Thomasjkeel/RainfallQC-notebooks/blob/main/notebooks/demo/rainfallQC_demo.ipynb>`_.
 
-Finally, different QC methods are suitable for different temporal resolutions, see our `Which checks are suitable for my data's temporal resolution? <https://nerc-ceh.github.io/RainfallQC/quickstart.html>`_ for more information.
+QC checks in RainfallQC
+=======================
+
+.. role:: green
+   :class: qc-green
+
+.. role:: dark-green
+   :class: qc-dark-green
+
+.. role:: red
+   :class: qc-red
+
+
+.. table:: QC checks and appropriate time-resolution
+   :widths: auto
+   :align: left
+
+   =========================================== =====================  ==================================================================================== ================= ================= ================= ================= =================
+   Long name                                   Sub-module             QC Framework                                                                         <15-min           15-min            hourly            daily             monthly
+   =========================================== =====================  ==================================================================================== ================= ================= ================= ================= =================
+   Percentiles                                 Gauge checks           `IntenseQC <https://www.sciencedirect.com/science/article/pii/S1364815221002127>`_   :green:`✓`        :green:`✓`        :green:`✓`        :green:`✓`        :green:`✓`
+   K-largest                                   Gauge checks           `IntenseQC <https://www.sciencedirect.com/science/article/pii/S1364815221002127>`_   :green:`✓`        :green:`✓`        :green:`✓`        :green:`✓`        :green:`✓`
+   Days of week                                Gauge checks           `IntenseQC <https://www.sciencedirect.com/science/article/pii/S1364815221002127>`_   :green:`✓`        :green:`✓`        :green:`✓`        :green:`✓`        :red:`☓`
+   Hours of day                                Gauge checks           `IntenseQC <https://www.sciencedirect.com/science/article/pii/S1364815221002127>`_   :green:`✓`        :green:`✓`        :green:`✓`        :red:`☓`          :red:`☓`
+   Intermittency                               Gauge checks           `IntenseQC <https://www.sciencedirect.com/science/article/pii/S1364815221002127>`_   :green:`✓`        :green:`✓`        :green:`✓`        :green:`✓`        :green:`✓`
+   Breakpoints                                 Gauge checks           `IntenseQC <https://www.sciencedirect.com/science/article/pii/S1364815221002127>`_   :green:`✓`        :green:`✓`        :green:`✓`        :green:`✓`        :red:`☓`
+   Minimum value change                        Gauge checks           `IntenseQC <https://www.sciencedirect.com/science/article/pii/S1364815221002127>`_   :green:`✓`        :green:`✓`        :green:`✓`        :green:`✓`        :green:`✓`
+   R99p                                        Comparison checks      `IntenseQC <https://www.sciencedirect.com/science/article/pii/S1364815221002127>`_   :green:`✓`        :green:`✓`        :green:`✓`        :green:`✓`        :red:`☓`
+   PRCPTOT                                     Comparison checks      `IntenseQC <https://www.sciencedirect.com/science/article/pii/S1364815221002127>`_   :green:`✓`        :green:`✓`        :green:`✓`        :green:`✓`        :red:`☓`
+   World Record                                Comparison checks      `IntenseQC <https://www.sciencedirect.com/science/article/pii/S1364815221002127>`_   :green:`✓`        :green:`✓`        :green:`✓`        :green:`✓`        :red:`☓`
+   Rx1day                                      Comparison checks      `IntenseQC <https://www.sciencedirect.com/science/article/pii/S1364815221002127>`_   :green:`✓`        :green:`✓`        :green:`✓`        :red:`☓`          :red:`☓`
+   CDD (Dry spells)                            Timeseries checks      `IntenseQC <https://www.sciencedirect.com/science/article/pii/S1364815221002127>`_   :green:`✓`        :green:`✓`        :green:`✓`        :green:`✓`        :red:`☓`
+   Daily accumulations                         Timeseries checks      `IntenseQC <https://www.sciencedirect.com/science/article/pii/S1364815221002127>`_   :dark-green:`agg` :dark-green:`agg` :green:`✓`        :green:`✓`        :red:`☓`
+   Monthly accumulations                       Timeseries checks      `IntenseQC <https://www.sciencedirect.com/science/article/pii/S1364815221002127>`_   :green:`✓`        :green:`✓`        :green:`✓`        :green:`✓`        :red:`☓`
+   Streaks                                     Timeseries checks      `IntenseQC <https://www.sciencedirect.com/science/article/pii/S1364815221002127>`_   :dark-green:`agg` :dark-green:`agg` :green:`✓`        :green:`✓`        :red:`☓`
+   Daily neighbours (wet)                      Neighbourhood checks   `IntenseQC <https://www.sciencedirect.com/science/article/pii/S1364815221002127>`_   :green:`✓`        :green:`✓`        :green:`✓`        :green:`✓`        :red:`☓`
+   Hourly neighbours (wet)                     Neighbourhood checks   `IntenseQC <https://www.sciencedirect.com/science/article/pii/S1364815221002127>`_   :green:`✓`        :green:`✓`        :green:`✓`        :red:`☓`          :red:`☓`
+   Daily neighbours (dry)                      Neighbourhood checks   `IntenseQC <https://www.sciencedirect.com/science/article/pii/S1364815221002127>`_   :green:`✓`        :green:`✓`        :green:`✓`        :green:`✓`        :red:`☓`
+   Hourly neighbours (dry)                     Neighbourhood checks   `IntenseQC <https://www.sciencedirect.com/science/article/pii/S1364815221002127>`_   :green:`✓`        :green:`✓`        :green:`✓`        :red:`☓`          :red:`☓`
+   Monthly neighbours                          Neighbourhood checks   `IntenseQC <https://www.sciencedirect.com/science/article/pii/S1364815221002127>`_   :dark-green:`agg` :dark-green:`agg` :dark-green:`agg` :dark-green:`agg` :green:`✓`
+   Timing offset                               Neighbourhood checks   `IntenseQC <https://www.sciencedirect.com/science/article/pii/S1364815221002127>`_   :green:`✓`        :green:`✓`        :green:`✓`        :green:`✓`        :red:`☓`
+   Pre-QC affinity index                       Neighbourhood checks   `IntenseQC <https://www.sciencedirect.com/science/article/pii/S1364815221002127>`_   :green:`✓`        :green:`✓`        :green:`✓`        :green:`✓`        :green:`✓` 
+   Pre-QC pearson correlation                  Neighbourhood checks   `IntenseQC <https://www.sciencedirect.com/science/article/pii/S1364815221002127>`_   :green:`✓`        :green:`✓`        :green:`✓`        :green:`✓`        :green:`✓`
+   Daily factor                                Neighbourhood checks   `IntenseQC <https://www.sciencedirect.com/science/article/pii/S1364815221002127>`_   :dark-green:`agg` :dark-green:`agg` :dark-green:`agg` :green:`✓`        :red:`☓`
+   Monthly factor                              Neighbourhood checks   `IntenseQC <https://www.sciencedirect.com/science/article/pii/S1364815221002127>`_   :dark-green:`agg` :dark-green:`agg` :dark-green:`agg` :dark-green:`agg` :green:`✓`
+   Check exceedance of UK 1h record            Sub-hourly thresholds  `SubHourlyQC <https://doi.org/10.1002/qj.4357>`_                                     :green:`✓`        :green:`✓`        :red:`☓`          :red:`☓`          :red:`☓`
+   Check exceedance of UK 24h record           Sub-hourly thresholds  `SubHourlyQC <https://doi.org/10.1002/qj.4357>`_                                     :green:`✓`        :green:`✓`        :red:`☓`          :red:`☓`          :red:`☓`
+   Check 24h-sum exceedance of UK 24h record   Sub-hourly thresholds  `SubHourlyQC <https://doi.org/10.1002/qj.4357>`_                                     :green:`✓`        :green:`✓`        :red:`☓`          :red:`☓`          :red:`☓`
+   Check streaks (20 mm min)                   Sub-hourly thresholds  `SubHourlyQC <https://doi.org/10.1002/qj.4357>`_                                     :green:`✓`        :green:`✓`        :red:`☓`          :red:`☓`          :red:`☓`
+   Check data has sub-hourly frequency         Sub-hourly thresholds  `SubHourlyQC <https://doi.org/10.1002/qj.4357>`_                                     :green:`✓`        :green:`✓`        :red:`☓`          :red:`☓`          :red:`☓`
+   Check sub-hourly rainfall thresholds        Sub-hourly thresholds  `SubHourlyQC <https://doi.org/10.1002/qj.4357>`_                                     :green:`✓`        :green:`✓`        :red:`☓`          :red:`☓`          :red:`☓`
+   Faulty Zeros                                pyPWSQC filters        `pyPWSQC <https://doi.org/10.5281/zenodo.4501919>`_                                  :green:`✓`        :green:`✓`        :green:`✓`        :green:`✓`        :red:`☓`
+   Station Outliers                            pyPWSQC filters        `pyPWSQC <https://doi.org/10.5281/zenodo.4501919>`_                                  :green:`✓`        :green:`✓`        :green:`✓`        :red:`☓`          :red:`☓`     
+   =========================================== =====================  ==================================================================================== ================= ================= ================= ================= =================
+
+
 
 Documentation and License
 =========================
@@ -255,24 +243,19 @@ Documentation and License
 * Free software: GNU General Public License v3
 * Documentation: https://nerc-ceh.github.io/RainfallQC/
 
-
-Features
-========
-
-- 27 rainfall QC methods (25 from IntenseQC, 2 from pyPWSQC)
-- polars DataFrame support for fast data processing
-- modular structure so you can pick and choose which checks to run
-- support for single gauges or networks of gauges
-- editable parameters so you can tweak thresholds, streak or accumulation lengths, and distances to neighbouring gauges
+Note on time aggregation
+========================
+Hourly data is aggregated with 'label=right', so 07:00:01 to 08:00 is labelled 08:00.
+For daily and monthly aggregation, label is left, so n-hour on D to n-hour on D+1 is D.
 
 How to cite this package
 ========================
 To cite a specific version of RainfallQC, please see `Zenodo <https://zenodo.org/records/17457184>`_ DOI. 
-For v0.3.1: https://doi.org/10.5281/zenodo.17457013
+For v1.0.2: https://doi.org/10.5281/zenodo.21030756
 
 Credits
 =======
-* Builds upon `IntenseQC <https://github.com/nclwater/intense-qc/tree/master>`_, and (is compatible with) `pyPWSQC <https://github.com/OpenSenseAction/pypwsqc>`_:
+* Builds upon `IntenseQC <https://github.com/nclwater/intense-qc/tree/master>`_, `SubHourlyQC <https://github.com/nclwater/SubHourlyQC/tree/main>`_  and (is compatible with) `pyPWSQC <https://github.com/OpenSenseAction/pypwsqc>`_:
 * Please email tomkee@ceh.ac.uk if you have any questions.
 * This package was created with Cookiecutter_ and the `audreyr/cookiecutter-pypackage`_ project template.
 
