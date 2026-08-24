@@ -20,6 +20,15 @@ RainfallQC - Quality control for rainfall data
 
 Provides methods for running rainfall quality control.
 
+Features
+========
+
+- 33 rainfall QC methods (25 from IntenseQC, 6 from SubHourlyQC and 2 from pyPWSQC)
+- polars DataFrame support for fast data processing
+- modular structure so you can pick and choose which checks to run
+- support for single rain gauges or networks of rain gauges
+- editable parameters so you can tweak thresholds, streak or accumulation lengths, and distances to neighbouring gauges
+
 Installation
 ============
 RainfallQC can be installed from PyPi:
@@ -171,16 +180,8 @@ Other examples
 Of course, your data may not be tabular, or may not be stored in a single file. Therefore, please see our other `Tutorials <https://nerc-ceh.github.io/RainfallQC/tutorials/overview.html>`_.
 
 
-QC frameworks in RainfallQC
-===========================
-
-As of RainfallQC v1.1.0, there are three QC frameworks:
-
-1. "intenseqc" - All 25 checks from IntenseQC/GSDR-QC with names like: "QC1", "QC2" ... "QC25",
-2. "pypwsqc" - 2 checks from pyPWSQC with the names: "FZ" and "SO",
-3. "subhourlyqc" - Checks to extent intenseqc for subhourly data (7 new, 12 shared with intenseqc), with names like "HQC_QC1", "SHQC_freqResChecker":
-4. and "custom" - Allows the user to select a custom set of checks (see Example 8 in `Tutorials <https://nerc-ceh.github.io/RainfallQC/tutorials/run_a_sensitivity_analysis.html>`_).
-
+QC checks in RainfallQC
+=======================
 
 .. role:: green
    :class: qc-green
@@ -241,16 +242,6 @@ Documentation and License
 * RainfallQC is developed and maintained by UKCEH.
 * Free software: GNU General Public License v3
 * Documentation: https://nerc-ceh.github.io/RainfallQC/
-
-
-Features
-========
-
-- 33 rainfall QC methods (25 from IntenseQC, 6 from SubHourlyQC and 2 from pyPWSQC)
-- polars DataFrame support for fast data processing
-- modular structure so you can pick and choose which checks to run
-- support for single gauges or networks of gauges
-- editable parameters so you can tweak thresholds, streak or accumulation lengths, and distances to neighbouring gauges
 
 Note on time aggregation
 ========================
