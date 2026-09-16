@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Methods to apply rulebase to create quality controlled data."""
 
 import polars as pl
@@ -241,7 +240,7 @@ def apply_intenseQC_rulebase(
     # apply R1, which removes whole years
     # has to be run after R7 which updates the data
     rule_removed_rows, n_qc2_rows_removed = apply_r1(
-        rule_removed_rows, station_id, all_flags["QC2"], return_count=return_counts
+        rule_removed_rows, station_id, all_flags["QC2"], return_counts=return_counts
     )
 
     # update n_rows_removed
@@ -289,7 +288,7 @@ def apply_intenseQC_w_subhourlyQC_rulebase(
     # apply R1, which removes whole years
     # has to be run after R7 which updates the data
     rule_removed_rows, n_qc2_rows_removed = apply_r1(
-        rule_removed_rows, station_id, all_flags["QC2"], return_count=return_counts
+        rule_removed_rows, station_id, all_flags["QC2"], return_counts=return_counts
     )
 
     # update n_rows_removed
