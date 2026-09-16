@@ -151,7 +151,7 @@ INBUILT_QC_FRAMEWORKS = {
     "intenseqc_rulebase_only": INTENSE_RULEBASE_QC,
     "uk_subhourlyqc": UK_SUBHOURLY_QC,
     "pypwsqc": PYPWSQC,
-    "intenseqc_w_subhourlyqc": INTENSEQC_W_SUBHOURLYQC_RULEBASE,
+    "intenseqc_w_subhourlyqc_rulebase": INTENSEQC_W_SUBHOURLYQC_RULEBASE,
 }
 
 
