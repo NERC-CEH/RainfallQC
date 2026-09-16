@@ -1,3 +1,6 @@
+# -*- coding: utf-8 -*-
+"""Methods to apply rulebase to create quality controlled data."""
+
 import polars as pl
 
 TIME_STEP_CONVERSION = {"15m": "15m", "1h": "hourly"}
@@ -20,6 +23,7 @@ def apply_conditional_rule(data: pl.DataFrame, condition: pl.Expr, val_col: str)
     -------
     data:
         Mask of column based on condition
+
     """
     return data.with_columns(pl.when(condition).then(None).otherwise(pl.col(val_col)).alias(val_col))
 
@@ -55,22 +59,24 @@ def apply_rowbased_rulebase_to_one_station(
         Input data with rows removed based on rulebase
     num_rows_removed_by_rule:
         Returned if return counts == True
+
     """
     num_rows_removed_by_rule = {}
     num_rows_removed_by_rule["station_id"] = station_id
     rule_removed_rows = flags_by_row
     for rule_id, rule in rules_to_apply.items():
+        current_rule = rule
         if callable(rule):
-            rule = rule(station_id, TIME_STEP_CONVERSION[time_step])
-        rule_removed_rows = apply_conditional_rule(rule_removed_rows, rule, station_id)
-        num_rows_removed_by_rule[rule_id] = flags_by_row.filter(rule).height
+            current_rule = current_rule(station_id, TIME_STEP_CONVERSION[time_step])
+        rule_removed_rows = apply_conditional_rule(rule_removed_rows, current_rule, station_id)
+        num_rows_removed_by_rule[rule_id] = flags_by_row.filter(current_rule).height
     if return_counts:
         return rule_removed_rows, num_rows_removed_by_rule
     return rule_removed_rows
 
 
 def apply_r1(
-    flags_by_row: pl.DataFrame, station_id: str, qc2_list: list, return_count=True
+    flags_by_row: pl.DataFrame, station_id: str, qc2_list: list, return_counts: bool = True
 ) -> pl.DataFrame | tuple[pl.DataFrame, int]:
     """
     Apply rule 1 from the IntenseQC framework.
@@ -88,8 +94,8 @@ def apply_r1(
     return_counts:
         Whether you should return counts of removed rows (default: True)
 
-    Returns:
-    --------
+    Returns
+    -------
     rule_removed_rows:
         Input data with rows removed based on rulebase
     num_rows_removed_by_rule:
@@ -102,7 +108,7 @@ def apply_r1(
     for year in qc2_list:
         num_rows_removed += rule_removed_rows.filter(pl.col("time").dt.year() == year).height
         rule_removed_rows = apply_conditional_rule(rule_removed_rows, (pl.col("time").dt.year() == year), station_id)
-    if return_count:
+    if return_counts:
         return rule_removed_rows, num_rows_removed
     return rule_removed_rows
 
@@ -199,7 +205,7 @@ def get_rulebase_conditions_w_subhourlyqc(time_step: str) -> dict:
 
 
 def apply_intenseQC_rulebase(
-    all_flags: dict, station_id: str, time_step: str, return_counts=True
+    all_flags: dict, station_id: str, time_step: str, return_counts: bool = True
 ) -> pl.DataFrame | tuple[pl.DataFrame, dict]:
     """
     Apply the IntenseQC rulebase (11 rules).
@@ -210,13 +216,13 @@ def apply_intenseQC_rulebase(
         Data with flags by row
     station_id:
         Gauge ID
-    qc2_list:
+    time_step:
         The time resolution of the data
     return_counts:
         Whether you should return counts of removed rows (default: True)
 
-    Returns:
-    --------
+    Returns
+    -------
     rule_removed_rows:
         Input data with rows removed based on rulebase
     num_rows_removed_by_rule:
@@ -247,7 +253,7 @@ def apply_intenseQC_rulebase(
 
 
 def apply_intenseQC_w_subhourlyQC_rulebase(
-    all_flags: dict, station_id: str, time_step: str, return_counts=True
+    all_flags: dict, station_id: str, time_step: str, return_counts: bool = True
 ) -> pl.DataFrame | tuple[pl.DataFrame, dict]:
     """
     Apply the IntenseQC rulebase (11 rules) and 6 rules from SubHourlyQC.
@@ -258,13 +264,13 @@ def apply_intenseQC_w_subhourlyQC_rulebase(
         Data with flags by row
     station_id:
         Gauge ID
-    qc2_list:
+    time_step:
         The time resolution of the data
     return_counts:
         Whether you should return counts of removed rows (default: True)
 
-    Returns:
-    --------
+    Returns
+    -------
     rule_removed_rows:
         Input data with rows removed based on rulebase
     num_rows_removed_by_rule:
