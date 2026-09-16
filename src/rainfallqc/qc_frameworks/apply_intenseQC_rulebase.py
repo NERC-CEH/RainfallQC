@@ -4,6 +4,23 @@ TIME_STEP_CONVERSION = {"15m": "15m", "1h": "hourly"}
 
 
 def apply_conditional_rule(data: pl.DataFrame, condition: pl.Expr, val_col: str) -> pl.DataFrame:
+    """
+    Apply a conditional rule.
+
+    Parameters
+    ----------
+    data:
+        Data to check condition from
+    condition:
+        Condition to check in given val_col
+    val_col:
+        Column with data to check against condition
+
+    Returns
+    -------
+    data:
+        Mask of column based on condition
+    """
     return data.with_columns(pl.when(condition).then(None).otherwise(pl.col(val_col)).alias(val_col))
 
 
@@ -15,7 +32,29 @@ def apply_rowbased_rulebase_to_one_station(
     return_counts: bool = True,
 ) -> pl.DataFrame | tuple[pl.DataFrame, dict]:
     """
+    Apply rulebase to a single gauge worth of data.
+
     Note: will overlap the count of rules removed
+
+    Parameters
+    ----------
+    flags_by_row:
+        Data with flags by row
+    rules_to_apply:
+        Conditions to remove data from data
+    station_id:
+        Gauge ID
+    time_step:
+        The time resolution of the data
+    return_counts:
+        Whether you should return counts of removed rows (default: True)
+
+    Returns
+    -------
+    rule_removed_rows:
+        Input data with rows removed based on rulebase
+    num_rows_removed_by_rule:
+        Returned if return counts == True
     """
     num_rows_removed_by_rule = {}
     num_rows_removed_by_rule["station_id"] = station_id
@@ -34,7 +73,28 @@ def apply_r1(
     flags_by_row: pl.DataFrame, station_id: str, qc2_list: list, return_count=True
 ) -> pl.DataFrame | tuple[pl.DataFrame, int]:
     """
+    Apply rule 1 from the IntenseQC framework.
+
     Needs to be applied last, as it can remove entire years
+
+    Parameters
+    ----------
+    flags_by_row:
+        Data with flags by row
+    station_id:
+        Gauge ID
+    qc2_list:
+        The time resolution of the data
+    return_counts:
+        Whether you should return counts of removed rows (default: True)
+
+    Returns:
+    --------
+    rule_removed_rows:
+        Input data with rows removed based on rulebase
+    num_rows_removed_by_rule:
+        Returned if return counts == True
+
     """
     num_rows_removed = 0
     rule_removed_rows = flags_by_row
@@ -48,12 +108,42 @@ def apply_r1(
 
 
 def get_r7(station_id: str, time_step: str) -> pl.Expr:
+    """
+    Apply rule 7 from the IntenseQC framework.
+
+    Parameters
+    ----------
+    station_id:
+        Gauge ID
+    time_step:
+        The time resolution of the data
+
+    Returns
+    -------
+    condition:
+        Expression for subsetting data
+
+    """
     return (pl.col(f"wet_spell_flag_{TIME_STEP_CONVERSION[time_step]}") == 3) & (
         pl.col(station_id) > 2 * pl.col(station_id).filter(pl.col(station_id) > 0).mean()
     )
 
 
 def get_rulebase_conditions(time_step: str) -> dict:
+    """
+    Get all rulebase conditions.
+
+    Parameters
+    ----------
+    time_step:
+        The time resolution of the data
+
+    Returns
+    -------
+    dict:
+        Rulebase expressions
+
+    """
     return {
         "R2": pl.col("daily_accumulation") == 1,
         "R3": pl.col("monthly_accumulation") == 1,
@@ -73,6 +163,28 @@ def get_rulebase_conditions(time_step: str) -> dict:
 def apply_intenseQC_rulebase(
     all_flags: dict, station_id: str, time_step: str, return_counts=True
 ) -> pl.DataFrame | tuple[pl.DataFrame, dict]:
+    """
+    Apply the IntenseQC rulebase (11 rules).
+
+    Parameters
+    ----------
+    all_flags:
+        Data with flags by row
+    station_id:
+        Gauge ID
+    qc2_list:
+        The time resolution of the data
+    return_counts:
+        Whether you should return counts of removed rows (default: True)
+
+    Returns:
+    --------
+    rule_removed_rows:
+        Input data with rows removed based on rulebase
+    num_rows_removed_by_rule:
+        Returned if return counts == True
+
+    """
     # apply R2-R11 (the row-wise rules)
     rule_removed_rows, n_rows_removed = apply_rowbased_rulebase_to_one_station(
         all_flags["all_flags_by_row"],
