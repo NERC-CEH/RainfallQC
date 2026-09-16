@@ -49,7 +49,7 @@ def run_qc_framework(
         qc_framework = user_defined_framework
     else:
         raise KeyError(
-            f"QC framework '{qc_framework}' is not known."
+            f"QC framework '{qc_framework}' is not known. "
             f"In-built QC frameworks include: {INBUILT_QC_FRAMEWORKS.keys()}."
         )
 
