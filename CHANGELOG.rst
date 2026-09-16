@@ -2,6 +2,11 @@
 Changelog
 =========
 
+1.1.1 (2026-09-16)
+------------------
+* Add subhourlyqc to apply_rulebase.py
+* Rename apply_intenseQC_rulesbase.py to apply_qc_rulebase.py
+
 1.1.0 (2026-08-11)
 ------------------
 * Add subhourlyQC checks from Villalobos-Herrera et al. (2022)
