@@ -336,7 +336,7 @@ def compute_km_distances_from_target_id(
         f"gauge_network_metadata does not contain value: '{target_id}' in column '{station_id_col}'"
     )
 
-    assert len(target_station) < 1, (
+    assert len(target_station) < 2, (
         f"Target : '{target_id}' has {len(target_station)} values. Please check for station_id duplicates in metadata."
     )
     target_latlon = (
